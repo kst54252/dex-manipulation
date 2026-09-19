@@ -1,0 +1,218 @@
+{
+  "schema": "dex_dataset_frame_v1",
+  "coordinate_frame": "ground",
+  "length_unit": "m",
+  "quaternion_order": "xyzw",
+  "ground_z_m": 0.0,
+  "initial_frame_id": 15,
+  "final_frame_id": 41,
+  "frame_count": 27,
+  "frame_ids": [
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41
+  ],
+  "frame_range": [
+    15,
+    41
+  ],
+  "duration_s": 5.2,
+  "source_axes": "x_right_y_down_z_forward",
+  "world_axes": "z_up; xy aligned with initial can local xy",
+  "world_from_source": [
+    [
+      -0.22520422929656694,
+      0.1816538732126457,
+      0.9572277291500613,
+      -0.7609755438895123
+    ],
+    [
+      -0.974203560417236,
+      -0.027353888879387528,
+      -0.22400711514046756,
+      -0.023225320224275533
+    ],
+    [
+      -0.0145078591570178,
+      -0.9829820115902518,
+      0.18312806151068703,
+      0.09600386728862566
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "source_from_world": [
+    [
+      -0.22520422929656694,
+      -0.974203560417236,
+      -0.0145078591570178,
+      -0.1926082899443407
+    ],
+    [
+      0.1816538732126457,
+      -0.027353888879387528,
+      -0.9829820115902518,
+      0.23196892672684336
+    ],
+    [
+      0.9572277291500613,
+      -0.22400711514046756,
+      0.18312806151068703,
+      0.7056432527203418
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "object_index": 0,
+  "object_name": "stepped_can_73x32_base76x3",
+  "initial_object_pose": [
+    [
+      0.999999900577243,
+      -2.3499555212913463e-08,
+      4.4016334219498446e-08,
+      0.0
+    ],
+    [
+      -2.3499554426666452e-08,
+      0.999999908515512,
+      9.433207485744181e-08,
+      0.0
+    ],
+    [
+      4.401633395480051e-08,
+      9.433207582742326e-08,
+      1.000000033852843,
+      0.020119500000000026
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "initial_collision_bottom_z_m": 2.854032248086173e-18,
+  "collision_shapes": [
+    {
+      "type": "cylinder",
+      "radius": 0.038,
+      "height": 0.003,
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.0186195
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "usd_path": "/Can/CollisionBase"
+    },
+    {
+      "type": "cylinder",
+      "radius": 0.0365,
+      "height": 0.029,
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.0026195
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "usd_path": "/Can/CollisionBody"
+    }
+  ],
+  "object_geometry_fingerprint": "a6d68f302b5620b5e818a90d05181614f01948294c8824f5c7d074fb0ecc597c",
+  "hand_object_relative_transform_max_error": 3.3306690738754696e-16,
+  "time_basis": "retimed_user_authorized",
+  "retimed_fps": 5.0,
+  "method": "One fixed rigid transform for every hand/object pose and keypoint in all frames; no scaling, per-frame correction, or joint/time changes",
+  "assumption": "Initial can local +Z is simulation up; no measured table/camera-to-robot calibration",
+  "hardware_calibrated": false,
+  "sources": [
+    {
+      "path": "/home/wanjunkim/ARSL/dex-manipulation/data/poses/839512060362.npz",
+      "sha256": "67de8c69a3e71e3b958da9863fb95a7a2066bdb9c7e3f91c89ae9724752d3178"
+    },
+    {
+      "path": "/home/wanjunkim/ARSL/dex-manipulation/data/reference/839512060362.npz",
+      "sha256": "5190fc0b556b5a01a4b8e3624f21ae478941a1fe71517dcc28f59684f013f661"
+    },
+    {
+      "path": "/home/wanjunkim/ARSL/dex-manipulation/assets/models/can_mesh.json",
+      "sha256": "d6d46352330fdeb32ec60c8c874bc5d1620783a9cb2cc778e347d623f55a3cd2"
+    },
+    {
+      "path": "/home/wanjunkim/ARSL/dex-manipulation/config/retargeting.json",
+      "sha256": "442378cc239d9d139c1e33e548450a01f428391037c77dbce64c0e6d9274b0d9"
+    }
+  ]
+}

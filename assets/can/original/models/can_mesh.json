@@ -1,0 +1,53 @@
+{
+  "mesh_source": "assets/007_tuna_fish_can/textured_simple.usd",
+  "collision_source": "assets/USD/tuna_fish_can_rigid.usda",
+  "units": "m",
+  "frame": "mesh stage default prim; alignment with dataset must be confirmed",
+  "stage_up_axis": "Y",
+  "collision_shapes": [
+    {
+      "type": "cylinder",
+      "radius": 0.042973,
+      "height": 0.033511,
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.0041195
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "usd_path": "/TunaCan/PhysicsCollision"
+    }
+  ],
+  "bounds_m": [
+    [
+      -0.04270299896597862,
+      -0.042973000556230545,
+      -0.020874999463558197
+    ],
+    [
+      0.04280700162053108,
+      0.04264099895954132,
+      0.012636000290513039
+    ]
+  ]
+}

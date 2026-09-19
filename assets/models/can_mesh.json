@@ -1,0 +1,119 @@
+{
+  "mesh_source": "assets/can/can.usda",
+  "collision_source": "assets/can/can.usda",
+  "units": "m",
+  "frame": "dataset object pose frame; original geometric center and +Z axis preserved",
+  "stage_up_axis": "Z",
+  "collision_shapes": [
+    {
+      "type": "cylinder",
+      "radius": 0.038,
+      "height": 0.003,
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.0186195
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "usd_path": "/Can/CollisionBase"
+    },
+    {
+      "type": "cylinder",
+      "radius": 0.0365,
+      "height": 0.029,
+      "transform": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -0.0026195
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "usd_path": "/Can/CollisionBody"
+    }
+  ],
+  "bounds_m": [
+    [
+      -0.03799999877810478,
+      -0.03799999877810478,
+      -0.020119499415159225
+    ],
+    [
+      0.03799999877810478,
+      0.03799999877810478,
+      0.011880500242114067
+    ]
+  ],
+  "mesh_sha256": "87a02456ad29381c7ae99a8a9a4eb6329b46e677ee750dcc0cc6feabc746381e",
+  "collision_source_sha256": "9ed63f37454f8feaf3a7e161342cec551b41f59bcbfaf24b6a1452cd60c6b6fe",
+  "fingerprint": "a6d68f302b5620b5e818a90d05181614f01948294c8824f5c7d074fb0ecc597c",
+  "name": "stepped_can_73x32_base76x3",
+  "specification": {
+    "name": "stepped_can_73x32_base76x3",
+    "length_unit": "m",
+    "body_diameter_m": 0.073,
+    "total_height_m": 0.032,
+    "base_diameter_m": 0.076,
+    "base_height_m": 0.003,
+    "center_in_object_m": [
+      0.0,
+      0.0,
+      -0.0041195
+    ],
+    "axis": "+Z",
+    "alignment_basis": "Preserve the original collision cylinder geometric center and axis in the dataset object pose frame; replace its shape without changing source poses.",
+    "mass_kg": 0.15,
+    "mass_basis": "Existing simulation mass retained; not measured for the replacement can. COM/inertia assume uniform density in the solid compound volume.",
+    "radial_segments": 256,
+    "surface_point_count": 50,
+    "surface_sampling_seed": 20260918
+  },
+  "center_of_mass_m": [
+    0.0,
+    0.0,
+    -0.0042326355858240865
+  ],
+  "diagonal_inertia_kg_m2": [
+    6.332703420710084e-05,
+    6.332703420710084e-05,
+    0.000100763755789293
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "object_index": 0,
+  "object_name": "stepped_can_73x32_base76x3",
+  "mesh_to_object": [
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1
+    ]
+  ],
+  "hand_side": "right",
+  "left_hand_policy": "preserve_source",
+  "length_unit": "m",
+  "camera_axes": "x_right_y_down_z_forward",
+  "fps": null,
+  "timestamps_s": null,
+  "time_basis": "retimed_user_authorized",
+  "retimed_fps": 5.0,
+  "metadata_status": "Object index/alignment originally checked by 36-frame segmentation reprojection; right hand observed in original RGB frames 15/33/50. User removed original frames 42-50; active range is now 15-41 (27 poses). Original capture fps unknown. User-authorized 5 Hz pose spacing gives 5.2 seconds.",
+  "alignment_evidence": "local/results/validation/dataset_alignment.json",
+  "alignment_mean_iou": 0.953510296895932,
+  "frame_range": [
+    15,
+    41
+  ],
+  "dataset_object_name": "007_tuna_fish_can",
+  "object_geometry": "assets/models/can_mesh.json",
+  "object_spec": "assets/can/spec.json",
+  "shape_replacement": "User dimensioned replacement; dataset pose frame, geometric center and axis preserved. Source RGB still depicts the original YCB can."
+}

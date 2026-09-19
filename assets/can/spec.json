@@ -1,0 +1,16 @@
+{
+  "name": "stepped_can_73x32_base76x3",
+  "length_unit": "m",
+  "body_diameter_m": 0.073,
+  "total_height_m": 0.032,
+  "base_diameter_m": 0.076,
+  "base_height_m": 0.003,
+  "center_in_object_m": [0.0, 0.0, -0.0041195],
+  "axis": "+Z",
+  "alignment_basis": "Preserve the original collision cylinder geometric center and axis in the dataset object pose frame; replace its shape without changing source poses.",
+  "mass_kg": 0.15,
+  "mass_basis": "Existing simulation mass retained; not measured for the replacement can. COM/inertia assume uniform density in the solid compound volume.",
+  "radial_segments": 256,
+  "surface_point_count": 50,
+  "surface_sampling_seed": 20260918
+}
