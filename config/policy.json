@@ -1,0 +1,300 @@
+{
+  "reference": "data/grounded/reference.npz",
+  "model": "assets/models/revo2.json",
+  "hand_asset": "assets/USD/revo2_floating.usda",
+  "object_asset": "assets/can/can.usda",
+  "object_geometry": "assets/models/can_mesh.json",
+  "world_frame": "grounded_dataset",
+  "scene_assumption": "Derived dataset has the initial can collision bottom at Z=0 and local +Z up; no second placement. Simulation convention, not measured camera extrinsics.",
+  "physics_dt": 0.008333333333333333,
+  "control_decimation": 4,
+  "gravity": 9.81,
+  "friction": 1.0,
+  "contact_offset_m": 0.001,
+  "rest_offset_m": 0.0,
+  "residual_translation_m": 0.03333333333333333,
+  "residual_rotation_rad": 0.10666666666666667,
+  "residual_joint_rad": 0.10666666666666667,
+  "root_kp_position": 300.0,
+  "root_kd_position": 30.0,
+  "root_kp_rotation": 3.0,
+  "root_kd_rotation": 0.3,
+  "root_force_limit_n": null,
+  "root_torque_limit_nm": null,
+  "joint_stiffness": 20.0,
+  "joint_damping": 1.0,
+  "failure_object_error_m": 0.15,
+  "success_object_error_m": 0.025,
+  "success_final_height_error_m": 0.025,
+  "reset_position_noise_m": 0.0,
+  "rsi": {
+    "enabled": false,
+    "sampling": "uniform",
+    "initialize_velocity": true,
+    "uniform_mix": 0.1,
+    "ema_alpha": 0.001,
+    "kernel_size": 1,
+    "kernel_decay": 0.8,
+    "position_noise_m": 0.002,
+    "rotation_noise_rad": 0.02,
+    "joint_noise_rad": 0.02
+  },
+  "gravity_curriculum": {
+    "enabled": true,
+    "step_unit": "vector_environment_control_step",
+    "stages": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        9600,
+        0,
+        1
+      ],
+      [
+        12000,
+        0.5,
+        2
+      ],
+      [
+        14400,
+        1,
+        3
+      ],
+      [
+        16800,
+        2,
+        4
+      ],
+      [
+        19200,
+        3,
+        5
+      ],
+      [
+        21600,
+        4,
+        6
+      ],
+      [
+        24000,
+        5,
+        7
+      ],
+      [
+        26400,
+        6,
+        8
+      ],
+      [
+        28800,
+        7,
+        9
+      ],
+      [
+        31200,
+        8,
+        9.81
+      ],
+      [
+        33600,
+        9,
+        9.81
+      ],
+      [
+        36000,
+        9.81,
+        9.81
+      ]
+    ]
+  },
+  "augmentation": {
+    "enabled": true,
+    "translation_lower_m": [
+      -0.05,
+      -0.05,
+      0
+    ],
+    "translation_upper_m": [
+      0.05,
+      0.05,
+      0
+    ],
+    "yaw_range_rad": [
+      -0.5235987755982988,
+      0.5235987755982988
+    ],
+    "blend_start_s": 1.2,
+    "blend_end_s": 2.6,
+    "phase_basis": "Source rigid screwdriver ratios 0.135 -> 0.292; 9 s / 30 Hz yields 270 control frames (indices 0..269), fade indices floor(269*.135)=36 and floor(269*.292)=78. No can pickup/use annotation is claimed.",
+    "phase_start_ratio": 0.135,
+    "phase_end_ratio": 0.292
+  },
+  "seed": 42,
+  "ppo": {
+    "rollout_steps": 24,
+    "epochs": 5,
+    "num_minibatches": 4,
+    "learning_rate": 0.001,
+    "gamma": 0.998,
+    "gae_lambda": 0.95,
+    "clip_ratio": 0.2,
+    "entropy_coefficient": 0.002,
+    "value_coefficient": 1.0,
+    "max_grad_norm": 1.0,
+    "target_kl": 0.01,
+    "schedule": "adaptive",
+    "hidden_sizes": [
+      1024,
+      512,
+      256,
+      128
+    ],
+    "activation": "elu",
+    "initial_std": 0.5,
+    "observation_normalization": true
+  },
+  "recipe": "regrind_leap_rigid_v3",
+  "physics_device": "cuda:0",
+  "env_spacing_m": 0.75,
+  "self_collision": true,
+  "hand_gravity": false,
+  "root_torque_distribution": "mass_proportional",
+  "reset_perturbation": false,
+  "failure_hand_object_distance_m": 0.5,
+  "workspace": {
+    "lower_m": [
+      -0.4,
+      -0.25,
+      -0.007
+    ],
+    "upper_m": [
+      0.1,
+      0.25,
+      0.493
+    ],
+    "basis": "Leap rigid screwdriver workspace translated by table-top z=-0.507 m; can/table world has table top z=0. No measured camera calibration is claimed."
+  },
+  "observation": {
+    "position_noise_m": 0.002,
+    "rotation_noise_rad": 0.02,
+    "joint_noise_rad": 0.02,
+    "max_delay_steps": 2.0,
+    "history_steps": 2
+  },
+  "domain_randomization": {
+    "enabled": true,
+    "hand_friction": [
+      0.7,
+      1.3
+    ],
+    "object_friction": [
+      0.5,
+      1.5
+    ],
+    "table_friction": [
+      0.5,
+      1.5
+    ],
+    "material_buckets": 250,
+    "hand_mass_scale": [
+      0.95,
+      1.05
+    ],
+    "object_mass_scale": [
+      0.8,
+      1.2
+    ],
+    "gain_scale": [
+      0.9,
+      1.1
+    ],
+    "joint_default_offset_rad": 0.03,
+    "object_com_range_m": [
+      0.005,
+      0.03,
+      0.005
+    ],
+    "com_basis": "Original Leap rigid screwdriver XYZ perturbation ranges retained; replacement can body radius 36.5 mm, total half-height 16 mm. These are simulation randomization ranges, not measured mass distributions."
+  },
+  "push_curriculum": {
+    "enabled": true,
+    "interval_s": [
+      1.0,
+      5.0
+    ],
+    "stages": [
+      [
+        0,
+        0.0,
+        0.0
+      ],
+      [
+        130000,
+        0.1,
+        0.2
+      ],
+      [
+        140000,
+        0.2,
+        0.4
+      ],
+      [
+        150000,
+        0.3,
+        0.6
+      ],
+      [
+        160000,
+        0.4,
+        0.8
+      ],
+      [
+        170000,
+        0.5,
+        1.0
+      ]
+    ]
+  },
+  "reward": {
+    "object_weight": 1.5,
+    "object_std_m": 0.02,
+    "object_linear_velocity_weight": 1.0,
+    "object_linear_velocity_std": 1.0,
+    "object_angular_velocity_weight": 1.0,
+    "object_angular_velocity_std": 3.14,
+    "wrist_position_weight": 0.05,
+    "wrist_position_std_m": 0.02,
+    "wrist_rotation_weight": 0.05,
+    "wrist_rotation_std_rad": 0.2,
+    "action_l2_weight": 0.0,
+    "action_l2_std": 1.0,
+    "action_rate_weight": 1.0,
+    "action_rate_std": 0.5,
+    "action_out_of_bounds_weight": 1.0,
+    "action_out_of_bounds_std": 1.0,
+    "early_failure_weight": -10.0
+  },
+  "training": {
+    "num_envs": 4096,
+    "iterations": 2000,
+    "save_every": 500,
+    "initial_random_episode_length": true
+  },
+  "source_profile": "leap",
+  "episode_length_s": 9.0,
+  "surface": {
+    "size_xy_m": [
+      0.3,
+      0.3
+    ],
+    "center_xy_m": [
+      0.0,
+      0.0
+    ],
+    "top_z_m": 0.0,
+    "thickness_m": 0.02
+  }
+}
