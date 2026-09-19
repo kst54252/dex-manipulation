@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>손–캔 동작 비교</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef2f6;color:#182537;font:15px system-ui,sans-serif}
+main{max-width:1520px;margin:auto;padding:22px}h1{font-size:23px;margin:0 0 8px}.subtitle{color:#52657b;line-height:1.6}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.panel{background:white;border:1px solid #d9e2eb;border-radius:12px;overflow:hidden}
+.views.with-reference{grid-template-columns:1fr 1fr 1fr}
+h2{font-size:15px;margin:15px 18px 12px}.viewport{aspect-ratio:4/3;position:relative}.viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:white;padding:16px;border:1px solid #d9e2eb;border-radius:12px}
+button,select{padding:9px 15px;border:1px solid #bdcad8;border-radius:7px;background:white;color:#172638;font:inherit;cursor:pointer}
+#play{background:#185bb5;color:white;border-color:#185bb5;min-width:90px}input[type=range]{flex:1;min-width:190px;accent-color:#185bb5}
+.status{margin:14px 0;line-height:1.7}.bad{color:#b42318;font-weight:600}.good{color:#126c49}.note{color:#52657b;font-size:13px;line-height:1.7}
+.legend{display:flex;gap:16px;margin-top:10px;color:#53657a;font-size:13px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+@media(max-width:800px){.views,.views.with-reference{grid-template-columns:1fr}main{padding:12px}}
+</style>
+<main><h1 id="heading">손–캔 동작 리타게팅</h1><div class="subtitle" id="summary"></div>
+<div class="views"><section class="panel" id="reference-panel" hidden><h2>원본 RGB · 같은 프레임</h2><div class="viewport"><canvas id="reference" width="640" height="480"></canvas></div></section>
+<section class="panel"><h2 id="source-title">입력 · 사람 손 21점과 캔</h2><div class="viewport" id="source"></div></section>
+<section class="panel"><h2>결과 · Floating Revo2와 캔</h2><div class="viewport" id="target"></div></section></div>
+<div class="controls"><button id="play">▶ 재생</button><button id="restart">처음</button>
+<input id="frame" type="range" min="0" step="1" value="0" aria-label="원본 프레임">
+<strong id="frame-label"></strong><select id="speed" aria-label="재생 속도"><option value="0.25">0.25배</option><option value="0.5">0.5배</option><option value="1" selected>1배</option></select>
+<label><input id="loop" type="checkbox" checked> 반복</label><label><input id="meshes" type="checkbox" checked> 손 형상</label>
+<label><input id="interpolate" type="checkbox"> 부드러운 보간</label>
+<label id="reference-options" hidden><input id="rgb-points" type="checkbox" checked> RGB 관절점</label>
+<select id="camera-mode" aria-label="카메라 시점"><option value="dataset">원본 카메라</option><option value="orbit">자유 시점</option></select>
+<button id="reset-view">시점 초기화</button></div>
+<div class="status" id="status"></div><div class="legend"><span><i class="dot" style="background:#d97706"></i>엄지</span><span><i class="dot" style="background:#0891b2"></i>검지</span><span><i class="dot" style="background:#7c3aed"></i>중지</span><span><i class="dot" style="background:#db2777"></i>약지</span><span><i class="dot" style="background:#059669"></i>소지</span></div>
+<p class="note">기본은 원본 프레임 그대로 비교합니다. 원본 카메라에서는 세 화면의 영상 좌표가 같습니다. 자유 시점: 드래그 회전 · 휠 확대.<br>
+부드러운 보간을 켜면 중간 자세를 생성합니다(RGB는 원본 프레임 유지). 검사 통과는 동작 일치나 물리적 파지 성공을 뜻하지 않습니다.</p>
+</main><script id="pose-data" type="application/json">__PAYLOAD__</script><script>__BUNDLE__</script></html>
