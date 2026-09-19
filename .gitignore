@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.deps/
+.webdeps/
+*.egg-info/
+build/
+dist/
+
+# Local tests, troubleshooting tools, reports, runs, checkpoints and share exports.
+/local/
+/.vscode/
+.pytest_cache/
+.ruff_cache/
+
+# Prevent legacy commands from adding generated artifacts to Git.
+/results/
+/exports/
+/extracted/
+/tests/
+*.pt
+*.pth
+*.onnx
+*.log

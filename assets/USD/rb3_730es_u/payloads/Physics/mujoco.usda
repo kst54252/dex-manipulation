@@ -1,0 +1,364 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "URDF USD Converter v0.1.3"
+    }
+    defaultPrim = "rb3_730es_u"
+    doc = """Generated from Composed Stage of root layer /tmp/tmpn6s1nny1/rb3_730es_u.usdc
+
+
+Generated from Composed Stage of root layer /tmp/urdf_import_rb3_730es_u_jo2gq_s9/usdex_rb3_730es_u/rb3_730es_u.usdc
+
+
+Generated from Composed Stage of root layer /tmp/urdf_import_rb3_730es_u_jo2gq_s9/temp_rb3_730es_u/rb3_730es_u.usd
+
+
+Generated from Composed Stage of root layer /home/wanjunkim/robot_assets/USD/rb3_730es_u/payloads/base.usd
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    subLayers = [
+        @./physics.usda@
+    ]
+    upAxis = "Z"
+)
+
+over "rb3_730es_u"
+{
+    over "Physics"
+    {
+        def MjcActuator "base_actuator"
+        {
+            uniform double mjc:forceRange:max = 10
+            uniform double mjc:forceRange:min = -10
+            custom rel mjc:target
+            prepend rel mjc:target = </rb3_730es_u/Physics/base>
+        }
+
+        def MjcActuator "shoulder_actuator"
+        {
+            uniform double mjc:forceRange:max = 10
+            uniform double mjc:forceRange:min = -10
+            custom rel mjc:target
+            prepend rel mjc:target = </rb3_730es_u/Physics/shoulder>
+        }
+
+        def MjcActuator "elbow_actuator"
+        {
+            uniform double mjc:forceRange:max = 10
+            uniform double mjc:forceRange:min = -10
+            custom rel mjc:target
+            prepend rel mjc:target = </rb3_730es_u/Physics/elbow>
+        }
+
+        def MjcActuator "wrist1_actuator"
+        {
+            uniform double mjc:forceRange:max = 10
+            uniform double mjc:forceRange:min = -10
+            custom rel mjc:target
+            prepend rel mjc:target = </rb3_730es_u/Physics/wrist1>
+        }
+
+        def MjcActuator "wrist2_actuator"
+        {
+            uniform double mjc:forceRange:max = 10
+            uniform double mjc:forceRange:min = -10
+            custom rel mjc:target
+            prepend rel mjc:target = </rb3_730es_u/Physics/wrist2>
+        }
+
+        def MjcActuator "wrist3_actuator"
+        {
+            uniform double mjc:forceRange:max = 10
+            uniform double mjc:forceRange:min = -10
+            custom rel mjc:target
+            prepend rel mjc:target = </rb3_730es_u/Physics/wrist3>
+        }
+
+        over "root_joint"
+        {
+        }
+
+        over "base" (
+            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+        )
+        {
+        }
+
+        over "shoulder" (
+            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+        )
+        {
+        }
+
+        over "elbow" (
+            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+        )
+        {
+        }
+
+        over "wrist1" (
+            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+        )
+        {
+        }
+
+        over "wrist2" (
+            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+        )
+        {
+        }
+
+        over "wrist3" (
+            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+        )
+        {
+        }
+    }
+
+    over "Geometry"
+    {
+        over "link0"
+        {
+            over "link1"
+            {
+                over "link2"
+                {
+                    over "link3"
+                    {
+                        over "link4"
+                        {
+                            over "link5"
+                            {
+                                over "link6"
+                                {
+                                    over "tcp"
+                                    {
+                                    }
+
+                                    over "link6"
+                                    {
+                                        over "tn__14001_z7jwu9yb9oxH"
+                                        {
+                                        }
+
+                                        over "tn__13_pko3zX4jk9"
+                                        {
+                                        }
+
+                                        over "tn__12001_z7jwu9yb9oxH"
+                                        {
+                                        }
+
+                                        over "tn__11001_z7jwu9yb9oxH"
+                                        {
+                                        }
+
+                                        over "tn__10001_z7jwu9yb9oxH"
+                                        {
+                                        }
+
+                                        over "tn__9001_j6hsd8by7fuF"
+                                        {
+                                        }
+
+                                        over "tn__8003_j6hsd8by7fuF"
+                                        {
+                                        }
+
+                                        over "tn__5001_j6hsd8by7fuF"
+                                        {
+                                        }
+
+                                        over "tn__4001_j6hsd8by7fuF"
+                                        {
+                                        }
+
+                                        over "tn__1001_j6hsd8by7fuF"
+                                        {
+                                        }
+                                    }
+
+                                    over "link6_1"
+                                    {
+                                    }
+                                }
+
+                                over "link5"
+                                {
+                                    over "tn__3004_j6hsd8by7fuF"
+                                    {
+                                    }
+
+                                    over "tn__2004_j6hsd8by7fuF"
+                                    {
+                                    }
+                                }
+
+                                over "link5_1"
+                                {
+                                }
+                            }
+
+                            over "link4"
+                            {
+                                over "tn__3023_j6hsd8by7fuF"
+                                {
+                                }
+
+                                over "tn__2023_j6hsd8by7fuF"
+                                {
+                                }
+
+                                over "tn__3017_j6hsd8by7fuF"
+                                {
+                                }
+
+                                over "tn__2017_j6hsd8by7fuF"
+                                {
+                                }
+                            }
+
+                            over "link4_1"
+                            {
+                            }
+                        }
+
+                        over "link3"
+                        {
+                            over "tn__9009_j6hsd8by7fuF"
+                            {
+                            }
+
+                            over "tn__8011_j6hsd8by7fuF"
+                            {
+                            }
+
+                            over "tn__7004_j6hsd8by7fuF"
+                            {
+                            }
+
+                            over "tn__6008_j6hsd8by7fuF"
+                            {
+                            }
+
+                            over "tn__9005_j6hsd8by7fuF"
+                            {
+                            }
+                        }
+
+                        over "link3_1"
+                        {
+                        }
+                    }
+
+                    over "link2"
+                    {
+                        over "tn__16_pko3zX4jk9"
+                        {
+                        }
+
+                        over "tn__15_pko3zX4jk9"
+                        {
+                        }
+
+                        over "tn__14_pko3zX4jk9"
+                        {
+                        }
+
+                        over "tn__12_pko3zX4jk9"
+                        {
+                        }
+
+                        over "tn__11_pko3zX4jk9"
+                        {
+                        }
+
+                        over "tn__10_pko3zX4jk9"
+                        {
+                        }
+
+                        over "tn__8001_j6hsd8by7fuF"
+                        {
+                        }
+
+                        over "tn__7_YfX2cu2ah7"
+                        {
+                        }
+
+                        over "tn__6001_j6hsd8by7fuF"
+                        {
+                        }
+
+                        over "tn__3001_j6hsd8by7fuF"
+                        {
+                        }
+
+                        over "tn__2001_j6hsd8by7fuF"
+                        {
+                        }
+                    }
+
+                    over "link2_1"
+                    {
+                    }
+                }
+
+                over "link1"
+                {
+                    over "tn__5_YfX2cu2ah7"
+                    {
+                    }
+
+                    over "tn__1_YfX2cu2ah7"
+                    {
+                    }
+
+                    over "tn__13001_z7jwu9yb9oxH"
+                    {
+                    }
+
+                    over "tn__4_YfX2cu2ah7"
+                    {
+                    }
+                }
+
+                over "link1_1"
+                {
+                }
+            }
+
+            over "link0"
+            {
+                over "tn__8_YfX2cu2ah7"
+                {
+                }
+
+                over "tn__6_YfX2cu2ah7"
+                {
+                }
+
+                over "tn__3_YfX2cu2ah7"
+                {
+                }
+
+                over "tn__2_YfX2cu2ah7"
+                {
+                }
+            }
+
+            over "link0_1"
+            {
+            }
+        }
+    }
+
+    over "Materials"
+    {
+    }
+
+    over "VisualMaterials"
+    {
+    }
+}
+

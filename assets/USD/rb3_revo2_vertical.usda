@@ -1,0 +1,96 @@
+#usda 1.0
+(
+    defaultPrim = "World"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+# Vertical Revo2 mounting overlay.
+#
+# The source STL is 41.304972 mm tall along +Z.  The RB3 link6 flange face is
+# 100 mm along local +Z from the link frame.  The adapter base is placed on
+# that face and the Revo2 right_hand_base_link is placed on the adapter top at
+# 141.304972 mm.  The old -90 degree link6-Y rotation is intentionally
+# removed, so the Revo2 finger direction (+Z in its base frame) is aligned with
+# link6 +Z.
+def Xform "World" (
+    prepend references = @./rb3_revo2.usd@</World>
+)
+{
+    over "rb3_730es_u"
+    {
+        over "Geometry"
+        {
+            over "link0"
+            {
+                over "link1"
+                {
+                    over "link2"
+                    {
+                        over "link3"
+                        {
+                            over "link4"
+                            {
+                                over "link5"
+                                {
+                                    over "link6"
+                                    {
+                                        # The fixed joint already targets this mount frame.
+                                        over "revo2_mount"
+                                        {
+                                            double3 xformOp:translate = (0, 0, 0.141304972)
+                                            quatd xformOp:orient = (1, 0, 0, 0)
+                                            double3 xformOp:scale = (1, 1, 1)
+                                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                                        }
+
+                                        # Visual and convex-hull collision generated from
+                                        # n_wc_v3_temp.stl by Isaac Lab's mesh converter.
+                                        def Xform "revo2_vertical_adapter" (
+                                            prepend references = @./revo2_vertical_adapter/revo2_vertical_adapter.usd@</n_wc_v3_temp>
+                                        )
+                                        {
+                                            double3 xformOp:translate = (0, 0, 0.1)
+                                            quatd xformOp:orient = (1, 0, 0, 0)
+                                            double3 xformOp:scale = (1, 1, 1)
+                                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    over "revo2_right"
+    {
+        # Initial zero-pose layout. The assembler fixed joint keeps this branch
+        # attached to link6 after the arm moves.
+        double3 xformOp:translate = (0, -0.00645, 0.916604972)
+        quatf xformOp:orient = (1, 0, 0, 0)
+        float3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        over "Geometry"
+        {
+            over "world"
+            {
+                over "right_hand_base_link"
+                {
+                    # Hand-side fixed-joint frame coincides with the wrist.
+                    over "rb3_mount"
+                    {
+                        double3 xformOp:translate = (0, 0, 0)
+                        quatd xformOp:orient = (1, 0, 0, 0)
+                        double3 xformOp:scale = (1, 1, 1)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+                }
+            }
+        }
+    }
+}

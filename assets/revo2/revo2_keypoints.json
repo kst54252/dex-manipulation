@@ -1,0 +1,212 @@
+{
+  "0": {
+    "name": "kp_00_wrist",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/kp_00_wrist",
+    "parent_link": "right_hand_base_link",
+    "xyz": [
+      0.0156501671354886,
+      0.0,
+      0.009812532587463663
+    ]
+  },
+  "1": {
+    "name": "kp_01_index_mcp",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/kp_01_index_mcp",
+    "parent_link": "right_hand_base_link",
+    "xyz": [
+      0.004300534716728624,
+      0.02805937884120168,
+      0.07510630727419397
+    ]
+  },
+  "2": {
+    "name": "kp_02_index_pip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_index_proximal_link/kp_02_index_pip",
+    "parent_link": "right_index_proximal_link",
+    "xyz": [
+      0.001958502566110857,
+      -0.0006233033602703018,
+      0.013539830288912286
+    ]
+  },
+  "3": {
+    "name": "kp_03_index_dip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_index_proximal_link/right_index_distal_link/kp_03_index_dip",
+    "parent_link": "right_index_distal_link",
+    "xyz": [
+      0.0029103208362596007,
+      3.4723361320709856e-05,
+      0.0065752714420220515
+    ]
+  },
+  "4": {
+    "name": "kp_04_middle_mcp",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/kp_04_middle_mcp",
+    "parent_link": "right_hand_base_link",
+    "xyz": [
+      -0.0039362516260115525,
+      0.00947726198905566,
+      0.0752936928857683
+    ]
+  },
+  "5": {
+    "name": "kp_05_middle_pip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_middle_proximal_link/kp_05_middle_pip",
+    "parent_link": "right_middle_proximal_link",
+    "xyz": [
+      0.00164761945229518,
+      -0.00032863567408672467,
+      0.013696585018909496
+    ]
+  },
+  "6": {
+    "name": "kp_06_middle_dip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_middle_proximal_link/right_middle_distal_link/kp_06_middle_dip",
+    "parent_link": "right_middle_distal_link",
+    "xyz": [
+      0.0033817190041236893,
+      -9.783426036478506e-05,
+      0.0071726355582141105
+    ]
+  },
+  "7": {
+    "name": "kp_07_little_mcp",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/kp_07_little_mcp",
+    "parent_link": "right_hand_base_link",
+    "xyz": [
+      0.003931607794664023,
+      -0.027869303600430932,
+      0.07210950223914595
+    ]
+  },
+  "8": {
+    "name": "kp_08_little_pip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_pinky_proximal_link/kp_08_little_pip",
+    "parent_link": "right_pinky_proximal_link",
+    "xyz": [
+      0.002392804397254828,
+      0.0003971943778400405,
+      0.013915907509896103
+    ]
+  },
+  "9": {
+    "name": "kp_09_little_dip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_pinky_proximal_link/right_pinky_distal_link/kp_09_little_dip",
+    "parent_link": "right_pinky_distal_link",
+    "xyz": [
+      0.0033229002320944966,
+      0.0002716397239690138,
+      0.007733226887266895
+    ]
+  },
+  "10": {
+    "name": "kp_10_ring_mcp",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/kp_10_ring_mcp",
+    "parent_link": "right_hand_base_link",
+    "xyz": [
+      0.0018108617344097782,
+      -0.009259963050005177,
+      0.07709707382200234
+    ]
+  },
+  "11": {
+    "name": "kp_11_ring_pip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_ring_proximal_link/kp_11_ring_pip",
+    "parent_link": "right_ring_proximal_link",
+    "xyz": [
+      0.0016457749371955772,
+      0.0003272585076449534,
+      0.013619070589125898
+    ]
+  },
+  "12": {
+    "name": "kp_12_ring_dip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_ring_proximal_link/right_ring_distal_link/kp_12_ring_dip",
+    "parent_link": "right_ring_distal_link",
+    "xyz": [
+      0.0037103254045680305,
+      0.0004101915983769338,
+      0.007603944325886
+    ]
+  },
+  "13": {
+    "name": "kp_13_thumb_mcp",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_thumb_metacarpal_link/right_thumb_proximal_link/kp_13_thumb_mcp",
+    "parent_link": "right_thumb_proximal_link",
+    "xyz": [
+      0.008822255411602205,
+      0.0003713464418288112,
+      0.0021017309383553687
+    ]
+  },
+  "14": {
+    "name": "kp_14_thumb_pip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_thumb_metacarpal_link/right_thumb_proximal_link/kp_14_thumb_pip",
+    "parent_link": "right_thumb_proximal_link",
+    "xyz": [
+      -0.0004903719921842146,
+      0.028324596313097763,
+      -0.002884394504619827
+    ]
+  },
+  "15": {
+    "name": "kp_15_thumb_dip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_thumb_metacarpal_link/right_thumb_proximal_link/right_thumb_distal_link/kp_15_thumb_dip",
+    "parent_link": "right_thumb_distal_link",
+    "xyz": [
+      -0.0002532840409516237,
+      0.0012339137257532523,
+      0.0008451733744583405
+    ]
+  },
+  "16": {
+    "name": "kp_16_thumb_tip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_thumb_metacarpal_link/right_thumb_proximal_link/right_thumb_distal_link/right_thumb_touch_link/kp_16_thumb_tip",
+    "parent_link": "right_thumb_touch_link",
+    "xyz": [
+      0.0013385125916508568,
+      0.007952952899307517,
+      -0.006428697921980732
+    ]
+  },
+  "17": {
+    "name": "kp_17_index_tip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_index_proximal_link/right_index_distal_link/right_index_touch_link/kp_17_index_tip",
+    "parent_link": "right_index_touch_link",
+    "xyz": [
+      -0.0055630673408967185,
+      0.004868954451786089,
+      -0.0005416883273450246
+    ]
+  },
+  "18": {
+    "name": "kp_18_middle_tip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_middle_proximal_link/right_middle_distal_link/right_middle_touch_link/kp_18_middle_tip",
+    "parent_link": "right_middle_touch_link",
+    "xyz": [
+      -0.008468257432454968,
+      -0.00017143428100016393,
+      0.00803444400407674
+    ]
+  },
+  "19": {
+    "name": "kp_19_ring_tip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_ring_proximal_link/right_ring_distal_link/right_ring_touch_link/kp_19_ring_tip",
+    "parent_link": "right_ring_touch_link",
+    "xyz": [
+      -0.007130975695485153,
+      0.00013921291329461582,
+      0.007560376388889234
+    ]
+  },
+  "20": {
+    "name": "kp_20_little_tip",
+    "prim_path": "/revo2_single/Geometry/world/right_hand_base_link/right_pinky_proximal_link/right_pinky_distal_link/right_pinky_touch_link/kp_20_little_tip",
+    "parent_link": "right_pinky_touch_link",
+    "xyz": [
+      -0.0073927212626686695,
+      8.904333526305389e-05,
+      0.005988866845348384
+    ]
+  }
+}

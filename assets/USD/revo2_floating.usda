@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    defaultPrim = "revo2_floating"
+    metersPerUnit = 1
+    kilogramsPerUnit = 1
+    upAxis = "Z"
+)
+
+# Reference the validated standalone hand and turn the outer root into a tiny
+# free rigid body. The imported fixed joint then attaches the physical palm to
+# this dummy root, matching the proven floating Leap/Wuji asset structure.
+def Xform "revo2_floating" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsArticulationRootAPI"]
+    prepend references = @./revo2_right/revo2_right.usda@</revo2_single>
+)
+{
+    bool physics:kinematicEnabled = 0
+    bool physics:rigidBodyEnabled = 1
+    bool physics:startsAsleep = 0
+    float physics:mass = 1
+    point3f physics:centerOfMass = (0, 0, 0)
+    float3 physics:diagonalInertia = (0.025, 0.025, 0.025)
+    quatf physics:principalAxes = (1, 0, 0, 0)
+
+    over "Geometry"
+    {
+        over "world" (
+            delete apiSchemas = ["PhysicsArticulationRootAPI", "NewtonArticulationRootAPI", "PhysxArticulationAPI"]
+        )
+        {
+        }
+    }
+}
