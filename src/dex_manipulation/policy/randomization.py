@@ -22,6 +22,8 @@ def apply_startup_randomization(env):
     env.nominal_physics['hand']['damping']=env.robot._physics_view.get_dof_dampings().clone().cpu()
     if not cfg['enabled']:
         env.randomized_physics={name:{key:value.clone() for key,value in item.items()} for name,item in env.nominal_physics.items()}
+        from ..materials import enforce_pad_contact
+        enforce_pad_contact(env)
         return
     rng=env.rng
     env.randomized_physics={name:{} for name in views}
@@ -68,6 +70,10 @@ def apply_startup_randomization(env):
     amount=cfg['joint_default_offset_rad']
     env.default_q_offset[:]=torch.tensor(rng.uniform(-amount,amount,(env.num_envs,6)),device=env.device,dtype=torch.float32)
     set_physics_properties(env,env.randomized_physics)
+    # Pad coefficients are fixed until measured; retain legacy randomization on
+    # rigid hand parts, can and table. Save the actual coefficients, not the
+    # temporary all-hand random draw that was overwritten for the pads.
+    env.randomized_physics['hand']['materials']=env.robot._physics_view.get_material_properties().clone().cpu()
 
 
 def set_physics_properties(env,properties):
@@ -79,6 +85,8 @@ def set_physics_properties(env,properties):
             # PhysX property setters use host tensors even with GPU dynamics.
             # torch.load(map_location='cuda') also moves saved startup properties.
             getattr(view,method)(value.detach().cpu().contiguous(),indices)
+    from ..materials import enforce_pad_contact
+    enforce_pad_contact(env)
     env.refresh_physics_properties()
 
 
@@ -92,6 +100,8 @@ def property_report(env):
     com=env.can._physics_view.get_coms().cpu()[...,:3]-env.nominal_physics['object']['coms'][...,:3]
     report['object']['com_offset_ranges_m']=torch.stack((com.amin(0),com.amax(0))).tolist()
     report['joint_default_offset_ranges_rad']=torch.stack((env.default_q_offset.amin(0),env.default_q_offset.amax(0))).cpu().tolist()
+    from ..materials import pad_contact_report
+    report['localized_pad_contact']=pad_contact_report(env)
     return report
 
 

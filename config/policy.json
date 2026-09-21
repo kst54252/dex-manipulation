@@ -352,5 +352,21 @@
     "actual_penalty_weight": 8.0,
     "target_penalty_weight": 4.0,
     "basis": "Independent collision-mesh enclosing boxes; conservative tabletop half-space; unprotected actor command and minimum physical-substep clearance penalties. Not a dynamic noncollision guarantee."
+  },
+  "contact_materials": {
+    "enabled": true,
+    "pad_bodies": [
+      "right_thumb_touch_link",
+      "right_index_touch_link",
+      "right_middle_touch_link",
+      "right_ring_touch_link",
+      "right_pinky_touch_link"
+    ],
+    "static_friction": 1.2,
+    "dynamic_friction": 1.0,
+    "friction_combine_mode": "average",
+    "stiffness_n_m": 20000.0,
+    "damping_ns_m": 20.0,
+    "basis": "Uncalibrated rubber-like pad approximation. Only five separate touch collision meshes; force-based compliant contact. Rigid shells/can/table retained; pad coefficients fixed under startup randomization."
   }
 }

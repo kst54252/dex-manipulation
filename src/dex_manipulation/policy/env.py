@@ -210,6 +210,8 @@ class PhysxResidualEnv:
                     col=PhysxSchema.PhysxCollisionAPI.Apply(prim)
                     col.CreateContactOffsetAttr(config.get('object_contact_offset_m',config['contact_offset_m']) if asset.endswith('/Can') else config['contact_offset_m'])
                     col.CreateRestOffsetAttr(config['rest_offset_m'])
+        from ..materials import bind_pad_material
+        pad_material = bind_pad_material(stage, hand_path, config, '/World/Revo2PadMaterial')
         cache=UsdGeom.XformCache()
         palm=next(p for p in Usd.PrimRange(stage.GetPrimAtPath(hand_path)) if p.GetName()==model.root)
         relative=cache.GetLocalToWorldTransform(palm)*cache.GetLocalToWorldTransform(stage.GetPrimAtPath(hand_path)).GetInverse()
@@ -280,6 +282,7 @@ class PhysxResidualEnv:
             damping_si_min=float(actual_kd.min()),damping_si_max=float(actual_kd.max()),
             force_body=self.robot.body_names[self.force_body_id],
             simulation_velocity_limits_rad_s=velocity[0].cpu().tolist())
+        self.metadata['pad_material_binding'] = pad_material
         self.metadata.update(controller='regrind_pose_pd',gravity_compensation=False,reference_velocity_feedforward=False,
                              stepping='one explicit physics step per PD update; rendering advances no physics')
         self.metadata['motion_control']=copy.deepcopy(self.motion_controller.config)

@@ -133,6 +133,8 @@ class ArmPolicyEnv(PhysxResidualEnv):
                                   for path in self.robot._physics_view.link_paths[0]]
         if sum(self.body_shape_counts) != self.robot._physics_view.max_shapes:
             raise RuntimeError('Could not verify the assembled collider material layout')
+        from ..materials import enforce_pad_contact, pad_contact_report
+        enforce_pad_contact(self)
         self.base_id = self.robot.body_names.index(self.arm.root)
         self.palm_id = self.robot.body_names.index(model.root)
         self.kp_ids = torch.tensor([self.robot.body_names.index(k['link']) for k in model.keypoints], device=self.device)
@@ -177,6 +179,8 @@ class ArmPolicyEnv(PhysxResidualEnv):
         if render:
             from isaacsim.core.utils.viewports import set_camera_view
             set_camera_view(eye=np.array([1.65, -1.9, 1.25]), target=np.array([.35, 0, .05]))
+        self.metadata['pad_contact'] = pad_contact_report(self)
+        self.metadata['pad_material_binding'] = scene['pad_material_binding']
         self.reset(randomize=False)
 
     def set_training(self, training):
@@ -223,6 +227,9 @@ class ArmPolicyEnv(PhysxResidualEnv):
         for key, values in saved['object'].items():
             getattr(self.can._physics_view, methods[key])(values[:1].detach().cpu().contiguous(), indices)
         self.table._physics_view.set_material_properties(saved['table']['materials'][:1].detach().cpu().contiguous(),indices)
+        from ..materials import enforce_pad_contact, pad_contact_report
+        enforce_pad_contact(self)
+        self.metadata['pad_contact'] = pad_contact_report(self)
         self.default_q_offset.copy_(state['default_q_offset'][:1].to(self.device))
         self.obs_history.default_q.copy_(self.default_q_offset)
         self.refresh_physics_properties()

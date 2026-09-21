@@ -279,18 +279,25 @@ def run(args,root,on_ready=None,is_running=None):
         from ..scene import Workcell
         metadata['surface']=Workcell.load(root/arm_config['workcell']).metadata()
     metadata['contract_hash']=hashlib.sha256(json.dumps(legacy_demo_paths(metadata),sort_keys=True).encode()).hexdigest()
+    # Preserve strict historical checkpoint contracts. Deployment material
+    # changes belong to an explicit execution profile, never forged metadata.
+    import copy
+    contact_mode=getattr(args,'contact_materials',None) or ('rubber' if args.mode=='play' else 'checkpoint')
+    env_config=copy.deepcopy(config)
+    if contact_mode=='rubber':
+        env_config['contact_materials']=json.loads((root/'config/policy.json').read_text())['contact_materials']
     control_mode=getattr(args,'motion_control',None) or 'checkpoint'
     stable=(json.loads((root/'config/policy.json').read_text())['motion_control']
             if control_mode=='stable' else None)
     if stable is not None:stable=dict(stable,enabled=True)
     if native_arm:
         from .arm_train import ArmTrainingEnv
-        env=ArmTrainingEnv(root,model,reference,config,arm_config,args.num_envs,render=not args.headless)
+        env=ArmTrainingEnv(root,model,reference,env_config,arm_config,args.num_envs,render=not args.headless)
     elif robot_mode=='arm':
         from .arm_env import ArmPolicyEnv
-        env=ArmPolicyEnv(root,model,reference,config,arm_config,render=not args.headless)
+        env=ArmPolicyEnv(root,model,reference,env_config,arm_config,render=not args.headless)
     else:
-        env=PhysxResidualEnv(root,model,reference,config,args.num_envs,render=not args.headless,
+        env=PhysxResidualEnv(root,model,reference,env_config,args.num_envs,render=not args.headless,
                              motion_control_override=stable)
     table_mode=getattr(args,'table_safety',None) or ('protect' if args.mode=='play' and not native_arm else 'checkpoint')
     if table_mode=='protect':
@@ -302,6 +309,11 @@ def run(args,root,on_ready=None,is_running=None):
         viewport_updates=not args.headless,skip_evaluation=args.skip_evaluation,
         export=args.export,automatic_replay_output=not args.skip_evaluation and not native_arm,mode=args.mode)
     metadata['execution']['robot']=robot_mode
+    metadata['execution']['contact_materials']=dict(mode=contact_mode,
+        trained=config.get('contact_materials'),applied=env_config.get('contact_materials'),
+        differs_from_training=config.get('contact_materials')!=env_config.get('contact_materials'))
+    if metadata['execution']['contact_materials']['differs_from_training']:
+        print('[contact] Five rubber pads enabled for playback; contact physics differs from this checkpoint training. Use --contact-materials checkpoint to reproduce it.',flush=True)
     metadata['execution']['table_safety']=dict(mode=table_mode,trained=config.get('table_safety'),
         applied=env.table_safety.config if env.table_safety is not None else None,
         interpretation='collision-geometry command guard; dynamic contacts still require validation')
@@ -328,6 +340,8 @@ def run(args,root,on_ready=None,is_running=None):
         metadata['execution']['motion_control']=dict(mode=control_mode,
             trained=config.get('motion_control'), applied=env.motion_controller.config,
             differs_from_training=config.get('motion_control')!=env.motion_controller.config)
+        from ..materials import pad_contact_report
+        metadata['execution']['contact_materials']['runtime']=pad_contact_report(env)
         (args.output/'run_metadata.json').write_text(json.dumps(metadata,indent=2)+'\n')
         if args.mode!='train':
             print('[motion control]',json.dumps(metadata['execution']['motion_control']),flush=True)

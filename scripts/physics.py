@@ -28,7 +28,7 @@ def main():
             parser.error(f'Arm reference unavailable/stale: {reason}. Use ./run.sh arm retarget for automatic IK preparation.')
         from scripts.replay import main as replay
         sys.argv=[sys.argv[0],'--mode','targets','--rate','120','--loops',str(args.loops),'--output',str(output),
-                  '--reference',str(args.arm_reference),'--config',str(args.arm_config)]
+                  '--reference',str(args.arm_reference),'--config',str(args.arm_config),'--physics-config',str(args.config)]
         sys.argv+=['--headless'] if args.headless else ['--realtime']
         return replay()
     from isaacsim import SimulationApp

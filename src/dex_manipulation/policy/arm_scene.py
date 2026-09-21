@@ -104,6 +104,8 @@ def build_arm_scene(stage,root,model,reference,config,arm_config,arm,workcell,wo
             col = PhysxSchema.PhysxCollisionAPI.Apply(prim)
             col.CreateContactOffsetAttr(config.get('object_contact_offset_m', config['contact_offset_m']))
             col.CreateRestOffsetAttr(config['rest_offset_m'])
+    from ..materials import bind_pad_material
+    pad_material = bind_pad_material(stage, robot_path, config, prefix+'/Revo2PadMaterial')
     initial_can_pose = world_from_source @ reference.object[0]
     if abs(collision_bottom(initial_can_pose, reference.collision_shapes)) > 1e-6:
         raise ValueError('Arm workcell placement does not put the initial can bottom on z=0')
@@ -114,4 +116,4 @@ def build_arm_scene(stage,root,model,reference,config,arm_config,arm,workcell,wo
     can_xform.AddOrientOp().Set(Gf.Quatf(float(q[3]), Gf.Vec3f(*q[:3])))
     can_xform.AddScaleOp().Set(Gf.Vec3f(1.))
     return dict(robot=str(articulation_root.GetPath()),can=can_path,table=str(table_prim.GetPath()),
-                resolution=articulation_resolution,initial_can_pose=initial_can_pose)
+                resolution=articulation_resolution,initial_can_pose=initial_can_pose,pad_material_binding=pad_material)

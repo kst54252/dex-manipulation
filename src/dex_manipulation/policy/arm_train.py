@@ -146,7 +146,7 @@ class ArmTrainingEnv(PhysxResidualEnv):
         self.reset_q=solved['q'].clone()
         self.metadata=dict(robot='RB3-730 + Revo2 trained with online IK',num_envs=num_envs,
             physics_device=str(self.device),workcell=self.workcell.metadata(),arm_training=dict(self.arm_cfg),
-            articulation_resolution=scene['resolution'],arm_model_sha256=digest(root/arm_config['arm_model']),
+            articulation_resolution=scene['resolution'],pad_material_binding=scene['pad_material_binding'],arm_model_sha256=digest(root/arm_config['arm_model']),
             assembled_usd_sha256=digest(root/arm_config['usd']),world_from_source=self.world_from_source.tolist(),
             base_from_source=alignment['base_from_source'],arm_joint_names=self.arm.active_names,
             body_names=self.robot.body_names,dof_names=self.robot.dof_names,body_shape_counts=self.body_shape_counts,

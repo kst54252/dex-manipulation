@@ -40,6 +40,8 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
                         help="Play/evaluate default to the trained controller. Stable explicitly enables the optional command governor from config/policy.json. Training uses its config.")
     parser.add_argument('--table-safety', choices=('checkpoint','protect'), default=None,
                         help='Play defaults to protect: collision-geometry tabletop command guard. Checkpoint reproduces the trained setting. Training uses its config.')
+    parser.add_argument('--contact-materials', choices=('checkpoint','rubber'), default=None,
+                        help='Play defaults to localized rubber pad contact. Checkpoint reproduces trained materials; training uses its config.')
     args = parser.parse_args(argv)
     if args.robot == 'arm':
         if args.mode != 'play' and args.config == ROOT/'config/policy.json':
@@ -58,6 +60,8 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
         parser.error("Set motion_control in the training config; this flag is for play/evaluate")
     if args.mode == 'train' and args.table_safety is not None:
         parser.error('Set table_safety in the training config; this flag is for play/evaluate')
+    if args.mode == 'train' and args.contact_materials is not None:
+        parser.error('Set contact_materials in the training config; this flag is for play/evaluate')
     if args.initialize_actor and (args.mode!='train' or args.robot!='arm' or args.checkpoint):
         parser.error('--initialize-actor is only for new arm training, without --checkpoint')
     if args.mode == "play":

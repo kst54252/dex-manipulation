@@ -374,5 +374,21 @@
       "limit_weight": 0.2
     },
     "basis": "Actual fixed-base RB3+Revo2 physics. Residual action remains wrist translation/rotation and six independent fingers. Direct bounded IK at every control tick; no virtual floating response. Strict candidate errors plus actual tracking enter reward."
+  },
+  "contact_materials": {
+    "enabled": true,
+    "pad_bodies": [
+      "right_thumb_touch_link",
+      "right_index_touch_link",
+      "right_middle_touch_link",
+      "right_ring_touch_link",
+      "right_pinky_touch_link"
+    ],
+    "static_friction": 1.2,
+    "dynamic_friction": 1.0,
+    "friction_combine_mode": "average",
+    "stiffness_n_m": 20000.0,
+    "damping_ns_m": 20.0,
+    "basis": "Uncalibrated rubber-like pad approximation. Only five separate touch collision meshes; force-based compliant contact. Rigid shells/can/table retained; pad coefficients fixed under startup randomization."
   }
 }

@@ -14,6 +14,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference', type=Path, default=ROOT/'local/results/ik/full/trajectory.npz')
     parser.add_argument('--config', type=Path, default=ROOT/'config/ik.json')
+    parser.add_argument('--physics-config', type=Path, default=ROOT/'config/policy.json',
+                        help='Localized fingertip contact settings for physical target replay')
     parser.add_argument('--output', type=Path, default=ROOT/'local/results/ik/replay')
     parser.add_argument('--mode', choices=('kinematic','targets'), default='kinematic')
     parser.add_argument('--headless', action='store_true')
@@ -27,6 +29,7 @@ def main():
     from dex_manipulation.reference import JointReference
     reference = JointReference(args.reference)  # Refuse failures before starting Isaac.
     config = json.loads(args.config.read_text())
+    physics_config = json.loads(args.physics_config.read_text()) if args.mode=='targets' else {}
     from dex_manipulation.scene import Workcell
     workcell = Workcell.load(ROOT/config['workcell'])
     workcell.validate_reference(reference.metadata, json.loads((ROOT/config['alignment']).read_text()))
@@ -73,6 +76,16 @@ def main():
         world.get_physics_context().set_gravity(0. if args.mode=='kinematic' else -9.81)
         add_reference_to_stage(str(ROOT/config['usd']),'/Robot')
         stage=world.stage
+        if args.mode=='targets':
+            # Use the same verified contact solver as the floating/arm policy
+            # environments, including external forces on every TGS iteration.
+            world.get_physics_context().set_solver_type('TGS')
+            solver=physics_config.get('solver_iterations',{})
+            api=PhysxSchema.PhysxSceneAPI.Apply(world.get_physics_context().get_current_physics_scene_prim())
+            api.CreateMaxPositionIterationCountAttr(solver.get('scene_position',64))
+            api.CreateMaxVelocityIterationCountAttr(solver.get('scene_velocity',4))
+            for name,value in physics_config.get('scene_physics',{}).items():
+                api.GetPrim().GetAttribute('physxScene:'+name).Set(value)
         # USD /World is mapped to /Robot by the reference's default prim.
         source_stage=Usd.Stage.Open(str(ROOT/config['usd']))
         source_root=str(source_stage.GetDefaultPrim().GetPath())
@@ -93,12 +106,13 @@ def main():
                 UsdGeom.Imageable(prim).CreateVisibilityAttr('invisible')
         mimic_count=0
         if args.mode=='targets':
-            # The asset's Newton mimic schema is not a PhysX coupling constraint.
-            # Preserve the extracted physical coupling; disable redundant follower drives.
+            # Use one explicit coupling representation. Isaac Sim 6 also reads
+            # native Newton mimic, so retaining it would duplicate constraints.
             joints={p.GetName():p for p in stage.Traverse() if p.IsA(UsdPhysics.RevoluteJoint)}
             for joint in hand.moving:
                 if not joint.get('mimic'):continue
                 spec=joint['mimic'];prim=joints[joint['name']];leader=joints[spec['leader']]
+                prim.RemoveAppliedSchema('NewtonMimicAPI')
                 axis='rot'+str(UsdPhysics.RevoluteJoint(prim).GetAxisAttr().Get())
                 api=PhysxSchema.PhysxMimicJointAPI.Apply(prim,axis)
                 api.CreateReferenceJointRel().SetTargets([leader.GetPath()])
@@ -109,6 +123,10 @@ def main():
                 mimic_count+=1
         wrist_path='/Robot'+config['wrist_path'][len(source_root):]
         root,articulation_resolution=prepare_arm_articulation(stage,'/Robot',base_path,wrist_path)
+        if args.mode=='targets':
+            api=PhysxSchema.PhysxArticulationAPI.Apply(root)
+            api.CreateSolverPositionIterationCountAttr(solver.get('hand_position',32))
+            api.CreateSolverVelocityIterationCountAttr(solver.get('hand_velocity',2))
         robot=world.scene.add(SingleArticulation(prim_path=str(root.GetPath()),name='rb3_revo2'))
         object_data=reference.data.get('object_transform')
         can_ops=None; dynamic_can=None; initial_can_pose=None
@@ -127,6 +145,11 @@ def main():
                 can=UsdGeom.Xformable(stage.GetPrimAtPath('/ReferenceCan'));can.ClearXformOpOrder()
                 can_ops=can.AddTransformOp()
                 object_rotation=Slerp(reference.times,Rotation.from_matrix(object_data[:,:3,:3]))
+        pad_binding=None
+        if args.mode=='targets':
+            from dex_manipulation.materials import bind_pad_material
+            pad_binding=bind_pad_material(stage,'/Robot',physics_config,'/Revo2PadMaterial')
+            (args.output/'contact_materials.json').write_text(json.dumps(pad_binding,indent=2)+'\n')
         world.reset()
         adapter=IsaacJointAdapter(robot,arm,hand)
         tensor=robot._articulation_view._physics_view
@@ -232,6 +255,9 @@ def main():
                      r['joint_error_rad']<1e-5 for r in records))
         report=dict(mode=args.mode,samples=len(records),source_frames=len(frame_records),ik_samples=len(reference.times),loops_requested=args.loops,
                     articulation_resolution=articulation_resolution,
+                    contact_materials=pad_binding,
+                    contact_solver=(dict(type='TGS',iterations=physics_config.get('solver_iterations',{}),
+                        scene=physics_config.get('scene_physics',{})) if args.mode=='targets' else None),
                     object_geometry_fingerprint=can_geometry['fingerprint'],
                     physics_vs_fk_passed=success,maximum_position_error_m=max(r['position_error_m'] for r in records),
                     maximum_orientation_error_rad=max(r['orientation_error_rad'] for r in records),

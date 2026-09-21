@@ -37,6 +37,8 @@ def parser():
     p.add_argument('--headless', action='store_true', help='창 없이 동일 물리 재생')
     p.add_argument('--table-safety', choices=('protect','checkpoint'),
                    help='정책 상판 보호: 기존 정책은 protect, 팔 학습 정책은 checkpoint가 기본')
+    p.add_argument('--contact-materials', choices=('rubber','checkpoint'),
+                   help='정책 재생: 기본 rubber 패드, checkpoint는 학습 당시 접촉 물성 재현')
     p.add_argument('--dry-run', action='store_true', help='실제 실행·파일 생성 없이 연결할 입력과 명령 확인')
     p.add_argument('--list', action='store_true', help='데모와 등록 정책 목록')
     return p
@@ -110,6 +112,8 @@ def resolve_plan(root, args, catalog):
                '--checkpoint', str(checkpoint), '--config', str(config_path), '--episodes', str(args.repeat),
                '--evaluation-protocol', 'strict', '--motion-control', 'checkpoint', '--output', str(output), *flags]
         cmd.extend(['--table-safety',args.table_safety or ('checkpoint' if native_arm else 'protect')])
+        if getattr(args,'contact_materials',None):
+            cmd.extend(['--contact-materials',args.contact_materials])
         if args.robot == 'arm':
             arm_path = args.arm_config or (cfg['arm_training']['arm_config'] if native_arm else (entry['arm_config'] if entry else None))
             if arm_path is None:
@@ -208,6 +212,8 @@ def main(root=None, argv=None):
             p.error('정책 이름을 서로 다르게 두 번 지정했습니다.')
         if args.mode != 'policy' and (args.policy or args.config):
             p.error('--policy/--config는 policy 모드에서 사용하세요.')
+        if args.mode != 'policy' and args.contact_materials:
+            p.error('--contact-materials는 policy 모드의 학습 물성 재현 옵션입니다.')
         plan = resolve_plan(root, args, catalog)
         if args.dry_run:
             print(json.dumps(plan, indent=2, ensure_ascii=False))
