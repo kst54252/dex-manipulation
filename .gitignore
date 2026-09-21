@@ -21,3 +21,8 @@ dist/
 *.pth
 *.onnx
 *.log
+
+# DexYCB raw captures/annotations stay local; keep placement instructions.
+/data/demo*/raw/*
+!/data/demo*/raw/README.md
+/data/raw/
