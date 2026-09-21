@@ -38,8 +38,8 @@ def read_labels(source, frame_range=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=ROOT / "data/raw/839512060362")
-    parser.add_argument("--output", type=Path, default=ROOT / "data/poses/839512060362.npz")
+    parser.add_argument("--source", type=Path, default=ROOT / "data/demo2/raw")
+    parser.add_argument("--output", type=Path, default=ROOT / "data/demo2/poses.npz")
     parser.add_argument('--config', type=Path, default=ROOT/'config/retargeting.json')
     parser.add_argument('--frame-range', nargs=2, type=int, help='Inclusive frame IDs; defaults to dataset config')
     args = parser.parse_args()

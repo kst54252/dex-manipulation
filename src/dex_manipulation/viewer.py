@@ -14,9 +14,8 @@ def viewer_payload(trajectory_path, report_path=None, model=None, object_mesh_pa
     # is mapped back; the grounded dataset and simulator reference stay untouched.
     display_frame = 'input'
     if reference_dir is not None and 'frame_metadata_json' in d:
-        from .coordinates import transform_reference
-        frame = json.loads(str(d['frame_metadata_json']))
-        d = transform_reference(d, np.asarray(frame['source_from_world']))
+        from .coordinates import reference_in_source_frame
+        d = reference_in_source_frame(d)
         display_frame = 'original_camera_for_rgb_comparison'
     report = {} if report_path is None else json.loads(Path(report_path).read_text())
 

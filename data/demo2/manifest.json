@@ -1,0 +1,367 @@
+{
+  "schema": "dex_demo_layout_v1",
+  "demo": "demo2",
+  "source": {
+    "kind": "retained RGB and original DexYCB labels",
+    "camera": "839512060362",
+    "capture_fps": null,
+    "dataset": "DexYCB",
+    "dataset_url": "https://dex-ycb.github.io/",
+    "dataset_license": "CC BY-NC 4.0",
+    "attribution": "Yu-Wei Chao et al., CVPR 2021"
+  },
+  "frame_ids": [
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41
+  ],
+  "frame_count": 27,
+  "duration_s": 5.2,
+  "length_unit": "m",
+  "camera_axes": "x_right_y_down_z_forward",
+  "ground_z_m": 0,
+  "reference_quaternion_order": "xyzw",
+  "camera_poses": "poses.npz",
+  "camera_reference": "retargeted.npz",
+  "ground_reference": "grounded/reference.npz",
+  "policy_reference": "policy_reference.npz",
+  "policy_reference_duration_s": 5.2,
+  "policy_reference_matches_current_geometry_and_time": true,
+  "policy_note": "Prepared contact wrist/finger poses; same original object targets and timing",
+  "retargeting_config": "config/retargeting.json",
+  "ik_config": "config/ik.json",
+  "policy_config": "config/policy.json",
+  "files": {
+    "grounded/frame.json": {
+      "sha256": "c69d24fec3f009dfda5ca6fc31293d0ba2bab422140a5ea2d0000bff77195607",
+      "bytes": 4312,
+      "role": "original frame transform and timing provenance"
+    },
+    "grounded/poses.npz": {
+      "sha256": "0ae085b86dfb72dc9c1f9105aef5a906b7675712fbe847bd2b032ef2b41d26de",
+      "bytes": 18598,
+      "role": "human/object annotations in simulation ground coordinates"
+    },
+    "grounded/reference.npz": {
+      "sha256": "802d330c0704fc90d882cf041652180f42a7ff5686dac143d025bfee20afff85",
+      "bytes": 74081,
+      "role": "current geometric wrist/finger/object reference, ground coordinates"
+    },
+    "policy_reference.json": {
+      "sha256": "0083c8556071d9ca981848c71fa06bc04b91ebcc18d08f822cc154b21c3a32fa",
+      "bytes": 20134,
+      "role": "contact-reference preparation provenance"
+    },
+    "policy_reference.npz": {
+      "sha256": "d3951d0e30f83c14c7550a3365b262aeba77f281183211cf6c43c5b637d04067",
+      "bytes": 79596,
+      "role": "exact input bytes used by the latest trained policy"
+    },
+    "poses.npz": {
+      "sha256": "67de8c69a3e71e3b958da9863fb95a7a2066bdb9c7e3f91c89ae9724752d3178",
+      "bytes": 8261,
+      "role": "human MANO21 and object SE(3), camera coordinates"
+    },
+    "raw/color_000015.jpg": {
+      "sha256": "77643b3f48cff8c3ec20be13c1caca93729e9241ab4d6afff37c3b51c03d46fc",
+      "bytes": 99001,
+      "role": "source annotation/image"
+    },
+    "raw/color_000016.jpg": {
+      "sha256": "bee89ef44dff5ea5dd4d3dd8e04e38cb8de69fa34dba1fa5b0d63ddaf6775858",
+      "bytes": 99023,
+      "role": "source annotation/image"
+    },
+    "raw/color_000017.jpg": {
+      "sha256": "4467ce29c9ddc29bfa0024a6ee8925cf59af15606761c07401f7e2e91f6889d4",
+      "bytes": 99331,
+      "role": "source annotation/image"
+    },
+    "raw/color_000018.jpg": {
+      "sha256": "cf2201781fac38e9cd236c94e3e17d87d1eef83b12eb1a96a4a05beccf02272d",
+      "bytes": 99350,
+      "role": "source annotation/image"
+    },
+    "raw/color_000019.jpg": {
+      "sha256": "192ec7b09c3d5e052d5fc9a38bfd0d2798c028e54655a6442f8a9481a86550e1",
+      "bytes": 99509,
+      "role": "source annotation/image"
+    },
+    "raw/color_000020.jpg": {
+      "sha256": "4780143789c33811857242c6cd4e94cf733bd63db090e3a0dfc02f63eec41ed7",
+      "bytes": 99600,
+      "role": "source annotation/image"
+    },
+    "raw/color_000021.jpg": {
+      "sha256": "301895ccd070a631f27789aa012127279a428f5aa7c1149800c46cb049bb0cab",
+      "bytes": 99950,
+      "role": "source annotation/image"
+    },
+    "raw/color_000022.jpg": {
+      "sha256": "f8732123db3e2a9d92bc8f66bbafc9a2bb5d7197c5dbe5f4c0569ebbbfb37ac9",
+      "bytes": 100207,
+      "role": "source annotation/image"
+    },
+    "raw/color_000023.jpg": {
+      "sha256": "057c6af866f48cca3ceb4e472624dab4a8c1204a0778887a7df73142c0f0a86c",
+      "bytes": 100203,
+      "role": "source annotation/image"
+    },
+    "raw/color_000024.jpg": {
+      "sha256": "82a6cc42f83aca42829ff45a88968630249d03f080c75e44bfa76fe9b46ced63",
+      "bytes": 100738,
+      "role": "source annotation/image"
+    },
+    "raw/color_000025.jpg": {
+      "sha256": "b154d1fa751d3e1b38b8be24e90b88fba87fb8e60c9ca4ffb415a9c834712942",
+      "bytes": 100520,
+      "role": "source annotation/image"
+    },
+    "raw/color_000026.jpg": {
+      "sha256": "a9e087a73faf8d8c0d2c39ac71989d5bb745a5b464064720b8b7fbf8bd8e5292",
+      "bytes": 100588,
+      "role": "source annotation/image"
+    },
+    "raw/color_000027.jpg": {
+      "sha256": "61048a22e9ee0bf737503ec2af0a8a7a8f0f141b90b6e682bce95fa540f70c88",
+      "bytes": 100734,
+      "role": "source annotation/image"
+    },
+    "raw/color_000028.jpg": {
+      "sha256": "b82a55a36b113c37a6b0f65821714e0c1aeaf5ef544b21f64c68d2fbdad633a9",
+      "bytes": 100638,
+      "role": "source annotation/image"
+    },
+    "raw/color_000029.jpg": {
+      "sha256": "12804cd4cac2b130cc5f359d7298c76da5fe5ca3bfd04e91f2d159ebe3d7a41b",
+      "bytes": 100456,
+      "role": "source annotation/image"
+    },
+    "raw/color_000030.jpg": {
+      "sha256": "55ab8e9085ec7788444f17537b735810328dc7a2fb13a4133d423f796da1fde7",
+      "bytes": 100356,
+      "role": "source annotation/image"
+    },
+    "raw/color_000031.jpg": {
+      "sha256": "9e541a67075ce4b79c59713b76f5819f158fe2e9e187e698402099abbf3957d5",
+      "bytes": 99856,
+      "role": "source annotation/image"
+    },
+    "raw/color_000032.jpg": {
+      "sha256": "8f2736e859c9468273ac49dccfb52acd00e80ab4475ad6a676faf9548a770cfb",
+      "bytes": 99919,
+      "role": "source annotation/image"
+    },
+    "raw/color_000033.jpg": {
+      "sha256": "f1d2cec70e2ac41305c1e54ee34e7fdd975891b2073967f591d7d4d3479368b2",
+      "bytes": 99336,
+      "role": "source annotation/image"
+    },
+    "raw/color_000034.jpg": {
+      "sha256": "9c7482c8013935be243b56ba45082c01d62bac2ba2d60a15ed6083c4d1d38a44",
+      "bytes": 99284,
+      "role": "source annotation/image"
+    },
+    "raw/color_000035.jpg": {
+      "sha256": "4ad3e99989287253ba6866e3f1487b4b4243a6b500f6bb844657e9a1465aa150",
+      "bytes": 99135,
+      "role": "source annotation/image"
+    },
+    "raw/color_000036.jpg": {
+      "sha256": "f49c00de5058b1336e40d204fe7ec1a15e26a618dabc61f6c0898c837afe908d",
+      "bytes": 98951,
+      "role": "source annotation/image"
+    },
+    "raw/color_000037.jpg": {
+      "sha256": "756ecc3cbd6ded1b5f4f2ca41ef2c5bedb59a206179314db26c43506dc2ad5eb",
+      "bytes": 98769,
+      "role": "source annotation/image"
+    },
+    "raw/color_000038.jpg": {
+      "sha256": "b76c563f4e617b3cd8dcb49fed8735eaf1ba88d741b38fda44439fa2ffd437b6",
+      "bytes": 98917,
+      "role": "source annotation/image"
+    },
+    "raw/color_000039.jpg": {
+      "sha256": "1f19d72bcace8b4769b9ec831874f215451f6b63ea7f32850f49b4b4c3090488",
+      "bytes": 99071,
+      "role": "source annotation/image"
+    },
+    "raw/color_000040.jpg": {
+      "sha256": "98f9a55a46f209c12e0d177cf4fc47c05c7ac774e481a9b1cc3a99505a5eb911",
+      "bytes": 99023,
+      "role": "source annotation/image"
+    },
+    "raw/color_000041.jpg": {
+      "sha256": "6a1b9deba14959ada287925238e41bee277a63d2d6c65ee7b48a92b67841a8f0",
+      "bytes": 98898,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000015.npz": {
+      "sha256": "1412574f843912bbef26d234efe1d6f3b6bc90ba207f4fc5235a661f8cee3d64",
+      "bytes": 2811,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000016.npz": {
+      "sha256": "05a062cbf130339e9f3b0a9cb0a0a06f2009f3f122daa422bf02e3a264cef3e3",
+      "bytes": 2875,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000017.npz": {
+      "sha256": "b41e36902b6194047e403ef098776337ff469686ba3434a7e6eb52605141edae",
+      "bytes": 2944,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000018.npz": {
+      "sha256": "3c4637e7eb6f94a7ceafe33848ac8ac367fb31854256627276d062395609d93a",
+      "bytes": 2957,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000019.npz": {
+      "sha256": "a8473d6fee85c23b8eeb673f15a069b06523a57b348337983db19945d95d399b",
+      "bytes": 2987,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000020.npz": {
+      "sha256": "7974b365c4542fee9cd01056d0bc8973a3e41450e8f0b93743e3d6bde8b45ec8",
+      "bytes": 2990,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000021.npz": {
+      "sha256": "2fca781312f6302755108fc12e1a1b161b2e9085cfd540a09eac10f339fffdf8",
+      "bytes": 3013,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000022.npz": {
+      "sha256": "d3474539d2700f406dc5a6bcad0b60fa4c33eaa0054a77b92cb4b021df22c8e7",
+      "bytes": 3002,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000023.npz": {
+      "sha256": "048c48286009047d7164cfd4da8127297aa4f2897b0f4f22f3d45bf071277947",
+      "bytes": 3020,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000024.npz": {
+      "sha256": "8a90b005ded78537ac1c9a2a69608c1b2ae2957c6fea6bf8b0621e20411c3024",
+      "bytes": 3008,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000025.npz": {
+      "sha256": "0780ec7075382fd4780ad715d3f4255e821a2ac51cd92d91572a61c9c09be3bc",
+      "bytes": 3036,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000026.npz": {
+      "sha256": "2af8849535a64a0f5a1ef8b20fd971bc7cd35ae2d9b2d4cb114cd9d2b96d906c",
+      "bytes": 3063,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000027.npz": {
+      "sha256": "83b119ebe273d77db3bb7a3431326319ff627a675f827407cebba96c664fde7e",
+      "bytes": 3037,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000028.npz": {
+      "sha256": "27bbf9119576e3bd29a9d643044969703d685796294c5dad67a5c5b3996f028b",
+      "bytes": 3032,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000029.npz": {
+      "sha256": "c808db93d17ef9cf510048a5db996e0aba010ff84de95ab2b4e7115c35c697e1",
+      "bytes": 3036,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000030.npz": {
+      "sha256": "1b75ca89afb719ff39c22ce6cd903eae4a38559a81c04921e8415f05e673a6c2",
+      "bytes": 2995,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000031.npz": {
+      "sha256": "f35ced30d6327c2eaa8b1ed75749bec38e0da344d5af66b87631652f81566a35",
+      "bytes": 2974,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000032.npz": {
+      "sha256": "cdbadc3af340b3bb84ceb600cdf99384127add04eae061a6a74f4983341a45f8",
+      "bytes": 2964,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000033.npz": {
+      "sha256": "130f88bf46285f7caf8dffd04ac8e2f1c055505f7542d7dbe00ffd7d6fdd1099",
+      "bytes": 2963,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000034.npz": {
+      "sha256": "9c57abef0c0f6855a47d5c7de156397c9e52762052300cad62bc3f44365f5cf8",
+      "bytes": 2942,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000035.npz": {
+      "sha256": "3a5e8decd6dba8cd1371320e074e61c6a77aae89d5e26afbada8997e4705a1aa",
+      "bytes": 2968,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000036.npz": {
+      "sha256": "c49136e133ef0d66f26043ca339183a599f253bd78a26556b5a18afe61a83e0b",
+      "bytes": 2945,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000037.npz": {
+      "sha256": "66022113d529e043d9b18018db895ff0bc0e1646bfa188a136604d20c7cafa79",
+      "bytes": 2905,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000038.npz": {
+      "sha256": "f6b31f152b0fc6ef4f05d8e3076d83d97ec9e5e747e3bc65af188537447643f6",
+      "bytes": 2860,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000039.npz": {
+      "sha256": "be797435ce04051ff03426536e573e34b7f90fb9a53b4214737fb8071ec74115",
+      "bytes": 2773,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000040.npz": {
+      "sha256": "f73cf53db5ddb69cf6e37af2a36bbbe8992520ea3ce78aead2eaebd2e70ed1f3",
+      "bytes": 2756,
+      "role": "source annotation/image"
+    },
+    "raw/labels_000041.npz": {
+      "sha256": "79cb80b15dbc584c42baba4912609b879c74c5130b3bcf29c3aa5f44f8e9b323",
+      "bytes": 2763,
+      "role": "source annotation/image"
+    },
+    "retargeted.npz": {
+      "sha256": "5190fc0b556b5a01a4b8e3624f21ae478941a1fe71517dcc28f59684f013f661",
+      "bytes": 64778,
+      "role": "retargeted wrist/finger/keypoints, camera coordinates"
+    }
+  },
+  "label": "2번 데모",
+  "raw_storage": "Local only; raw images and NPZ are ignored by Git; see raw/README.md and docs/dataset.md"
+}

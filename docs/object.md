@@ -30,19 +30,19 @@
 ```bash
 "$PYTHON" scripts/object.py
 "$PYTHON" scripts/retargeting.py retarget \
-  --model-dir assets/models --input data/poses/839512060362.npz \
+  --model-dir assets/models --input data/demo2/poses.npz \
   --metadata config/retargeting.json --output local/results/retargeting/839512060362
 ```
 
 새 결과의 `valid` 전체와 `transition_valid[1:]`가 통과했는지 확인한 뒤 적용합니다.
 
 ```bash
-cp local/results/retargeting/839512060362/trajectory.npz data/reference/839512060362.npz
+cp local/results/retargeting/839512060362/trajectory.npz data/demo2/retargeted.npz
 "$PYTHON" scripts/ground.py
 "$PYTHON" scripts/ik.py solve
 "$PYTHON" scripts/retargeting.py view \
   --model-dir assets/models --result local/results/retargeting/839512060362 \
-  --reference-dir data/raw/839512060362
+  --reference-dir data/demo2/raw
 "$PYTHON" scripts/physics.py floating --loops 3
 "$PYTHON" scripts/physics.py arm --loops 3
 ```

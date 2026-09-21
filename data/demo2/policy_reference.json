@@ -1,0 +1,784 @@
+{
+  "method": "own physical hand/object contact alignment with fixed original object targets",
+  "source": "/home/wanjunkim/ARSL/dex-manipulation/data/grounded/reference.npz",
+  "source_sha256": "802d330c0704fc90d882cf041652180f42a7ff5686dac143d025bfee20afff85",
+  "rollout": "local/results/policy/recovery_20260920/train_aligned_1000/validation/trained.npz",
+  "rollout_sha256": "3570262385e0a2010c0d70948a44bbb1a6439b8aff3236cf9faf1bd1c8c213b8",
+  "environment_index": 0,
+  "object_targets_changed": false,
+  "timestamps_changed": false,
+  "clearance_m": 0.0001,
+  "projection_scales": [
+    0.002,
+    0.002,
+    0.002,
+    0.02,
+    0.02,
+    0.02,
+    0.02,
+    0.02,
+    0.02,
+    0.02,
+    0.02,
+    0.02
+  ],
+  "transition_substeps": 20,
+  "frames": [
+    {
+      "frame_id": 15,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.14543967724769138,
+      "ground_clearance_m": 0.16155501785739934,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 16,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.14183953228541504,
+      "ground_clearance_m": 0.1586857250791866,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 17,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.13104130243604145,
+      "ground_clearance_m": 0.15056734959675805,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 18,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.11374440214364369,
+      "ground_clearance_m": 0.13724994368948998,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 19,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.09246614822922236,
+      "ground_clearance_m": 0.1211378444964341,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 20,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.07098556353642009,
+      "ground_clearance_m": 0.10192487915957021,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 21,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.05032815568868336,
+      "ground_clearance_m": 0.08342897097321852,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 22,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.03177860014267625,
+      "ground_clearance_m": 0.06566868409090354,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 23,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.0158269282597337,
+      "ground_clearance_m": 0.049224757936911306,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 24,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.005667966936072715,
+      "ground_clearance_m": 0.03462121221724659,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 25,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.002725824133853694,
+      "ground_clearance_m": 0.023187801762063982,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 26,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.002416458676353149,
+      "ground_clearance_m": 0.01573579153074732,
+      "projection": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame_id": 27,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999999979482969e-05,
+      "ground_clearance_m": 0.0073207952627459705,
+      "projection": [
+        -0.03853267644613867,
+        -0.06392677381609645,
+        -9.941827300810994e-05,
+        -0.056706966691210385,
+        0.034154807051207645,
+        0.029630999597036575,
+        -0.02845124587988133,
+        -0.05072001053511743,
+        -7.477065170469026e-09,
+        -7.477065170469034e-09,
+        -7.477065170469034e-09,
+        -7.477065170469077e-09
+      ]
+    },
+    {
+      "frame_id": 28,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999999999403664e-05,
+      "ground_clearance_m": 0.006415691888731451,
+      "projection": [
+        -0.03171620636717624,
+        -0.022519941252181343,
+        -0.001452529326548385,
+        -0.008626207527987359,
+        0.021580396894607456,
+        0.015030641683182357,
+        -0.0639884300487827,
+        -0.10432838097880343,
+        -7.407287404791051e-09,
+        -7.4072874047910545e-09,
+        -7.4072874047910685e-09,
+        -0.08580989697830523
+      ]
+    },
+    {
+      "frame_id": 29,
+      "solver_success": false,
+      "solver_message": "Iteration limit reached",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999999968320642e-05,
+      "ground_clearance_m": 0.0074805712577573,
+      "projection": [
+        -0.022324161868642455,
+        0.007510629824072643,
+        -0.012238516479187778,
+        0.016696318305114463,
+        0.013209180158278782,
+        0.008111545385222987,
+        -0.08096650670882388,
+        -0.13051578816532966,
+        0.0005431342124290848,
+        2.6537031782914327e-05,
+        -8.100473462292622e-05,
+        -0.1393770956189242
+      ]
+    },
+    {
+      "frame_id": 30,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000037882404739,
+      "ground_clearance_m": 0.008436418213963051,
+      "projection": [
+        -0.022426915536296537,
+        0.006851869745598534,
+        0.0026585131001138195,
+        0.028836914062232287,
+        0.008443724013557348,
+        0.005309394478886935,
+        -0.09066685606155027,
+        -0.14577470783474394,
+        -7.514202522783345e-09,
+        -7.514202522783325e-09,
+        -7.51420252278339e-09,
+        -0.14540305545820048
+      ]
+    },
+    {
+      "frame_id": 31,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999999988341814e-05,
+      "ground_clearance_m": 0.010301685611778693,
+      "projection": [
+        -0.02275429772696503,
+        0.008548439432377233,
+        0.00199624351705516,
+        0.0325326163093584,
+        0.007608184745158563,
+        0.0029081762157957504,
+        -0.09365848188937206,
+        -0.14735086108278408,
+        -7.649661978064952e-09,
+        -7.649661978064974e-09,
+        -7.649661978065078e-09,
+        -0.14936703481946187
+      ]
+    },
+    {
+      "frame_id": 32,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999998817564696e-05,
+      "ground_clearance_m": 0.020990905010264887,
+      "projection": [
+        -0.014881426490745727,
+        0.012766576599955018,
+        0.0019682144059477717,
+        0.029435613121505104,
+        0.0035529987135089146,
+        -0.0008074100707554198,
+        -0.07449313358705832,
+        -0.11912165973525699,
+        -4.4195195943358046e-09,
+        -4.419519594335589e-09,
+        -4.4195195943354936e-09,
+        -0.12027436940567637
+      ]
+    },
+    {
+      "frame_id": 33,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000000035541897,
+      "ground_clearance_m": 0.028259109981514922,
+      "projection": [
+        -0.0089826018001744,
+        0.020878503782247957,
+        0.006893361192568543,
+        0.030862953194478022,
+        0.003501194416606974,
+        -0.007302222850976064,
+        -0.0656512711558668,
+        -0.10793331926079333,
+        -7.48716731946661e-09,
+        -7.487167319466615e-09,
+        -7.487167319466615e-09,
+        -0.10636225960892556
+      ]
+    },
+    {
+      "frame_id": 34,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000000008378269,
+      "ground_clearance_m": 0.046934696068803114,
+      "projection": [
+        -0.00944997807561672,
+        0.025065480168906796,
+        0.0056613332412498545,
+        0.035368632897525176,
+        0.0020313365222633514,
+        -0.012037760554287309,
+        -0.0711537147750854,
+        -0.11480886103868887,
+        -9.452285281642901e-09,
+        -9.452285281642851e-09,
+        -9.452285281642693e-09,
+        -0.1172074788970086
+      ]
+    },
+    {
+      "frame_id": 35,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999999894005557e-05,
+      "ground_clearance_m": 0.06668905685652361,
+      "projection": [
+        -0.010089325579280058,
+        0.017364474133472457,
+        0.010201682288507962,
+        0.032578129081097564,
+        0.001549122168796892,
+        -0.012244123569637057,
+        -0.07739359423012121,
+        -0.12114251300851749,
+        -7.439219733612254e-09,
+        -7.439219733612119e-09,
+        -7.439219733612091e-09,
+        -0.12062337330604385
+      ]
+    },
+    {
+      "frame_id": 36,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.99999997387902e-05,
+      "ground_clearance_m": 0.0915624566283759,
+      "projection": [
+        -0.009650258462149307,
+        0.028152048609237097,
+        0.008964373403275777,
+        0.037629853646816105,
+        0.002431375680030749,
+        -0.0157508147066046,
+        -0.07918289846262792,
+        -0.12511948211725263,
+        -7.846290834674835e-09,
+        -7.53490995149551e-09,
+        -7.534909951495506e-09,
+        -0.12776963091983132
+      ]
+    },
+    {
+      "frame_id": 37,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000000003014598,
+      "ground_clearance_m": 0.11911801608913104,
+      "projection": [
+        -0.013467317179546608,
+        0.022706984210224823,
+        0.011182389429843067,
+        0.03801769269520035,
+        0.0028027655971712903,
+        -0.014525882402708468,
+        -0.08932288730177057,
+        -0.13815879981324133,
+        -7.441811117958575e-09,
+        -7.441811117958529e-09,
+        -7.441811117958531e-09,
+        -0.13915965641686903
+      ]
+    },
+    {
+      "frame_id": 38,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000000045738493,
+      "ground_clearance_m": 0.14378259666603646,
+      "projection": [
+        -0.007036184932998879,
+        0.02677320964843184,
+        0.009762219367560259,
+        0.03575571809488766,
+        0.00028701807676091934,
+        -0.018810898444428747,
+        -0.07780818957989381,
+        -0.12297889456336208,
+        -7.886781293242372e-09,
+        -7.886781293242214e-09,
+        -7.886781293242041e-09,
+        -0.1263850853831812
+      ]
+    },
+    {
+      "frame_id": 39,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 9.999999933090365e-05,
+      "ground_clearance_m": 0.16523813683310348,
+      "projection": [
+        -0.009980151527145535,
+        0.02183859506993111,
+        0.006621784757340291,
+        0.026219091453037954,
+        0.0008805177113702014,
+        -0.01990412539563777,
+        -0.07669482988817995,
+        -0.11719786816103589,
+        -7.342251514164067e-09,
+        -7.539840992577922e-09,
+        -7.539840992578118e-09,
+        -0.1156874530246881
+      ]
+    },
+    {
+      "frame_id": 40,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000474422985685,
+      "ground_clearance_m": 0.19015003292957833,
+      "projection": [
+        -0.010474975812666668,
+        0.018519212401336964,
+        0.004662601924933053,
+        0.02089492984253563,
+        -0.0029854997925553915,
+        -0.02291410880471686,
+        -0.08216315661360372,
+        -0.1255781036307327,
+        -5.9770557503118445e-09,
+        -5.977055750311968e-09,
+        -5.977055750311996e-09,
+        -0.12217440186818108
+      ]
+    },
+    {
+      "frame_id": 41,
+      "solver_success": true,
+      "solver_message": "Optimization terminated successfully",
+      "geometry_valid": true,
+      "minimum_distance_m": 0.00010000000018549041,
+      "ground_clearance_m": 0.21622402935993476,
+      "projection": [
+        -0.0060298018213618175,
+        0.01821989021495874,
+        0.011769171851392994,
+        0.022124410260657017,
+        -0.003036090744428435,
+        -0.027706342497036344,
+        -0.0831630088317225,
+        -0.12715859913907,
+        -7.481924620979101e-09,
+        -7.481924620978132e-09,
+        -7.481924620977962e-09,
+        -0.11943256077996921
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "frame_id": 16,
+      "minimum_distance_m": 0.1418395215464787,
+      "ground_clearance_m": 0.1586857200842169,
+      "valid": true
+    },
+    {
+      "frame_id": 17,
+      "minimum_distance_m": 0.13104129169123044,
+      "ground_clearance_m": 0.15056734395241284,
+      "valid": true
+    },
+    {
+      "frame_id": 18,
+      "minimum_distance_m": 0.11374439541258723,
+      "ground_clearance_m": 0.13724994164927495,
+      "valid": true
+    },
+    {
+      "frame_id": 19,
+      "minimum_distance_m": 0.09246614827155036,
+      "ground_clearance_m": 0.12113784644522917,
+      "valid": true
+    },
+    {
+      "frame_id": 20,
+      "minimum_distance_m": 0.07098556143957717,
+      "ground_clearance_m": 0.10192487758467395,
+      "valid": true
+    },
+    {
+      "frame_id": 21,
+      "minimum_distance_m": 0.05032815137810357,
+      "ground_clearance_m": 0.08342896604001172,
+      "valid": true
+    },
+    {
+      "frame_id": 22,
+      "minimum_distance_m": 0.03177859704280686,
+      "ground_clearance_m": 0.06566868003824411,
+      "valid": true
+    },
+    {
+      "frame_id": 23,
+      "minimum_distance_m": 0.01582692539674,
+      "ground_clearance_m": 0.04922475534943127,
+      "valid": true
+    },
+    {
+      "frame_id": 24,
+      "minimum_distance_m": 0.005667972533334035,
+      "ground_clearance_m": 0.03462121020600656,
+      "valid": true
+    },
+    {
+      "frame_id": 25,
+      "minimum_distance_m": 0.002725835753891853,
+      "ground_clearance_m": 0.023187797328181693,
+      "valid": true
+    },
+    {
+      "frame_id": 26,
+      "minimum_distance_m": 0.0022513443323111753,
+      "ground_clearance_m": 0.015735789215918596,
+      "valid": true
+    },
+    {
+      "frame_id": 27,
+      "minimum_distance_m": 9.999266518562857e-05,
+      "ground_clearance_m": 0.007320790815833384,
+      "valid": true
+    },
+    {
+      "frame_id": 28,
+      "minimum_distance_m": 4.354707959812764e-05,
+      "ground_clearance_m": 0.006415692753444079,
+      "valid": true
+    },
+    {
+      "frame_id": 29,
+      "minimum_distance_m": 8.429096660206916e-05,
+      "ground_clearance_m": 0.006415692753444073,
+      "valid": true
+    },
+    {
+      "frame_id": 30,
+      "minimum_distance_m": 9.233198064978994e-05,
+      "ground_clearance_m": 0.007480566880753823,
+      "valid": true
+    },
+    {
+      "frame_id": 31,
+      "minimum_distance_m": 8.644792342102811e-05,
+      "ground_clearance_m": 0.008436420048445999,
+      "valid": true
+    },
+    {
+      "frame_id": 32,
+      "minimum_distance_m": 9.184472826794231e-05,
+      "ground_clearance_m": 0.010301683596350624,
+      "valid": true
+    },
+    {
+      "frame_id": 33,
+      "minimum_distance_m": 4.031148176446469e-05,
+      "ground_clearance_m": 0.020990905538380775,
+      "valid": true
+    },
+    {
+      "frame_id": 34,
+      "minimum_distance_m": 9.498298230056865e-05,
+      "ground_clearance_m": 0.028259113409531963,
+      "valid": true
+    },
+    {
+      "frame_id": 35,
+      "minimum_distance_m": 9.999715794309034e-05,
+      "ground_clearance_m": 0.04693468898759175,
+      "valid": true
+    },
+    {
+      "frame_id": 36,
+      "minimum_distance_m": 8.556814674062091e-05,
+      "ground_clearance_m": 0.06668905913666974,
+      "valid": true
+    },
+    {
+      "frame_id": 37,
+      "minimum_distance_m": 8.04043044553513e-05,
+      "ground_clearance_m": 0.09156245364493608,
+      "valid": true
+    },
+    {
+      "frame_id": 38,
+      "minimum_distance_m": 7.604000878475746e-05,
+      "ground_clearance_m": 0.11911801602696588,
+      "valid": true
+    },
+    {
+      "frame_id": 39,
+      "minimum_distance_m": 9.241391389465486e-05,
+      "ground_clearance_m": 0.1437825970467269,
+      "valid": true
+    },
+    {
+      "frame_id": 40,
+      "minimum_distance_m": 4.8227818823434354e-05,
+      "ground_clearance_m": 0.16523813305850416,
+      "valid": true
+    },
+    {
+      "frame_id": 41,
+      "minimum_distance_m": 5.102360797802457e-05,
+      "ground_clearance_m": 0.1901500309610494,
+      "valid": true
+    }
+  ],
+  "limitations": [
+    "sampled hand-object and hand-ground geometry checks, not continuous collision proof",
+    "does not certify physical grasp success; evaluate the newly trained policy"
+  ]
+}
