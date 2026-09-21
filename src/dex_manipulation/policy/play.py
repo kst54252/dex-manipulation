@@ -43,6 +43,8 @@ def play(env, learner, output, episodes=0, is_running=None, protocol='strict'):
                     command_timestamp='physics_time_s is elapsed simulation time; time_s is reference command time',
                     reset_policy='restart from first frame after termination/timeout',
                     interpretation='dynamic policy playback; completion alone is not grasp success')
+    if getattr(env, 'placement_sampler', None) is not None:
+        manifest['random_can'] = env.placement_sampler.metadata
     (output / 'playback.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print('[play]', json.dumps(manifest), flush=True)
     episode = 0
@@ -53,6 +55,11 @@ def play(env, learner, output, episodes=0, is_running=None, protocol='strict'):
             if env.render and env.world.is_stopped():
                 break
             env.reset(randomize=protocol == 'source')
+            placement = getattr(env, 'episode_placement', None)
+            if placement is not None:
+                print('[play placement]', json.dumps(dict(episode=episode + 1, **placement)), flush=True)
+                if episode == 0:
+                    (output / 'first_episode_placement.json').write_text(json.dumps(placement, indent=2) + '\n')
             reset_count = env.object_reset_count
             obs = env.observation()
             rows, steps, episode_return = [], 0, 0.0
@@ -119,6 +126,8 @@ def play(env, learner, output, episodes=0, is_running=None, protocol='strict'):
                           end=reason, tracking_success=bool(success), constraints_passed=bool(constraints_ok),
                           maximum_object_error_m=max_error, terminal_metrics=metrics,
                           object_writes_during_episode=env.object_reset_count - reset_count)
+            if placement is not None:
+                report['placement'] = placement
             log.write(json.dumps(report) + '\n')
             log.flush()
             print('[play episode]', json.dumps(report), flush=True)

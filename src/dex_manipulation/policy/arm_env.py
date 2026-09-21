@@ -267,11 +267,29 @@ class ArmPolicyEnv(PhysxResidualEnv):
     def reset(self, indices=None, randomize=False, times=None):
         if times is not None or self.evaluation_protocol != 'strict':
             raise ValueError('Arm policy playback starts at frame zero with strict observations')
+        placement_sampler = getattr(self, 'placement_sampler', None)
+        if placement_sampler is not None:
+            placement = placement_sampler.next()
+            self.world_from_source = placement.world_from_source.copy()
+            self.frame = PolicyFrame(self.world_from_source, self.device)
+            self.bridge.base_from_source = placement.base_from_source.copy()
+            self.bridge.seed = placement.initial_q.copy()
+            self.initial_can_pose = self.world_from_source @ self.reference.object[0]
+            self.episode_placement = dict(
+                grid_index=list(placement.grid_index), can_initial_world_xy_m=placement.xy.tolist(),
+                world_from_source=self.world_from_source.tolist(),
+                base_from_source=placement.base_from_source.tolist(),
+                initial_can_pose_world=self.initial_can_pose.tolist(), seed=placement_sampler.seed)
         self.motion.reset(self.all_ids, self.generator, False)
         self.contact_wrench[:]=0
         self.time.zero_(); self.last_action.zero_(); self.episode_length_buf.zero_()
         ref = self.motion.sample(self.time)
         initial = self.bridge.reset(ref['wrist_position'][0].cpu().numpy(), ref['wrist_quaternion'][0].cpu().numpy())
+        if placement_sampler is not None:
+            self.episode_placement.update(initial_q_arm=initial.q.tolist(),
+                initial_ik_position_error_m=initial.position_error_m,
+                initial_ik_orientation_error_rad=initial.orientation_error_rad,
+                initial_sigma_min=initial.sigma_min)
         qa = torch.tensor(initial.q[None], device=self.device, dtype=torch.float32)
         q = ref['q'].clone()
         full = q @ self.task.coupling.T + self.task.offset

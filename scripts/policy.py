@@ -23,6 +23,8 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--episodes", type=int, default=0, help="Play mode: repeat until stopped (0), or stop after this many episodes")
     parser.add_argument('--speed',type=float,default=1.0,help='Play reference speed multiplier for floating/arm; physics and control dt stay fixed')
+    parser.add_argument('--random-can', action='store_true', help='Demo 2 arm play: resample a verified tabletop IK point on every episode reset')
+    parser.add_argument('--placement-seed', type=int, help='Reproducible random can placement order')
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--policy-device", choices=("cpu", "cuda"), default=None)
     parser.add_argument("--device", choices=("cpu", "cuda:0"), default=None, help="Physics and default policy device")
@@ -49,6 +51,10 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
         parser.error('--speed must be positive and finite')
     if args.speed!=1.0 and args.mode!='play':
         parser.error('--speed applies only to play')
+    if args.random_can and (args.mode != 'play' or args.robot != 'arm'):
+        parser.error('--random-can requires demo 2 --mode play --robot arm')
+    if args.placement_seed is not None and (not args.random_can or args.placement_seed < 0):
+        parser.error('--placement-seed requires --random-can and a nonnegative integer')
     if args.robot == 'arm':
         if args.mode != 'play' and args.config == ROOT/'config/policy.json':
             parser.error('Arm training/evaluation requires an explicit arm-training config')

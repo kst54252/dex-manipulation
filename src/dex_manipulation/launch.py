@@ -36,6 +36,8 @@ def parser():
     p.add_argument('--arm-config', type=Path, help='사용자 정책의 팔 배치/IK 설정')
     p.add_argument('--repeat', type=int, default=0, help='반복 횟수 (기본 0: 무한 반복, 양수: 지정 횟수)')
     p.add_argument('--speed',type=float,help='재생 배속 (플로팅·팔 정책 기본 2, --speed 1은 이전 속도; 팔 retarget은 1)')
+    p.add_argument('--random-can', action='store_true', help='데모2 arm policy: 매 반복 검증된 IK 격자점에 캔·손 궤적 랜덤 배치')
+    p.add_argument('--placement-seed', type=int, help='랜덤 캔 배치 순서를 재현할 seed (--random-can 전용)')
     p.add_argument('--headless', action='store_true', help='창 없이 동일 물리 재생')
     p.add_argument('--table-safety', choices=('protect','checkpoint'),
                    help='정책 상판 보호: 기존 정책은 protect, 팔 학습 정책은 checkpoint가 기본')
@@ -91,6 +93,12 @@ def resolve_plan(root, args, catalog):
         return path
 
     commands = []
+    random_can = getattr(args, 'random_can', False)
+    placement_seed = getattr(args, 'placement_seed', None)
+    if random_can and (args.robot != 'arm' or args.mode != 'policy'):
+        raise ValueError('--random-can은 데모2 arm policy에서만 지원합니다.')
+    if placement_seed is not None and (not random_can or placement_seed < 0):
+        raise ValueError('--placement-seed는 --random-can과 함께 0 이상의 정수로 지정하세요.')
     speed=getattr(args,'speed',None)
     if speed is None:
         speed=catalog.get('playback_speed',{}).get(args.robot,1.0)
@@ -153,6 +161,13 @@ def resolve_plan(root, args, catalog):
                 required(read(arm_path)[key])
             cmd.extend(['--arm-config', str(arm_path)])
             details['arm_config'] = str(arm_path)
+            if random_can:
+                from .policy.placement import load_random_placement
+                placement = load_random_placement(root, cfg, read(arm_path), speed, placement_seed)
+                # Choose entropy once in the launcher and forward it, including
+                # dry-run commands, so the logged plan exactly reproduces play.
+                cmd.extend(['--random-can', '--placement-seed', str(placement.seed)])
+                details['random_can'] = placement.metadata
         details.update(checkpoint=str(checkpoint), config=str(config_path), reference=str(reference_path.resolve()),
                        label=entry['label'] if entry else checkpoint.name)
         if entry and entry.get('note'):

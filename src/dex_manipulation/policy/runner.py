@@ -287,6 +287,13 @@ def run(args,root,on_ready=None,is_running=None):
     from .playback import prepare_playback
     contact_mode=getattr(args,'contact_materials',None) or ('rubber' if args.mode=='play' else 'checkpoint')
     reference,env_config,playback_timing=prepare_playback(reference,config,speed)
+    placement = None
+    if getattr(args, 'random_can', False):
+        if args.mode != 'play' or robot_mode != 'arm' or native_arm:
+            raise ValueError('--random-can supports demo 2 floating-trained arm playback only')
+        from .placement import load_random_placement
+        placement = load_random_placement(root, config, arm_config, speed,
+                                         getattr(args, 'placement_seed', None), reference)
     if contact_mode=='rubber':
         env_config['contact_materials']=json.loads((root/'config/policy.json').read_text())['contact_materials']
     control_mode=getattr(args,'motion_control',None) or 'checkpoint'
@@ -299,6 +306,10 @@ def run(args,root,on_ready=None,is_running=None):
     elif robot_mode=='arm':
         from .arm_env import ArmPolicyEnv
         env=ArmPolicyEnv(root,model,reference,env_config,arm_config,render=not args.headless)
+        # Constructor reset uses the nominal placement; consume the random
+        # sequence only when the first actual playback episode begins.
+        if placement is not None:
+            env.placement_sampler = placement
     else:
         env=PhysxResidualEnv(root,model,reference,env_config,args.num_envs,render=not args.headless,
                              motion_control_override=stable)
@@ -316,6 +327,8 @@ def run(args,root,on_ready=None,is_running=None):
         export=args.export,automatic_replay_output=not args.skip_evaluation and not native_arm,mode=args.mode)
     metadata['execution']['robot']=robot_mode
     metadata['execution']['playback_timing']=playback_timing
+    if placement is not None:
+        metadata['execution']['random_can'] = placement.metadata
     if speed!=1.0:
         print(f'[playback] {speed:g}x | reference {playback_timing["input_duration_s"]:g}s -> {reference.duration:g}s | physics/control dt unchanged',flush=True)
     metadata['execution']['contact_materials']=dict(mode=contact_mode,

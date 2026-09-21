@@ -1,11 +1,5 @@
 {
-  "playback_speed": {
-    "floating": 2.0,
-    "arm": {
-      "retarget": 1.0,
-      "policy": 2.0
-    }
-  },
+  "playback_speed": {"floating": 2.0, "arm": {"retarget": 1.0, "policy": 2.0}},
   "demos": {
     "1": {
       "label": "1번 데모 · 40자세 · 5.2초 · 밑면 수평·바닥 밀착",
@@ -19,7 +13,11 @@
       "config": "config/policy.json",
       "arm_config": "config/ik.json",
       "arm_reference": "local/results/ik/full/trajectory.npz",
-      "training_config": "config/policy_demo2_contact.json"
+      "training_config": "config/policy_demo2_contact.json",
+      "random_can_regions": {
+        "1": "local/reports/table_ik_current_20260921/demo2_1x",
+        "2": "local/reports/table_ik_current_20260921/demo2_2x"
+      }
     }
   },
   "policies": {
