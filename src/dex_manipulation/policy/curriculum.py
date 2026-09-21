@@ -10,10 +10,17 @@ class ReferenceStateSampler:
         self.bin_count=int(self.frame_count//(1/control_dt))+1
         self.failures=torch.zeros(self.bin_count,device=device)
         self.episodes=0
-        if config['sampling'] not in ('uniform','adaptive'): raise ValueError('Invalid RSI sampler')
+        if config['sampling'] not in ('uniform','uniform_frames','adaptive'): raise ValueError('Invalid RSI sampler')
 
     def probabilities(self):
         uniform=torch.ones_like(self.failures)/self.bin_count
+        if self.cfg['sampling']=='uniform_frames':
+            # Report the frame distribution aggregated into the legacy bins;
+            # the final bin can have one fewer eligible (nonterminal) frame.
+            frames=torch.arange(max(self.frame_count-1,1),device=self.device)
+            bins=(frames*self.bin_count//self.frame_count).clamp(max=self.bin_count-1)
+            counts=torch.bincount(bins,minlength=self.bin_count).float()
+            return counts/counts.sum()
         if self.cfg['sampling']=='uniform': return uniform
         p=(1-self.cfg['uniform_mix'])*self.failures/self.failures.sum().clamp_min(1e-8)+self.cfg['uniform_mix']*uniform
         p=torch.where(self.failures.sum()>1e-8,p,uniform)
@@ -24,6 +31,12 @@ class ReferenceStateSampler:
         return p/p.sum()
 
     def sample(self,count,generator):
+        if self.cfg['sampling']=='uniform_frames':
+            # The floating Revo2 source samples each nonterminal frame directly.
+            # Keep the legacy bin sampler for reproducing older checkpoints.
+            indices=torch.randint(max(self.frame_count-1,1),(count,),device=self.device,generator=generator)
+            if not self.cfg['enabled']:indices.zero_()
+            return indices*self.dt
         bins=torch.multinomial(self.probabilities(),count,replacement=True,generator=generator)
         u=torch.rand(count,device=self.device,generator=generator)
         indices=((bins+u)/self.bin_count*(self.frame_count-1)).long()

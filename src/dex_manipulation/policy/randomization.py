@@ -34,10 +34,20 @@ def apply_startup_randomization(env):
         indices=rng.integers(0,len(buckets),materials.shape[:-1])
         materials[...,:2]=torch.from_numpy(buckets[indices]).float()
         materials[...,2]=0
+        if name=='hand' and cfg.get('hand_material_body_pattern'):
+            import re
+            selected=torch.tensor([bool(re.fullmatch(cfg['hand_material_body_pattern'],n))
+                for n,count in zip(env.robot.body_names,env.body_shape_counts) for _ in range(count)])
+            if len(selected)!=materials.shape[1]:raise ValueError('Arm material shape mapping differs from PhysX')
+            materials[:,~selected]=nominal['materials'][:,~selected]
         env.randomized_physics[name]['materials']=materials
         if name!='table':
             mass=nominal['masses']
             factor=torch.tensor(rng.uniform(*cfg[name+'_mass_scale'],mass.shape),dtype=mass.dtype)
+            if name=='hand' and cfg.get('hand_mass_body_pattern'):
+                import re
+                selected=torch.tensor([bool(re.fullmatch(cfg['hand_mass_body_pattern'],n)) for n in env.robot.body_names])
+                factor[:,~selected]=1.
             env.randomized_physics[name]['masses']=mass*factor
             # Inertia scales with mass; this is also the general Isaac Lab mass randomizer's behavior.
             inertia=nominal['inertias']
@@ -46,6 +56,10 @@ def apply_startup_randomization(env):
     for name in ('stiffness','damping'):
         nominal=env.nominal_physics['hand'][name]
         factor=torch.tensor(np.exp(rng.uniform(np.log(cfg['gain_scale'][0]),np.log(cfg['gain_scale'][1]),nominal.shape)),dtype=nominal.dtype)
+        if cfg.get('hand_gain_joint_pattern'):
+            import re
+            selected=torch.tensor([bool(re.fullmatch(cfg['hand_gain_joint_pattern'],n)) for n in env.robot.dof_names])
+            factor[:,~selected]=1.
         hand[name]=nominal*factor
     com=env.nominal_physics['object']['coms'].clone()
     extent=np.array(cfg['object_com_range_m'])
@@ -62,7 +76,9 @@ def set_physics_properties(env,properties):
         view={'hand':env.robot._physics_view,'object':env.can._physics_view,'table':env.table._physics_view}[name]
         for key,value in values.items():
             method={'materials':'set_material_properties','masses':'set_masses','inertias':'set_inertias','coms':'set_coms','stiffness':'set_dof_stiffnesses','damping':'set_dof_dampings'}[key]
-            getattr(view,method)(value.contiguous(),indices)
+            # PhysX property setters use host tensors even with GPU dynamics.
+            # torch.load(map_location='cuda') also moves saved startup properties.
+            getattr(view,method)(value.detach().cpu().contiguous(),indices)
     env.refresh_physics_properties()
 
 
@@ -96,6 +112,8 @@ class PushSchedule:
         self.remaining-=env.task.dt
         stage=max(row for row in self.cfg['stages'] if row[0]<=env.control_steps)
         for slot,asset in enumerate((env.robot,env.can)):
+            if slot==0 and env.cfg.get('arm_training',{}).get('enabled',False):
+                continue  # A fixed-base arm must never receive a floating-root velocity reset.
             ids=torch.nonzero(self.remaining[:,slot]<=0,as_tuple=False).flatten()
             if not len(ids): continue
             amplitudes=torch.tensor([stage[1]]*3+[stage[2]]*3,device=self.device)

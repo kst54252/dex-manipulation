@@ -12,14 +12,14 @@ import torch
 from .task import ResidualTask
 from .reference import TensorReference
 from .math3d import quat_apply, from_rotvec, quat_multiply, uniform
-from ..control import wrist_pd_wrenches
+from ..control import MotionController, wrist_pd_wrenches
 from .observations import ObservationHistory
 from .curriculum import ReferenceStateSampler,GravityCurriculum
 from .randomization import apply_startup_randomization,set_physics_properties,property_report,PushSchedule
 
 
 class PhysxResidualEnv:
-    def __init__(self,root,model,reference,config,num_envs=8,render=False):
+    def __init__(self,root,model,reference,config,num_envs=8,render=False,*,motion_control_override=None):
         from pxr import Usd,UsdGeom,UsdPhysics,PhysxSchema,UsdShade,UsdLux,Gf
         from isaacsim.core.api import World
         from isaacsim.core.prims import Articulation,RigidPrim
@@ -33,6 +33,19 @@ class PhysxResidualEnv:
             print(f"[startup] {phase} | envs={num_envs} elapsed={elapsed:.1f}s",flush=True)
         progress("create physics world")
         self.model,self.reference,self.cfg=model,reference,config
+        gain_units=config.get('joint_gain_units','usd_degrees')
+        if gain_units not in ('si','usd_degrees'):
+            raise ValueError('joint_gain_units must be si or usd_degrees')
+        drive_type=config.get('joint_drive_type')
+        if drive_type not in (None,'force','acceleration'):
+            raise ValueError('Unknown joint_drive_type')
+        mimic_mode=config.get('mimic_mode','constraint')
+        if mimic_mode not in ('constraint','constraint_with_drives','drive'):
+            raise ValueError('Unknown mimic_mode')
+        mimic_schema_policy=config.get('mimic_schema_policy','legacy_mixed')
+        if mimic_schema_policy not in ('asset','single','legacy_mixed'):
+            raise ValueError('Unknown mimic_schema_policy')
+        physics=config.get('solver_iterations',{})
         self.surface=FloatingSurface(config['surface'], reference.object[0,:3,3])
         from .trajectory import digest
         expected = reference.metadata.get('object_asset_sha256')
@@ -43,8 +56,17 @@ class PhysxResidualEnv:
         self.all_ids=torch.arange(num_envs,device=self.device,dtype=torch.long)
         self.generator=torch.Generator(device=self.device).manual_seed(config['seed'])
         self.rng=np.random.default_rng(config['seed'])
-        self.motion=TensorReference(reference,num_envs,config['augmentation'],self.device)
+        self.motion=TensorReference(reference,num_envs,config['augmentation'],self.device,
+            velocity_mode=config.get('reference_velocity_mode','segment'),
+            control_dt=config['physics_dt']*config['control_decimation'])
         self.task=ResidualTask(model,self.motion,config,self.device)
+        controller_config=config.get('motion_control') if motion_control_override is None else motion_control_override
+        self.motion_controller=MotionController(model,num_envs,config['physics_dt'],controller_config,self.device)
+        self.contact_correction_velocity=float((controller_config or {}).get(
+            'contact_correction_velocity_m_s',config.get('max_depenetration_velocity_m_s',5.)))
+        self.object_contact_correction_velocity=float(config.get('object_max_depenetration_velocity_m_s',self.contact_correction_velocity))
+        if not np.isfinite(self.object_contact_correction_velocity) or self.object_contact_correction_velocity<=0:
+            raise ValueError('Object contact correction velocity must be positive and finite')
         self.sampler=ReferenceStateSampler(reference.duration,self.task.dt,config['rsi'],self.device)
         self.gravity=GravityCurriculum(config['gravity_curriculum'],config['gravity'])
         self.training,self.control_steps=False,0
@@ -55,8 +77,11 @@ class PhysxResidualEnv:
         # simulator boundary so the nominal can starts at the support's center.
         self.origins=scene_origins+torch.tensor(self.surface.translation,device=self.device,dtype=torch.float32)
         self.time=torch.zeros(num_envs,device=self.device)
+        self.last_reset_frame=torch.zeros(num_envs,device=self.device,dtype=torch.long)
         self.episode_length_buf=torch.zeros(num_envs,dtype=torch.long,device=self.device)
-        self.max_episode_length=int(round(reference.duration/self.task.dt))+1
+        self.reference_frame_count=int(round(reference.duration/self.task.dt))+1
+        self.max_episode_length=(int(np.ceil(config['episode_length_s']/self.task.dt))
+            if 'reference_timing' in config else self.reference_frame_count)
         self.last_action=torch.zeros(num_envs,12,device=self.device)
         self.last_q_target=torch.zeros(num_envs,6,device=self.device)
         self.object_reset_count=0
@@ -87,18 +112,22 @@ class PhysxResidualEnv:
         context.set_gpu_max_num_partitions(1)
         stage=self.world.stage
         scene_api=PhysxSchema.PhysxSceneAPI.Apply(context.get_current_physics_scene_prim())
-        scene_api.CreateMaxPositionIterationCountAttr(192)
-        scene_api.CreateMaxVelocityIterationCountAttr(1)
+        scene_api.CreateMaxPositionIterationCountAttr(physics.get('scene_position',192))
+        scene_api.CreateMaxVelocityIterationCountAttr(physics.get('scene_velocity',1))
         scene_api.CreateBounceThresholdAttr(.2)
         scene_api.CreateFrictionOffsetThresholdAttr(.01)
         scene_api.CreateFrictionCorrelationDistanceAttr(.00625)
+        for name,value in config.get('scene_physics',{}).items():
+            # Explicitly author the source solver switches; World defaults differ.
+            attribute=scene_api.GetPrim().GetAttribute('physxScene:'+name)
+            if not attribute or not attribute.Set(value):raise ValueError(f'Unsupported PhysX scene option: {name}')
         UsdLux.DomeLight.Define(stage,'/World/Light').CreateIntensityAttr(900)
         if render:
             from isaacsim.core.utils.viewports import set_camera_view
             set_camera_view(eye=np.array([.6,-.6,.5]),target=np.array([0,0,.12]))
         material=UsdShade.Material.Define(stage,'/World/ContactMaterial')
         mat=UsdPhysics.MaterialAPI.Apply(material.GetPrim())
-        mat.CreateStaticFrictionAttr(1.);mat.CreateDynamicFrictionAttr(1.);mat.CreateRestitutionAttr(0.)
+        mat.CreateStaticFrictionAttr(config.get('friction',1.));mat.CreateDynamicFrictionAttr(config.get('friction',1.));mat.CreateRestitutionAttr(0.)
         self.mimic_specs=[]
         progress("build source environment")
         from isaacsim.core.cloner import Cloner
@@ -118,24 +147,52 @@ class PhysxResidualEnv:
         tablephys.CreateSolverPositionIterationCountAttr(8);tablephys.CreateSolverVelocityIterationCountAttr(1)
         tablephys.CreateMaxDepenetrationVelocityAttr(1.)
         col=PhysxSchema.PhysxCollisionAPI.Apply(table);col.CreateContactOffsetAttr(.005);col.CreateRestOffsetAttr(0.)
-        col.CreateTorsionalPatchRadiusAttr(.02);col.CreateMinTorsionalPatchRadiusAttr(.005)
+        col.CreateTorsionalPatchRadiusAttr(config.get('table_torsional_patch_radius_m',.02))
+        col.CreateMinTorsionalPatchRadiusAttr(config.get('table_min_torsional_patch_radius_m',.005))
         art=PhysxSchema.PhysxArticulationAPI.Apply(stage.GetPrimAtPath(hand_path))
-        art.CreateSolverPositionIterationCountAttr(32);art.CreateSolverVelocityIterationCountAttr(1)
+        art.CreateSolverPositionIterationCountAttr(physics.get('hand_position',32))
+        art.CreateSolverVelocityIterationCountAttr(physics.get('hand_velocity',1))
         art.CreateEnabledSelfCollisionsAttr(config['self_collision'])
         art.CreateSleepThresholdAttr(.005);art.CreateStabilizationThresholdAttr(.0005)
         joints={p.GetName():p for p in Usd.PrimRange(stage.GetPrimAtPath(hand_path)) if p.IsA(UsdPhysics.RevoluteJoint)}
         for j in model.moving:
             prim=joints[j['name']];drive=UsdPhysics.DriveAPI.Apply(prim,'angular')
-            if j.get('mimic'):
+            if j.get('mimic') and mimic_schema_policy=='single':
+                # Isaac Sim 6 recognizes the imported Newton schema as well.
+                # Use one explicit constraint representation in this adapter.
+                prim.RemoveAppliedSchema('NewtonMimicAPI')
+            if drive_type is not None:drive.CreateTypeAttr(drive_type)
+            if config.get('joint_effort_limit_nm') is not None:
+                drive.CreateMaxForceAttr(float(config['joint_effort_limit_nm']))
+            # USD angular drives consume degrees; PhysX tensors and the task use
+            # radians. Convert once at the USD boundary, before world.reset.
+            gain_scale=np.pi/180 if gain_units=='si' else 1.
+            if j.get('mimic') and mimic_mode!='drive':
                 m=j['mimic']
-                api=PhysxSchema.PhysxMimicJointAPI.Apply(prim,'rot'+str(UsdPhysics.RevoluteJoint(prim).GetAxisAttr().Get()))
-                api.CreateReferenceJointRel().SetTargets([joints[m['leader']].GetPath()])
-                api.CreateReferenceJointAxisAttr('rot'+str(UsdPhysics.RevoluteJoint(joints[m['leader']]).GetAxisAttr().Get()))
-                api.CreateGearingAttr(-m['multiplier']);api.CreateOffsetAttr(-np.rad2deg(m['offset']))
-                drive.CreateStiffnessAttr(0.);drive.CreateDampingAttr(0.)
-                self.mimic_specs.append(dict(follower=j['name'],**m))
+                if mimic_schema_policy=='asset':
+                    if 'NewtonMimicAPI' not in prim.GetAppliedSchemas():
+                        raise ValueError(f"Registered native Newton mimic schema required: {prim.GetPath()}")
+                    # The source adapter retains the imported native constraint.
+                    # Do not add another representation on top of it.
+                    for axis in ('rotX','rotY','rotZ'):
+                        if prim.HasAPI(PhysxSchema.PhysxMimicJointAPI,axis):prim.RemoveAPI(PhysxSchema.PhysxMimicJointAPI,axis)
+                    implemented='NewtonMimicAPI'
+                else:
+                    api=PhysxSchema.PhysxMimicJointAPI.Apply(prim,'rot'+str(UsdPhysics.RevoluteJoint(prim).GetAxisAttr().Get()))
+                    api.CreateReferenceJointRel().SetTargets([joints[m['leader']].GetPath()])
+                    api.CreateReferenceJointAxisAttr('rot'+str(UsdPhysics.RevoluteJoint(joints[m['leader']]).GetAxisAttr().Get()))
+                    api.CreateGearingAttr(-m['multiplier']);api.CreateOffsetAttr(-np.rad2deg(m['offset']))
+                    implemented='PhysxMimicJointAPI'
+                drive.CreateStiffnessAttr(config['joint_stiffness']*gain_scale if mimic_mode=='constraint_with_drives' else 0.)
+                drive.CreateDampingAttr(config['joint_damping']*gain_scale if mimic_mode=='constraint_with_drives' else 0.)
+                self.mimic_specs.append(dict(follower=j['name'],**m,implemented_schema=implemented))
             else:
-                drive.CreateStiffnessAttr(config['joint_stiffness']);drive.CreateDampingAttr(config['joint_damping'])
+                if j.get('mimic'):
+                    for axis in ('rotX','rotY','rotZ'):
+                        if prim.HasAPI(PhysxSchema.PhysxMimicJointAPI,axis):
+                            prim.RemoveAPI(PhysxSchema.PhysxMimicJointAPI,axis)
+                drive.CreateStiffnessAttr(config['joint_stiffness']*gain_scale)
+                drive.CreateDampingAttr(config['joint_damping']*gain_scale)
         for asset in (hand_path,prefix+'/Can',prefix+'/Table'):
             UsdShade.MaterialBindingAPI.Apply(stage.GetPrimAtPath(asset)).Bind(material,materialPurpose='physics')
             for prim in Usd.PrimRange(stage.GetPrimAtPath(asset)):
@@ -144,12 +201,15 @@ class PhysxResidualEnv:
                     if asset==hand_path: rb.CreateDisableGravityAttr(not config['hand_gravity'])
                     if asset.endswith('/Can'):
                         rb.CreateDisableGravityAttr(False);rb.CreateEnableGyroscopicForcesAttr(True)
-                        rb.CreateSolverPositionIterationCountAttr(8);rb.CreateSolverVelocityIterationCountAttr(0)
+                        rb.CreateSolverPositionIterationCountAttr(physics.get('object_position',8))
+                        rb.CreateSolverVelocityIterationCountAttr(physics.get('object_velocity',0))
                         rb.CreateSleepThresholdAttr(.005);rb.CreateStabilizationThresholdAttr(.0025)
-                    if not asset.endswith('/Table'):rb.CreateMaxDepenetrationVelocityAttr(5.)
+                    if not asset.endswith('/Table'):
+                        rb.CreateMaxDepenetrationVelocityAttr(self.object_contact_correction_velocity if asset.endswith('/Can') else self.contact_correction_velocity)
                 if prim.HasAPI(UsdPhysics.CollisionAPI) and not asset.endswith('/Table'):
                     col=PhysxSchema.PhysxCollisionAPI.Apply(prim)
-                    col.CreateContactOffsetAttr(config['contact_offset_m']);col.CreateRestOffsetAttr(config['rest_offset_m'])
+                    col.CreateContactOffsetAttr(config.get('object_contact_offset_m',config['contact_offset_m']) if asset.endswith('/Can') else config['contact_offset_m'])
+                    col.CreateRestOffsetAttr(config['rest_offset_m'])
         cache=UsdGeom.XformCache()
         palm=next(p for p in Usd.PrimRange(stage.GetPrimAtPath(hand_path)) if p.GetName()==model.root)
         relative=cache.GetLocalToWorldTransform(palm)*cache.GetLocalToWorldTransform(stage.GetPrimAtPath(hand_path)).GetInverse()
@@ -188,7 +248,19 @@ class PhysxResidualEnv:
         self.kp_ids=torch.tensor([self.robot.body_names.index(k['link']) for k in model.keypoints],device=self.device)
         self.kp_local=torch.tensor([k['xyz'] for k in model.keypoints],device=self.device)
         self.tip_ids=torch.tensor([model.semantic_names.index(k+'_tip') for k in ('thumb','index','middle','ring','little')],device=self.device)
-        self.robot.set_max_joint_velocities(self.task.full_velocity[None].expand(num_envs,-1),joint_indices=self.full_ids)
+        self.tip_body_ids=self.kp_ids[self.tip_ids]
+        self.configure_table_safety()
+        velocity=self.task.full_velocity[None].expand(num_envs,-1)
+        if config.get('simulation_coupled_velocity_limits',False):
+            velocity=(self.task.coupling.abs()@self.task.velocity)[None].expand(num_envs,-1)
+        if config.get('simulation_joint_velocity_rad_s') is not None:
+            velocity=torch.full_like(velocity,float(config['simulation_joint_velocity_rad_s']))
+        self.robot.set_max_joint_velocities(velocity,joint_indices=self.full_ids)
+        self.force_body_id=self.robot.body_names.index(config.get('root_force_body','Hand'))
+        if gain_units=='si':
+            nominal_kp,nominal_kd=self.robot.get_gains(joint_indices=self.active_ids)
+            torch.testing.assert_close(nominal_kp,torch.full_like(nominal_kp,config['joint_stiffness']),rtol=1e-5,atol=1e-6)
+            torch.testing.assert_close(nominal_kd,torch.full_like(nominal_kd,config['joint_damping']),rtol=1e-5,atol=1e-6)
         apply_startup_randomization(self)
         self.refresh_physics_properties()
         self.obs_history=ObservationHistory(num_envs,6,config['observation'],self.device,self.generator)
@@ -200,9 +272,25 @@ class PhysxResidualEnv:
             object_control='gravity/contact plus source velocity-push curriculum; pose only reset',root_control='PD root force + mass-proportional distributed torque; hand gravity '+('enabled' if config['hand_gravity'] else 'disabled'),
             physics_dt=config['physics_dt'],control_dt=self.task.dt,randomization=property_report(self),
             active_effort_limits_nm=self.robot.get_max_efforts()[0,self.active_ids].cpu().tolist(),
-            actor_observation_size=67,critic_observation_size=88)
+            actor_observation_size=self.task.observation_size,critic_observation_size=self.task.critic_observation_size)
+        actual_kp,actual_kd=self.robot.get_gains(joint_indices=self.active_ids)
+        self.metadata['joint_drives']=dict(input_units=gain_units,drive_type=drive_type or 'asset',mimic_mode=mimic_mode,
+            mimic_schema_policy=mimic_schema_policy,
+            stiffness_si_min=float(actual_kp.min()),stiffness_si_max=float(actual_kp.max()),
+            damping_si_min=float(actual_kd.min()),damping_si_max=float(actual_kd.max()),
+            force_body=self.robot.body_names[self.force_body_id],
+            simulation_velocity_limits_rad_s=velocity[0].cpu().tolist())
         self.metadata.update(controller='regrind_pose_pd',gravity_compensation=False,reference_velocity_feedforward=False,
                              stepping='one explicit physics step per PD update; rendering advances no physics')
+        self.metadata['motion_control']=copy.deepcopy(self.motion_controller.config)
+        self.metadata['contact_correction_velocity_m_s']=self.contact_correction_velocity
+        self.metadata['object_contact_correction_velocity_m_s']=self.object_contact_correction_velocity
+        self.metadata['solver_iterations']=dict(scene_position=scene_api.GetMaxPositionIterationCountAttr().Get(),
+            scene_velocity=scene_api.GetMaxVelocityIterationCountAttr().Get(),
+            hand_position=art.GetSolverPositionIterationCountAttr().Get(),hand_velocity=art.GetSolverVelocityIterationCountAttr().Get())
+        self.metadata['scene_physics']={name:scene_api.GetPrim().GetAttribute('physxScene:'+name).Get()
+            for name in ('enableExternalForcesEveryIteration','enableStabilization','solveArticulationContactLast','gpuMaxNumPartitions')}
+        self.metadata['newton_mimic_registered']=bool(Usd.SchemaRegistry.GetTypeFromSchemaTypeName('NewtonMimicAPI'))
         self.metadata.update(surface=self.surface.metadata(),
             state_coordinate_frame='unchanged task/reference frame; add task_origins_world_m to positions for simulator world',
             task_origins_world_m=self.origins.cpu().tolist())
@@ -232,6 +320,19 @@ class PhysxResidualEnv:
         self.gravity.value=float(magnitude)
         self.world.get_physics_context().set_gravity(-float(magnitude))
         self.world.physics_sim_view.set_gravity(carb.Float3(0,0,-float(magnitude)))
+
+    def configure_motion_control(self, config):
+        """Explicit deployment override; checkpoint/training configuration stays intact."""
+        if self.training:
+            raise ValueError('Change the training config to train with a different motion controller')
+        correction=float((config or {}).get('contact_correction_velocity_m_s',
+                                           self.cfg.get('max_depenetration_velocity_m_s',5.)))
+        if correction!=self.contact_correction_velocity:
+            raise ValueError('Contact correction settings must be selected before PhysX initialization')
+        self.motion_controller=MotionController(self.model,self.num_envs,self.cfg['physics_dt'],config,self.device)
+        self.motion_controller.reset(self.all_ids,self.state())
+        self.metadata['motion_control']=copy.deepcopy(config)
+        self.metadata['contact_correction_velocity_m_s']=correction
 
     def set_training(self,training):
         changed=self.training!=bool(training);self.training=bool(training)
@@ -264,19 +365,27 @@ class PhysxResidualEnv:
         if times.shape!=(len(ids),) or not torch.isfinite(times).all() or (times<0).any() or (times>self.reference.duration).any():raise ValueError('Invalid reset times')
         if self.training:self._apply_gravity(self.gravity.sample(self.control_steps,self.rng,True))
         self.motion.reset(ids,self.generator,randomize and (self.training or self.evaluation_protocol=='source'))
+        if self.cfg['observation'].get('canonicalize_translation',False):
+            if self.motion.mode!='rigid_sequence' or self.motion.yaw[ids].abs().max()>1e-8:
+                raise ValueError('Translation canonicalization requires constant translation and zero yaw')
+            self.obs_history.position_offset[ids]=self.motion.translation[ids]
         ref=self.motion.sample(times,ids)
         q=ref['q'].clone()
         poses={k:ref[k].clone() for k in ('wrist_position','wrist_quaternion','object_position','object_quaternion')}
         if learning and self.cfg['reset_perturbation']:
             noise=self.cfg['rsi']
             q=(q+uniform(q.shape,-noise['joint_noise_rad'],noise['joint_noise_rad'],self.device,self.generator)).clamp(self.task.lower,self.task.upper)
-            for name in ('wrist','object'):
+            # Original floating Revo2 perturbs only finger positions. Its wrist
+            # and grounded can start exactly at the selected reference pose.
+            noisy_bodies=() if noise.get('reset_noise_mode')=='source_joint_only' else ('wrist','object')
+            for name in noisy_bodies:
                 poses[name+'_position']+=uniform((len(ids),3),-noise['position_noise_m'],noise['position_noise_m'],self.device,self.generator)
                 axis=torch.randn((len(ids),3),device=self.device,generator=self.generator)
                 axis/=axis.norm(dim=-1,keepdim=True).clamp_min(1e-12)
                 rv=axis*uniform((len(ids),1),-noise['rotation_noise_rad'],noise['rotation_noise_rad'],self.device,self.generator)
                 poses[name+'_quaternion']=quat_multiply(from_rotvec(rv),poses[name+'_quaternion'])
         self.time[ids]=times;self.episode_length_buf[ids]=0;self.last_action[ids]=0;self.last_q_target[ids]=q
+        self.last_reset_frame[ids]=(times/self.task.dt).round().long()
         moving=(times>1e-8)[:,None].float() if self.cfg['rsi']['initialize_velocity'] else torch.zeros((len(ids),1),device=self.device)
         self.robot.set_world_poses(poses['wrist_position']+self.origins[ids],poses['wrist_quaternion'][:,[3,0,1,2]],indices=ids)
         com=quat_apply(poses['wrist_quaternion'],self.body_com_local[ids,self.root_id])
@@ -294,10 +403,16 @@ class PhysxResidualEnv:
         self.world.physics_sim_view.update_articulations_kinematic()
         self.push.reset(ids)
         state=self.state()
+        self.motion_controller.reset(ids,state)
         self.obs_history.update(state,ids,reset=True,noisy=self.training or self.evaluation_protocol=='source')
         self.obs_history.assemble(state,self.motion.sample(self.time),self.last_action,self.phase(),ids)
 
-    def phase(self):return (self.time/self.task.dt)/(int(round(self.reference.duration/self.task.dt))+1)
+    def phase_at(self,times):
+        count=getattr(self,'reference_frame_count',self.max_episode_length)
+        denominator=count-1 if self.cfg.get('reference_phase')=='endpoint_normalized' else count
+        return ((times/self.task.dt)/max(denominator,1)).clamp(0,1)
+
+    def phase(self):return self.phase_at(self.time)
 
     def state(self):
         links=self.robot._physics_view.get_link_transforms().clone()
@@ -313,9 +428,20 @@ class PhysxResidualEnv:
         return dict(q=q[:,self.active_ids],full_q=q[:,self.full_ids],q_velocity=qv[:,self.active_ids],full_q_velocity=qv[:,self.full_ids],
             wrist_position=palm[:,:3]-self.origins,wrist_quaternion=palm[:,3:7],wrist_velocity=pv[:,:3],wrist_angular_velocity=pv[:,3:],
             object_position=cp-self.origins,object_quaternion=cq,object_velocity=cv[:,:3],object_angular_velocity=cv[:,3:],
-            link_transforms=task_links,link_velocities=velocities,robot_keypoints=kp,fingertips=kp[:,self.tip_ids])
+            link_transforms=task_links,link_velocities=velocities,robot_keypoints=kp,
+            fingertips=(task_links[:,self.tip_body_ids,:3] if self.cfg['observation'].get('fingertip_frame')=='link_origin' else kp[:,self.tip_ids]))
 
     def observation(self):return self.obs_history.get()
+
+    def configure_table_safety(self, override=None):
+        from .table import TableClearance
+        settings = self.cfg.get('table_safety', {}) if override is None else override
+        if self.cfg['surface']['top_z_m'] != 0:
+            raise ValueError('Table protection requires source tabletop Z=0')
+        if hasattr(self, 'frame') and not np.allclose(self.frame.world_from_source[2], [0,0,1,0], atol=1e-8):
+            raise ValueError('Table protection requires arm placement to preserve tabletop Z=0')
+        self.table_safety = (TableClearance(self.model, self.robot.body_names, settings, self.device)
+                             if settings.get('enabled', False) else None)
 
     def step(self,actions,auto_reset=True):
         started=time.monotonic()
@@ -324,23 +450,34 @@ class PhysxResidualEnv:
         # Current command drives physics and reward; command advances afterwards as in ManagerBasedRLEnv.
         ref=self.motion.sample(self.time)
         target=self.task.targets(ref,actions,self.last_q_target,self.default_q_offset)
+        table = getattr(self, 'table_safety', None)
+        if table is not None: table.begin(target, self.state())
         self.last_q_target.copy_(target['active_q'])
-        self.robot.set_joint_position_targets(target['full_q'],joint_indices=self.full_ids)
+        if not self.motion_controller.enabled:
+            self.robot.set_joint_position_targets(target['full_q'],joint_indices=self.full_ids)
+        applied_target=target
         for substep in range(self.cfg['control_decimation']):
+            applied_target=target
+            if self.motion_controller.enabled:
+                applied_target=self.motion_controller.step(target)
+                self.robot.set_joint_position_targets(applied_target['full_q'],joint_indices=self.full_ids)
             s=self.state()
-            all_forces,all_torques=wrist_pd_wrenches(s,target,self.body_mass,self.root_id,self.cfg)
+            if table is not None:
+                table.observe(s)
+                applied_target=table.guard(applied_target,s)
+            all_forces,all_torques=wrist_pd_wrenches(s,applied_target,self.body_mass,self.force_body_id,self.cfg)
             self.robot._physics_view.apply_forces_and_torques_at_position(all_forces,all_torques,None,self.all_ids.to(torch.int32),True)
             # Legacy World.step(render=True) advances an app/render interval,
             # which can contain multiple physics steps with a stale wrench.
             # As in Isaac Lab's RL loop, step physics explicitly and render alone.
             self.world.step(render=False)
-        if self.render:self.world.render()
-        if self.render:time.sleep(max(0,self.task.dt-(time.monotonic()-started)))
         self.episode_length_buf+=1
         state=self.state()
+        if table is not None: table.observe(state)
         demo_end=self.time>=self.reference.duration-1e-6
         timed_out=self.episode_length_buf>=self.max_episode_length
-        reward,term,trunc,metrics=self.task.score(state,ref,actions,self.last_action,demo_end,timed_out)
+        reward,term,trunc,metrics=self.task.score(state,ref,actions,self.last_action,demo_end,timed_out,
+                                                 table_metrics=table.metrics() if table is not None else None)
         metrics['gravity_m_s2']=torch.full((self.num_envs,),self.gravity.value,device=self.device)
         if self.training:
             self.control_steps+=1
@@ -348,17 +485,30 @@ class PhysxResidualEnv:
         self.last_action.copy_(actions)
         self.obs_history.update(state,self.all_ids,noisy=self.training or self.evaluation_protocol=='source')
         next_time=(self.time+self.task.dt).clamp(max=self.reference.duration)
-        next_phase=(next_time/self.task.dt)/self.max_episode_length
+        next_phase=self.phase_at(next_time)
         # Timeout value must see the next command too, exactly as a continuing
         # policy observation would, before any auto-reset overwrites this state.
         final_obs=self.obs_history.assemble(state,self.motion.sample(next_time),self.last_action,next_phase)
-        info=dict(metrics=metrics,final_observation=final_obs,state=state,reference=ref,applied_targets=target,object_reset_count=self.object_reset_count,reference_time=self.time.clone())
+        info=dict(metrics=metrics,final_observation=final_obs,state=state,reference=ref,
+                  raw_targets=target,applied_targets=applied_target,
+                  object_reset_count=self.object_reset_count,reference_time=self.time.clone())
         self.time=next_time
         done=torch.nonzero(term|trunc,as_tuple=False).flatten()
-        if auto_reset and len(done):self.reset(done,randomize=True)
+        if auto_reset and len(done):
+            self.reset(done,randomize=True)
+            if self.cfg.get('advance_command_after_auto_reset',False):
+                # Isaac Lab calls command_manager.compute AFTER resetting done
+                # environments. Their bodies start at RSI frame k, but the
+                # next observation/action uses command k+1. Initial env.reset()
+                # outside step() still exposes k, as in the source lifecycle.
+                self.time[done]=(self.time[done]+self.task.dt).clamp(max=self.reference.duration)
         self.push.advance(self)
         # Assemble new command without pushing the history or drawing noise a second time.
         self.obs_history.assemble(self.state() if auto_reset and len(done) else state,self.motion.sample(self.time),self.last_action,self.phase())
+        # UI callbacks can stop/close the timeline and invalidate PhysX views.
+        # Finish all physics reads before dispatching those callbacks.
+        if self.render:self.world.render()
+        if self.render:time.sleep(max(0,self.task.dt-(time.monotonic()-started)))
         return self.observation(),reward,term,trunc,info
 
     def close(self):self.world.stop()

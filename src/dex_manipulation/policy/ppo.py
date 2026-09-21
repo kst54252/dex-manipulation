@@ -61,7 +61,7 @@ class PPO:
     def update(self,_=None):
         stats=self.algorithm.update()
         self.iteration+=1
-        return {k:float(v) for k,v in stats.items()}|{'learning_rate':self.algorithm.learning_rate,'action_std':float(self.actor.output_std.mean())}
+        return {k:float(v) for k,v in stats.items()}|{'learning_rate':self.algorithm.learning_rate,'action_std':float(self.actor.output_std.detach().mean())}
 
     def save(self,path,metadata,training_state=None):
         path=Path(path); temporary=path.with_suffix(path.suffix+'.tmp')
@@ -85,6 +85,44 @@ class PPO:
             if torch.cuda.is_available() and data['cuda_rng_states']:
                 torch.cuda.set_rng_state_all([x.cpu() for x in data['cuda_rng_states']])
         return data
+
+    def initialize_arm_actor(self,path,metadata):
+        """Explicit transfer, not resume: preserve the floating mean actor only.
+
+        New arm inputs have zero first-layer weights. Critic, optimizer and
+        exploration std are freshly initialized for the new physical task.
+        """
+        data=torch.load(path,map_location=self.device,weights_only=True)
+        old=data['metadata'];new=metadata
+        if data.get('schema')!=3 or old.get('observation_schema')!='regrind_revo2_v6_actor67_critic94':
+            raise ValueError('Actor transfer requires the compatible 67-input floating policy')
+        for key in ('model_sha256','reference'):
+            if old[key]!=new[key]:raise ValueError(f'Actor transfer {key} differs; no silent demo/model substitution')
+        for key in ('observation','reference_phase','reference_velocity_mode','residual_translation_m','residual_rotation_rad','residual_joint_rad','table_safety'):
+            if old['config'].get(key)!=new['config'].get(key):raise ValueError(f'Actor transfer contract differs: {key}')
+        source=data['learner']['actor_state_dict'];target=self.actor.state_dict()
+        if set(source)!=set(target):raise ValueError('Actor architecture keys differ')
+        for key,value in source.items():
+            if key=='distribution.std_param':continue
+            if key=='mlp.0.weight':
+                if value.shape[1]!=67 or target[key].shape!=(value.shape[0],87):raise ValueError('Expected 67 -> 87 arm actor input extension')
+                target[key].zero_();target[key][:,:67].copy_(value)
+            elif key in ('obs_normalizer._mean','obs_normalizer._var','obs_normalizer._std'):
+                if value.shape!=(1,67) or target[key].shape!=(1,87):raise ValueError('Unexpected actor normalization dimensions')
+                target[key][:,:67].copy_(value)
+            elif key=='obs_normalizer.count':
+                # Retain the source prior: resetting count abruptly reinterprets
+                # the pretrained 67 inputs during the first rollout. The added
+                # 20 features already have physical, bounded normalization.
+                target[key].copy_(value)
+            else:
+                if target[key].shape!=value.shape:raise ValueError(f'Actor transfer shape mismatch: {key}')
+                target[key].copy_(value)
+        self.actor.load_state_dict(target,strict=True)
+        return dict(source_iteration=data['iteration'],source_contract_hash=old['contract_hash'],
+                    transferred='floating actor mean and observation statistics',
+                    new_inputs='20 zero-weight arm features',critic='fresh',optimizer='fresh',
+                    exploration_std='new training config',normalizer_prior_count=float(target['obs_normalizer.count'].item()))
 
     def export(self,directory):
         directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)

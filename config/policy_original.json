@@ -1,11 +1,11 @@
 {
-  "reference": "data/demo2/policy_reference.npz",
+  "reference": "data/demo1/stable/reference.npz",
   "model": "assets/models/revo2.json",
   "hand_asset": "assets/USD/revo2_floating.usda",
   "object_asset": "assets/can/can.usda",
   "object_geometry": "assets/models/can_mesh.json",
   "world_frame": "grounded_dataset",
-  "scene_assumption": "Derived dataset has the initial can collision bottom at Z=0 and local +Z up; no second placement. Simulation convention, not measured camera extrinsics.",
+  "scene_assumption": "Initial can base is horizontal at Z=0; minimum scene tilt correction and shared hand/object floor lift <=2.5mm; same 40 poses and 5.2s timing. A derived simulation frame, not measured calibration.",
   "physics_dt": 0.008333333333333333,
   "control_decimation": 4,
   "gravity": 9.81,
@@ -155,7 +155,7 @@
     "initial_std": 0.5,
     "observation_normalization": true
   },
-  "recipe": "regrind_revo2_floating_v8_contact_table_clearance_v1",
+  "recipe": "regrind_revo2_original_human_demo_base_down_1000_table_clearance_v1",
   "physics_device": "cuda:0",
   "env_spacing_m": 0.75,
   "self_collision": false,
