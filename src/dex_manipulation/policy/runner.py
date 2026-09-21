@@ -218,6 +218,9 @@ def plot_comparison(output):
 
 
 def run(args,root,on_ready=None,is_running=None):
+    speed=getattr(args,'speed',1.0)
+    if speed!=1.0 and args.mode!='play':
+        raise ValueError('--speed applies only to play; training timing is unchanged')
     print('[startup] load configuration and reference',flush=True)
     config=json.loads(Path(args.config).read_text())
     config['source_profile']=args.source_profile or config.get('source_profile','leap')
@@ -281,9 +284,9 @@ def run(args,root,on_ready=None,is_running=None):
     metadata['contract_hash']=hashlib.sha256(json.dumps(legacy_demo_paths(metadata),sort_keys=True).encode()).hexdigest()
     # Preserve strict historical checkpoint contracts. Deployment material
     # changes belong to an explicit execution profile, never forged metadata.
-    import copy
+    from .playback import prepare_playback
     contact_mode=getattr(args,'contact_materials',None) or ('rubber' if args.mode=='play' else 'checkpoint')
-    env_config=copy.deepcopy(config)
+    reference,env_config,playback_timing=prepare_playback(reference,config,speed)
     if contact_mode=='rubber':
         env_config['contact_materials']=json.loads((root/'config/policy.json').read_text())['contact_materials']
     control_mode=getattr(args,'motion_control',None) or 'checkpoint'
@@ -312,6 +315,9 @@ def run(args,root,on_ready=None,is_running=None):
         viewport_updates=not args.headless,skip_evaluation=args.skip_evaluation,
         export=args.export,automatic_replay_output=not args.skip_evaluation and not native_arm,mode=args.mode)
     metadata['execution']['robot']=robot_mode
+    metadata['execution']['playback_timing']=playback_timing
+    if speed!=1.0:
+        print(f'[playback] {speed:g}x | reference {playback_timing["input_duration_s"]:g}s -> {reference.duration:g}s | physics/control dt unchanged',flush=True)
     metadata['execution']['contact_materials']=dict(mode=contact_mode,
         trained=config.get('contact_materials'),applied=env_config.get('contact_materials'),
         differs_from_training=config.get('contact_materials')!=env_config.get('contact_materials'))
@@ -333,7 +339,16 @@ def run(args,root,on_ready=None,is_running=None):
         if args.checkpoint:
             loaded=learner.load(args.checkpoint,metadata,resume=args.mode=='train')
             if robot_mode=='arm':env.checkpoint_physics_names=loaded['metadata']['physics']
-            if loaded.get('training_state') is not None:env.load_training_state_dict(loaded['training_state'])
+            if loaded.get('training_state') is not None:
+                state=loaded['training_state']
+                if speed!=1.0 and hasattr(env,'sampler'):
+                    # RSI is disabled in play. Its saved time-bin histogram
+                    # belongs to the original horizon and cannot be restored
+                    # into the shorter one; keep all saved physical properties.
+                    # The floating-to-arm adapter has no RSI sampler and only
+                    # restores named physical properties from this state.
+                    state=dict(state,sampler=env.sampler.state_dict())
+                env.load_training_state_dict(state)
             elif robot_mode=='arm':raise ValueError('Arm deployment requires saved named hand/object physical properties')
             elif args.mode=='train':raise ValueError('Resume requires complete curriculum state')
         initialize=getattr(args,'initialize_actor',None)

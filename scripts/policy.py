@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run residual PPO on physical floating Revo2 or assembled RB3+Revo2 with online IK."""
 import argparse
+import math
 from pathlib import Path
 import sys
 
@@ -21,6 +22,7 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
     parser.add_argument("--save-every", type=int, default=None)
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--episodes", type=int, default=0, help="Play mode: repeat until stopped (0), or stop after this many episodes")
+    parser.add_argument('--speed',type=float,default=1.0,help='Play reference speed multiplier for floating/arm; physics and control dt stay fixed')
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--policy-device", choices=("cpu", "cuda"), default=None)
     parser.add_argument("--device", choices=("cpu", "cuda:0"), default=None, help="Physics and default policy device")
@@ -43,6 +45,10 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
     parser.add_argument('--contact-materials', choices=('checkpoint','rubber'), default=None,
                         help='Play defaults to localized rubber pad contact. Checkpoint reproduces trained materials; training uses its config.')
     args = parser.parse_args(argv)
+    if not math.isfinite(args.speed) or args.speed<=0:
+        parser.error('--speed must be positive and finite')
+    if args.speed!=1.0 and args.mode!='play':
+        parser.error('--speed applies only to play')
     if args.robot == 'arm':
         if args.mode != 'play' and args.config == ROOT/'config/policy.json':
             parser.error('Arm training/evaluation requires an explicit arm-training config')

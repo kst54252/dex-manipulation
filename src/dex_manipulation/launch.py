@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime
 import hashlib
 import json
+import math
 from pathlib import Path
 import subprocess
 import sys
@@ -34,6 +35,7 @@ def parser():
     p.add_argument('--config', type=Path, help='직접 선택한 정책의 학습 설정; 기본은 checkpoint 옆 config.resolved.json')
     p.add_argument('--arm-config', type=Path, help='사용자 정책의 팔 배치/IK 설정')
     p.add_argument('--repeat', type=int, default=0, help='반복 횟수 (기본 0: 무한 반복, 양수: 지정 횟수)')
+    p.add_argument('--speed',type=float,help='재생 배속 (플로팅·팔 정책 기본 2, --speed 1은 이전 속도; 팔 retarget은 1)')
     p.add_argument('--headless', action='store_true', help='창 없이 동일 물리 재생')
     p.add_argument('--table-safety', choices=('protect','checkpoint'),
                    help='정책 상판 보호: 기존 정책은 protect, 팔 학습 정책은 checkpoint가 기본')
@@ -89,14 +91,22 @@ def resolve_plan(root, args, catalog):
         return path
 
     commands = []
+    speed=getattr(args,'speed',None)
+    if speed is None:
+        speed=catalog.get('playback_speed',{}).get(args.robot,1.0)
+        if isinstance(speed,dict):speed=speed.get(args.mode,1.0)
+    if not math.isfinite(speed) or speed<=0:raise ValueError('--speed는 양의 유한한 수여야 합니다.')
+    if args.robot=='arm' and args.mode=='retarget' and speed!=1.0:
+        raise ValueError('팔 retarget은 검증된 IK 궤적의 1배속을 사용합니다. 팔 정책은 --speed를 지원합니다.')
     requested = args.policy or args.selection or '1'
     selected = catalog.get('aliases', {}).get(requested, requested)
     label = Path(selected).stem
     stamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     output = root / 'local/results/play' / f'{stamp}_{args.robot}_{args.mode}_{label}'
     details = dict(robot=args.robot, mode=args.mode, selected=selected, output=str(output), training=False,
-                   repeat=args.repeat, unlimited=args.repeat == 0)
+                   repeat=args.repeat, unlimited=args.repeat == 0, speed=speed)
     flags = ['--headless'] if args.headless else []
+    flags += ['--speed',str(speed)]
     if args.mode == 'policy':
         entry = catalog['policies'].get(selected)
         checkpoint = required(entry['checkpoint'] if entry else selected)
@@ -221,7 +231,7 @@ def main(root=None, argv=None):
             print(json.dumps(plan, indent=2, ensure_ascii=False))
             return 0
         repetition = '무한 반복' if args.repeat == 0 else f'{args.repeat}회'
-        print(f"\n{plan['label']} | {args.robot} | {args.mode} | {repetition}", flush=True)
+        print(f"\n{plan['label']} | {args.robot} | {args.mode} | {plan['speed']:g}배속 | {repetition}", flush=True)
         print(f"입력: {plan['reference']}\n결과: {plan['output']}\n종료: 창 닫기 또는 Ctrl+C", flush=True)
         if plan.get('note'):
             print('[policy] ' + plan['note'], flush=True)

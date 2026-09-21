@@ -1,6 +1,7 @@
 """Validated trajectory adapter, SI units, column transforms, XYZW quaternions."""
 import hashlib
 import json
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -91,6 +92,31 @@ class ReferenceMotion:
         if not report['initial_base_below_body']:
             raise ValueError('Can wider base is upside down; correct mesh_to_object, retarget and ground before training')
         return report
+
+    def for_playback(self, speed, control_dt):
+        """Return a retimed runtime copy; preserve input bytes and training metadata.
+
+        Positions/joints still use LERP and orientations SLERP. Rescaling their
+        time knots also rescales velocity targets, without changing physics dt.
+        """
+        if not np.isfinite([speed, control_dt]).all() or speed <= 0 or control_dt <= 0:
+            raise ValueError('Playback speed and control dt must be positive and finite')
+        if speed == 1.0:
+            return self
+        duration = self.duration / speed
+        count = round(duration / control_dt) + 1
+        if count < 2 or not np.isclose((count - 1) * control_dt, duration, atol=1e-7, rtol=0):
+            raise ValueError('Playback duration must span complete control intervals; choose another --speed')
+        result = copy.copy(self)
+        result.times = self.times / speed
+        result.duration = float(duration)
+        result._slerp = {name: Slerp(result.times, Rotation.from_matrix(poses[:, :3, :3]))
+                         for name, poses in (("wrist", self.wrist), ("object", self.object))}
+        result.metadata = copy.deepcopy(self.metadata)
+        result.metadata.update(playback_speed=float(speed), playback_input_duration_s=self.duration,
+                               duration_s=result.duration, control_reference_frames=count,
+                               time_basis='runtime playback retiming; source timestamps and capture FPS unchanged')
+        return result
 
     def sample(self, time):
         t = np.clip(np.atleast_1d(time).astype(float), 0, self.duration)

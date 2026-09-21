@@ -108,7 +108,7 @@ class IsaacJointAdapter:
 
 
 def replay_floating(root, output, loops=3, render=True, *, observer=None,
-                    config_path=None, arm_config_path=None, is_running=None):
+                    config_path=None, arm_config_path=None, is_running=None, speed=1.0):
     """Physical floating-hand demonstration: zero residual, no learner/early reset.
 
     Use the REGRIND pose-PD controller shared with RL: root force and distributed
@@ -141,6 +141,8 @@ def replay_floating(root, output, loops=3, render=True, *, observer=None,
     cfg['reset_perturbation']=False
     model=HandModel.load(root/cfg['model'])
     reference=ReferenceMotion(root/cfg['reference'],model,root/cfg['object_geometry'],cfg['world_frame'])
+    from .policy.playback import prepare_playback
+    reference,cfg,playback_timing=prepare_playback(reference,cfg,speed)
     # Preserve the current input segment's timing rather than invoking RL's retiming.
     cfg['episode_length_s']=reference.duration
     if cfg['augmentation'].get('mode','fade')=='fade':
@@ -206,6 +208,7 @@ def replay_floating(root, output, loops=3, render=True, *, observer=None,
         errors=np.array([row['wrist_position']-row['reference_wrist_position'] for row in rows])
         angles=np.array([(Rotation.from_quat(row['wrist_quaternion'])*Rotation.from_quat(row['reference_wrist_quaternion']).inv()).magnitude() for row in rows])
         report=dict(robot='floating',samples=len(rows),loops=len(failures),requested_loops=loops,duration_s=reference.duration,
+                    playback_timing=playback_timing,
                     reference=cfg['reference'],interrupted=not running(),
                     object_geometry_fingerprint=reference.metadata['object_geometry_fingerprint'],
                     gravity_m_s2=env.gravity.value,hand_gravity=cfg['hand_gravity'],object_gravity=True,object_kinematic=False,

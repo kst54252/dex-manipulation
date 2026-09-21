@@ -2,6 +2,7 @@
 """View reference motion with gravity/contact, no trained policy or early-failure reset."""
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 ROOT=Path(__file__).resolve().parents[1]
@@ -13,12 +14,15 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('robot',choices=('floating','arm'))
     parser.add_argument('--loops',type=int,default=3,help='Repeat complete demonstrations; 0 repeats until stopped')
+    parser.add_argument('--speed',type=float,default=1.0,help='Floating reference speed multiplier; physics dt stays fixed')
     parser.add_argument('--headless',action='store_true')
     parser.add_argument('--output',type=Path)
     parser.add_argument('--config',type=Path,default=ROOT/'config/policy.json',help='Floating physics configuration')
     parser.add_argument('--arm-config',type=Path,default=ROOT/'config/ik.json',help='Demo input, arm model and placement')
     parser.add_argument('--arm-reference',type=Path,default=ROOT/'local/results/ik/full/trajectory.npz')
     args=parser.parse_args()
+    if not math.isfinite(args.speed) or args.speed<=0:parser.error('--speed must be positive and finite')
+    if args.robot=='arm' and args.speed!=1.0:parser.error('--speed currently applies only to floating playback')
     if args.loops<0:parser.error('--loops must be nonnegative (0 repeats until stopped)')
     output=args.output or ROOT/'local/results/physics'/args.robot
     if args.robot=='arm':
@@ -38,7 +42,7 @@ def main():
     try:
         from dex_manipulation.sim import replay_floating
         replay_floating(ROOT,output,args.loops,render=not args.headless,
-                        config_path=args.config,arm_config_path=args.arm_config,is_running=app.is_running)
+                        config_path=args.config,arm_config_path=args.arm_config,is_running=app.is_running,speed=args.speed)
     except Exception:
         import traceback
         traceback.print_exc();code=1
