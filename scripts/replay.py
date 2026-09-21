@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Replay a validated arm+hand joint reference in Isaac Sim (kinematic by default)."""
 import argparse
+from itertools import count
 import json
 from pathlib import Path
 import sys
@@ -17,11 +18,11 @@ def main():
     parser.add_argument('--mode', choices=('kinematic','targets'), default='kinematic')
     parser.add_argument('--headless', action='store_true')
     parser.add_argument('--rate', type=float, default=60.)
-    parser.add_argument('--loops', type=int, default=1)
+    parser.add_argument('--loops', type=int, default=1, help='Repetitions; 0 repeats until stopped')
     parser.add_argument('--realtime', action='store_true')
     parser.add_argument('--capture', action='store_true', help='Save one viewport PNG per original reference frame')
     args = parser.parse_args()
-    if args.rate <= 0 or args.loops < 1:parser.error('rate and loops must be positive')
+    if args.rate <= 0 or args.loops < 0:parser.error('rate must be positive; loops must be nonnegative (0 repeats until stopped)')
     if args.capture and args.headless:parser.error('--capture requires a visible viewport')
     from dex_manipulation.reference import JointReference
     reference = JointReference(args.reference)  # Refuse failures before starting Isaac.
@@ -47,7 +48,7 @@ def main():
         from dex_manipulation.fk import ArmModel, HandModel
         from dex_manipulation.ik import pose_error, model_fingerprint
         from dex_manipulation.transforms import transform, inverse
-        from dex_manipulation.sim import IsaacJointAdapter
+        from dex_manipulation.sim import IsaacJointAdapter, prepare_arm_articulation
         from dex_manipulation.coordinates import collision_bottom
         can_geometry=json.loads((ROOT/'assets/models/can_mesh.json').read_text())
         can_shapes=can_geometry['collision_shapes']
@@ -106,7 +107,8 @@ def main():
                 drive=UsdPhysics.DriveAPI.Apply(prim,'angular')
                 drive.CreateStiffnessAttr(0.);drive.CreateDampingAttr(0.)
                 mimic_count+=1
-        root=next(p for p in stage.Traverse() if p.HasAPI(UsdPhysics.ArticulationRootAPI))
+        wrist_path='/Robot'+config['wrist_path'][len(source_root):]
+        root,articulation_resolution=prepare_arm_articulation(stage,'/Robot',base_path,wrist_path)
         robot=world.scene.add(SingleArticulation(prim_path=str(root.GetPath()),name='rb3_revo2'))
         object_data=reference.data.get('object_transform')
         can_ops=None; dynamic_can=None; initial_can_pose=None
@@ -141,14 +143,15 @@ def main():
             viewport.resolution=(1280,900)
         targets=list(reference.iter_targets(args.rate))
         source_mask=reference.data.get('source_frame_mask',np.ones(len(reference.times),bool))
-        records=[]; frame_records=[]; initial_bottoms=[]; base_errors=[]
+        records=[]; frame_records=[]; initial_bottoms=[]; maximum_base_error=0.
         # Initialization is explicitly not a trajectory from the robot's current state.
         adapter.set_state(targets[0])
         adapter.set_target(targets[0])
         if args.mode=='kinematic':
             for _ in range(5):world.step(render=not args.headless)
         started=time.monotonic()
-        for loop in range(args.loops):
+        for loop in (range(args.loops) if args.loops else count()):
+            if not app.is_running():break
             if args.mode=='targets':
                 # Reset only between complete demonstrations, never on grasp failure.
                 adapter.set_state(targets[0]);adapter.set_target(targets[0])
@@ -177,8 +180,9 @@ def main():
                     p=poses[bodies.index(name)]
                     return transform(Rotation.from_quat(p[3:7]).as_matrix(),p[:3])
                 measured_base=body(arm.root)
-                base_errors.append(float(np.max(np.abs(measured_base-world_from_base))))
-                if base_errors[-1]>1e-5:
+                base_error=float(np.max(np.abs(measured_base-world_from_base)))
+                maximum_base_error=max(maximum_base_error,base_error)
+                if base_error>1e-5:
                     raise RuntimeError('Simulated RB3 base differs from workcell mount')
                 measured=inverse(measured_base)@body(arm.wrist)
                 expected=arm.pose(target.ordered(arm.active_names))
@@ -227,6 +231,7 @@ def main():
                  all(r['position_error_m']<3e-5 and r['orientation_error_rad']<3e-4 and
                      r['joint_error_rad']<1e-5 for r in records))
         report=dict(mode=args.mode,samples=len(records),source_frames=len(frame_records),ik_samples=len(reference.times),loops_requested=args.loops,
+                    articulation_resolution=articulation_resolution,
                     object_geometry_fingerprint=can_geometry['fingerprint'],
                     physics_vs_fk_passed=success,maximum_position_error_m=max(r['position_error_m'] for r in records),
                     maximum_orientation_error_rad=max(r['orientation_error_rad'] for r in records),
@@ -235,7 +240,7 @@ def main():
                     interpretation='kinematic articulation-state replay; no drive tuning, collision or physical grasp validation' if args.mode=='kinematic' else 'existing USD position-drive targets; no gain tuning',
                     gravity_m_s2=0. if args.mode=='kinematic' else 9.81,
                     floor_top_z_m=workcell.description['floor_z'], tabletop_z_m=0.,
-                    workcell=workcell.metadata(), maximum_base_mount_matrix_error=max(base_errors),
+                    workcell=workcell.metadata(), maximum_base_mount_matrix_error=maximum_base_error,
                     initial_can_bottom_z_m_by_loop=initial_bottoms,
                     object_control='reset only; free rigid body under gravity/contact' if dynamic_can is not None else 'kinematic reference visualization',
                     object_pose_writes_during_demonstration=0 if dynamic_can is not None else len(records),

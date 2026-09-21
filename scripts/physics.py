@@ -12,31 +12,23 @@ sys.path.insert(0,str(ROOT))
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('robot',choices=('floating','arm'))
-    parser.add_argument('--loops',type=int,default=3,help='Repeat complete demonstrations, resetting between repetitions')
+    parser.add_argument('--loops',type=int,default=3,help='Repeat complete demonstrations; 0 repeats until stopped')
     parser.add_argument('--headless',action='store_true')
     parser.add_argument('--output',type=Path)
+    parser.add_argument('--config',type=Path,default=ROOT/'config/policy.json',help='Floating physics configuration')
+    parser.add_argument('--arm-config',type=Path,default=ROOT/'config/ik.json',help='Demo input, arm model and placement')
+    parser.add_argument('--arm-reference',type=Path,default=ROOT/'local/results/ik/full/trajectory.npz')
     args=parser.parse_args()
-    if args.loops<1:parser.error('--loops must be positive')
+    if args.loops<0:parser.error('--loops must be nonnegative (0 repeats until stopped)')
     output=args.output or ROOT/'local/results/physics'/args.robot
     if args.robot=='arm':
-        import hashlib
-        import numpy as np
-        from dex_manipulation.reference import JointReference
-        config=json.loads((ROOT/'config/ik.json').read_text())
-        path=ROOT/'local/results/ik/full/trajectory.npz'
-        if not path.exists():
-            parser.error('Generate the arm reference first: python scripts/ik.py solve')
-        reference=JointReference(path)
-        from dex_manipulation.scene import Workcell
-        workcell=Workcell.load(ROOT/config['workcell'])
-        alignment=workcell.resolve_alignment(json.loads((ROOT/config['alignment']).read_text()))
-        workcell.validate_reference(reference.metadata, alignment)
-        if (reference.metadata['input_sha256']!=hashlib.sha256((ROOT/config['input']).read_bytes()).hexdigest()
-                or not np.allclose(reference.metadata['base_from_source'],alignment['base_from_source'],atol=1e-10,rtol=0)
-                or reference.metadata.get('trajectory_substeps',1)!=config.get('trajectory_substeps',1)):
-            parser.error('Arm reference is stale after dataset/placement changes. Run: python scripts/ik.py solve')
+        from dex_manipulation.launch import arm_reference_error
+        reason=arm_reference_error(ROOT,args.arm_reference,args.arm_config)
+        if reason:
+            parser.error(f'Arm reference unavailable/stale: {reason}. Use ./run.sh arm retarget for automatic IK preparation.')
         from scripts.replay import main as replay
-        sys.argv=[sys.argv[0],'--mode','targets','--rate','120','--loops',str(args.loops),'--output',str(output)]
+        sys.argv=[sys.argv[0],'--mode','targets','--rate','120','--loops',str(args.loops),'--output',str(output),
+                  '--reference',str(args.arm_reference),'--config',str(args.arm_config)]
         sys.argv+=['--headless'] if args.headless else ['--realtime']
         return replay()
     from isaacsim import SimulationApp
@@ -45,7 +37,8 @@ def main():
     code=0
     try:
         from dex_manipulation.sim import replay_floating
-        replay_floating(ROOT,output,args.loops,render=not args.headless)
+        replay_floating(ROOT,output,args.loops,render=not args.headless,
+                        config_path=args.config,arm_config_path=args.arm_config,is_running=app.is_running)
     except Exception:
         import traceback
         traceback.print_exc();code=1
