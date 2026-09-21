@@ -303,6 +303,9 @@ def run(args,root,on_ready=None,is_running=None):
     if table_mode=='protect':
         table_settings=json.loads((root/'config/policy.json').read_text())['table_safety']
         env.configure_table_safety(dict(table_settings,enabled=True,guard_enabled=True))
+    if config.get('grasp_task'):
+        from .grasp_v2 import attach_grasp_task
+        attach_grasp_task(env)
     metadata['physics']=env.metadata
     # Execution/output choices do not change the policy/checkpoint contract.
     metadata['execution']=dict(headless=args.headless,render=not args.headless,

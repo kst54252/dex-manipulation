@@ -72,6 +72,10 @@ def resolve_plan(root, args):
         robot = 'arm' if config.get('arm_training', {}).get('enabled', False) else 'floating'
         reference = required(config['reference']).resolve()
         demo = next((n for n in ('1', '2') if reference.is_relative_to(root / f'data/demo{n}')), None)
+        # Derived contact references are deliberately stored under local/;
+        # their new configs explicitly identify the original demo.
+        if demo is None and config.get('demo_id') in ('1','2'):
+            demo=config['demo_id']
         if demo is None:
             raise ValueError('checkpoint 입력이 demo1/demo2에 속하지 않습니다. scripts/policy.py로 직접 설정하세요.')
         if (args.robot and args.robot != robot) or (args.demo and args.demo != demo):
@@ -87,7 +91,7 @@ def resolve_plan(root, args):
             raise ValueError('환경과 데모를 지정하세요. 예: ./train.sh floating 2 --iterations 2000')
         robot, demo = args.robot, args.demo
         catalog = read(root / 'config/play.json')['demos'][demo]
-        source = required(catalog['config'] if robot == 'floating' else 'config/policy_arm.json')
+        source = required(catalog.get('training_config',catalog['config']) if robot == 'floating' else 'config/policy_arm.json')
         config = deepcopy(read(source))
         if robot == 'arm':
             # The arm template owns physical/controller/PPO settings; only the

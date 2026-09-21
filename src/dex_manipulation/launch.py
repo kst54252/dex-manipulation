@@ -121,7 +121,9 @@ def resolve_plan(root, args, catalog):
                 # checkpoints still resolve through their registered policy below.
                 ref = resolve_demo_path(cfg['reference'],root).resolve()
                 for demo in catalog['demos'].values():
-                    if resolve_demo_path(read(root/demo['config'])['reference'],root).resolve() == ref:
+                    candidates=[demo['config']]
+                    if demo.get('training_config'):candidates.append(demo['training_config'])
+                    if any(resolve_demo_path(read(root/path)['reference'],root).resolve()==ref for path in candidates):
                         arm_path = demo['arm_config']
                         break
             if arm_path is None:

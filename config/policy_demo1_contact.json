@@ -1,0 +1,400 @@
+{
+  "reference": "local/references/contact/demo1.npz",
+  "model": "assets/models/revo2.json",
+  "hand_asset": "assets/USD/revo2_floating.usda",
+  "object_asset": "assets/can/can.usda",
+  "object_geometry": "assets/models/can_mesh.json",
+  "world_frame": "grounded_dataset",
+  "scene_assumption": "Initial can base is horizontal at Z=0; minimum scene tilt correction and shared hand/object floor lift <=2.5mm; same 40 poses and 5.2s timing. A derived simulation frame, not measured calibration.",
+  "physics_dt": 0.008333333333333333,
+  "control_decimation": 4,
+  "gravity": 9.81,
+  "friction": 0.8,
+  "contact_offset_m": 0.001,
+  "rest_offset_m": 0.0,
+  "residual_translation_m": 0.03333333333333333,
+  "residual_rotation_rad": 0.10666666666666667,
+  "residual_joint_rad": 0.10666666666666667,
+  "root_kp_position": 300.0,
+  "root_kd_position": 30.0,
+  "root_kp_rotation": 3.0,
+  "root_kd_rotation": 0.3,
+  "root_force_limit_n": null,
+  "root_torque_limit_nm": null,
+  "joint_stiffness": 3.0,
+  "joint_damping": 0.1,
+  "failure_object_error_m": 0.15,
+  "success_object_error_m": 0.025,
+  "success_final_height_error_m": 0.025,
+  "reset_position_noise_m": 0.0,
+  "rsi": {
+    "enabled": true,
+    "sampling": "uniform_frames",
+    "initialize_velocity": true,
+    "uniform_mix": 0.1,
+    "ema_alpha": 0.001,
+    "kernel_size": 1,
+    "kernel_decay": 0.8,
+    "position_noise_m": 0.002,
+    "rotation_noise_rad": 0.02,
+    "joint_noise_rad": 0.02,
+    "reset_noise_mode": "source_joint_only"
+  },
+  "gravity_curriculum": {
+    "enabled": true,
+    "step_unit": "vector_environment_control_step",
+    "stages": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        4800,
+        0,
+        1
+      ],
+      [
+        6000,
+        0.5,
+        2
+      ],
+      [
+        7200,
+        1,
+        3
+      ],
+      [
+        8400,
+        2,
+        4
+      ],
+      [
+        9600,
+        3,
+        5
+      ],
+      [
+        10800,
+        4,
+        6
+      ],
+      [
+        12000,
+        5,
+        7
+      ],
+      [
+        13200,
+        6,
+        8
+      ],
+      [
+        14400,
+        7,
+        9
+      ],
+      [
+        15600,
+        8,
+        9.81
+      ],
+      [
+        16800,
+        9,
+        9.81
+      ],
+      [
+        18000,
+        9.81,
+        9.81
+      ]
+    ],
+    "basis": "1000 iterations: source-shaped gravity stages compressed to reach 9.81 at iteration 750; 250 final iterations use full gravity."
+  },
+  "augmentation": {
+    "enabled": true,
+    "translation_lower_m": [
+      -0.05,
+      -0.05,
+      0
+    ],
+    "translation_upper_m": [
+      0.05,
+      0.05,
+      0
+    ],
+    "yaw_range_rad": [
+      0.0,
+      0.0
+    ],
+    "mode": "rigid_sequence",
+    "basis": "Floating Revo2: keep one episode translation for the entire trajectory and canonicalize observations. XY ranges fit the user-requested 30 cm support; no tool-use fade."
+  },
+  "seed": 42,
+  "ppo": {
+    "rollout_steps": 24,
+    "epochs": 5,
+    "num_minibatches": 4,
+    "learning_rate": 0.001,
+    "gamma": 0.998,
+    "gae_lambda": 0.95,
+    "clip_ratio": 0.2,
+    "entropy_coefficient": 0.002,
+    "value_coefficient": 1.0,
+    "max_grad_norm": 1.0,
+    "target_kl": 0.01,
+    "schedule": "adaptive",
+    "hidden_sizes": [
+      1024,
+      512,
+      256,
+      128
+    ],
+    "activation": "elu",
+    "initial_std": 0.5,
+    "observation_normalization": true
+  },
+  "recipe": "contact_reference_and_pad_approach_v2",
+  "physics_device": "cuda:0",
+  "env_spacing_m": 0.75,
+  "self_collision": false,
+  "hand_gravity": false,
+  "root_torque_distribution": "mass_proportional",
+  "reset_perturbation": true,
+  "failure_hand_object_distance_m": 0.5,
+  "workspace": {
+    "lower_m": [
+      -0.4,
+      -0.25,
+      -0.007
+    ],
+    "upper_m": [
+      0.1,
+      0.25,
+      0.493
+    ],
+    "basis": "Leap rigid screwdriver workspace translated by table-top z=-0.507 m; can/table world has table top z=0. No measured camera calibration is claimed."
+  },
+  "observation": {
+    "position_noise_m": 0.002,
+    "rotation_noise_rad": 0.02,
+    "joint_noise_rad": 0.02,
+    "max_delay_steps": 2.0,
+    "history_steps": 2,
+    "include_object_velocity": true,
+    "critic_joint_relative_to_default": true,
+    "canonicalize_translation": true,
+    "fingertip_frame": "link_origin"
+  },
+  "domain_randomization": {
+    "enabled": true,
+    "hand_friction": [
+      0.7,
+      1.3
+    ],
+    "object_friction": [
+      0.5,
+      1.2
+    ],
+    "table_friction": [
+      0.6,
+      1.2
+    ],
+    "material_buckets": 250,
+    "hand_mass_scale": [
+      0.9,
+      1.1
+    ],
+    "object_mass_scale": [
+      0.85,
+      1.15
+    ],
+    "gain_scale": [
+      0.8,
+      1.2
+    ],
+    "joint_default_offset_rad": 0.0,
+    "object_com_range_m": [
+      0.002,
+      0.002,
+      0.001
+    ],
+    "com_basis": "Original floating Revo2 can COM ranges; not the long screwdriver ranges.",
+    "hand_mass_body_pattern": "right_.*"
+  },
+  "push_curriculum": {
+    "enabled": true,
+    "interval_s": [
+      1.0,
+      5.0
+    ],
+    "stages": [
+      [
+        0,
+        0.0,
+        0.0
+      ],
+      [
+        130000,
+        0.1,
+        0.2
+      ],
+      [
+        140000,
+        0.2,
+        0.4
+      ],
+      [
+        150000,
+        0.3,
+        0.6
+      ],
+      [
+        160000,
+        0.4,
+        0.8
+      ],
+      [
+        170000,
+        0.5,
+        1.0
+      ]
+    ]
+  },
+  "reward": {
+    "object_weight": 1.5,
+    "object_std_m": 0.02,
+    "object_linear_velocity_weight": 1.0,
+    "object_linear_velocity_std": 1.0,
+    "object_angular_velocity_weight": 1.0,
+    "object_angular_velocity_std": 3.14,
+    "wrist_position_weight": 0.05,
+    "wrist_position_std_m": 0.02,
+    "wrist_rotation_weight": 0.05,
+    "wrist_rotation_std_rad": 0.2,
+    "action_l2_weight": 0.5,
+    "action_l2_std": 1.0,
+    "action_rate_weight": 1.0,
+    "action_rate_std": 0.5,
+    "action_out_of_bounds_weight": 1.0,
+    "action_out_of_bounds_std": 1.0,
+    "early_failure_weight": -10.0
+  },
+  "training": {
+    "num_envs": 4096,
+    "iterations": 1000,
+    "save_every": 100,
+    "initial_random_episode_length": true
+  },
+  "source_profile": "revo2",
+  "episode_length_s": 10.0,
+  "surface": {
+    "size_xy_m": [
+      0.3,
+      0.3
+    ],
+    "center_xy_m": [
+      0.0,
+      0.0
+    ],
+    "top_z_m": 0.0,
+    "thickness_m": 0.02
+  },
+  "joint_gain_units": "si",
+  "joint_drive_type": "force",
+  "joint_effort_limit_nm": 0.5,
+  "simulation_joint_velocity_rad_s": 100.0,
+  "mimic_mode": "constraint_with_drives",
+  "motion_control": {
+    "enabled": false,
+    "position_time_constant_s": 0.04,
+    "rotation_time_constant_s": 0.04,
+    "joint_time_constant_s": 0.04,
+    "linear_velocity_m_s": 0.18,
+    "linear_acceleration_m_s2": 1.5,
+    "angular_velocity_rad_s": 1.2,
+    "angular_acceleration_rad_s2": 6.0,
+    "joint_acceleration_rad_s2": 6.0,
+    "basis": "Optional deployment command governor, disabled in source-aligned training; command bounds do not guarantee actual contact dynamics or arm reachability.",
+    "contact_correction_velocity_m_s": 5.0
+  },
+  "reference_phase": "endpoint_normalized",
+  "reference_velocity_mode": "control_difference",
+  "mimic_schema_policy": "asset",
+  "joint_target_velocity_limit": false,
+  "root_force_body": "right_hand_base_link",
+  "solver_iterations": {
+    "scene_position": 64,
+    "scene_velocity": 4,
+    "hand_position": 32,
+    "hand_velocity": 2,
+    "object_position": 16,
+    "object_velocity": 2
+  },
+  "object_max_depenetration_velocity_m_s": 2.0,
+  "object_contact_offset_m": 0.002,
+  "reference_timing": "input_timestamps",
+  "scene_physics": {
+    "enableExternalForcesEveryIteration": true,
+    "enableStabilization": false,
+    "solveArticulationContactLast": false,
+    "gpuMaxNumPartitions": 8
+  },
+  "advance_command_after_auto_reset": true,
+  "table_torsional_patch_radius_m": 0.0,
+  "table_min_torsional_patch_radius_m": 0.0,
+  "table_safety": {
+    "enabled": true,
+    "guard_enabled": true,
+    "clearance_m": 0.004,
+    "lookahead_s": 0.02,
+    "actual_penalty_weight": 8.0,
+    "target_penalty_weight": 4.0,
+    "basis": "Independent collision-mesh enclosing boxes; conservative tabletop half-space; unprotected actor command and minimum physical-substep clearance penalties. Not a dynamic noncollision guarantee."
+  },
+  "contact_materials": {
+    "enabled": true,
+    "pad_bodies": [
+      "right_thumb_touch_link",
+      "right_index_touch_link",
+      "right_middle_touch_link",
+      "right_ring_touch_link",
+      "right_pinky_touch_link"
+    ],
+    "static_friction": 1.2,
+    "dynamic_friction": 1.0,
+    "friction_combine_mode": "average",
+    "stiffness_n_m": 20000.0,
+    "damping_ns_m": 20.0,
+    "basis": "Uncalibrated rubber-like pad approximation. Only five separate touch collision meshes; force-based compliant contact. Rigid shells/can/table retained; pad coefficients fixed under startup randomization."
+  },
+  "grasp_task": {
+    "schema": "pad_approach_and_contact_v2",
+    "start_frame_id": 25,
+    "minimum_force_n": 0.05,
+    "maximum_force_n": 5.0,
+    "tracking_std_m": 0.02,
+    "finger_weight": 2.0,
+    "all_fingers_weight": 4.0,
+    "missing_weight": 2.0,
+    "excess_force_weight": 0.25,
+    "approach_lead_s": 0.6,
+    "distance_scale_m": 0.008,
+    "proximity_weight": 1.0,
+    "weakest_pad_weight": 1.0,
+    "opposition_weight": 1.0,
+    "pressure_weight": 0.5,
+    "pressure_target_n": 0.4,
+    "preload_ramp_s": 0.3,
+    "preload_rad": [
+      0.04,
+      0.06,
+      0.06,
+      0.06,
+      0.06,
+      0.06
+    ]
+  },
+  "demo_id": "1"
+}
