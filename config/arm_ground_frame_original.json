@@ -1,26 +1,26 @@
 {
   "status": "simulation_ground_placement_not_calibration",
   "hardware_calibrated": false,
-  "method": "Fixed clockwise 90-degree yaw; initial can XY is 0.55 m in front of the robot base centre. Apply the same planar transform to the entire hand/object trajectory; preserve tabletop height.",
+  "method": "Original human-demo camera-negative-Y-up frame: fixed +90 degree yaw puts finger direction away from RB3, initial can at world XY (0.55,0). Same rigid transform for the entire hand/object sequence; no time or policy changes.",
   "source_frame": "ground",
   "ground_z_m": 0.0,
-  "yaw_degrees": -90,
+  "yaw_degrees": 90,
   "rotation_pivot": "Initial can origin at workcell XY=(0.55,0), tabletop Z=0",
   "world_from_source": [
     [
-      2.220446049250313e-16,
-      1.0,
+      0.0,
+      -1.0,
       0.0,
       0.55
     ],
     [
-      -1.0,
-      2.220446049250313e-16,
-      -0.0,
+      1.0,
+      0.0,
+      0.0,
       0.0
     ],
     [
-      -0.0,
+      0.0,
       0.0,
       1.0,
       0.0

@@ -1,0 +1,844 @@
+{
+  "schema_version": 1,
+  "source": "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_revo2_vertical.usda",
+  "source_sha256": "21f43ad436638b7684eaffd1e2c25f397401ad8bb15962d6f571850894c2a98f",
+  "layer_sha256": {
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_revo2_vertical.usda": "21f43ad436638b7684eaffd1e2c25f397401ad8bb15962d6f571850894c2a98f",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/geometries.usd": "ebd116122a11125dfdd6008f3cb3866c51da1d4f30ddab32ffcb37f3ed7e145e",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/instances.usda": "cd2e93f8f9095ebd16c582c74932959de8c194691cd7dab32ddeb1beb81ea4a6",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/materials.usda": "8cd53d8a9790c617dbe7d57ea89c295c5728f80c3b0ce56e7fa2c4b2b7deaa4f",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/revo2_right.usda": "cbf1311db9cae0f56b18a198355d469d9448f77fc8f8b3d6826ccab4dab1f84f",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/Physics/physx.usda": "5013402e1a331755303eecc2297a178920dc5507ebdff40c165621e553fff379",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/robot.usda": "11a02147c17f2657a9965e37aea8f90e932e99314389bf1b68c7e0740d7ba303",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/Physics/physics.usda": "9bcff7a8d4f972aa278c54a74845f19a4a36250925783d1f9573a9f0528a93fc",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/base.usda": "6f7ef801436cbd25c97d39bdfba00ec15cd9c3abb9152fd6e078357f44f4ad64",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/instances.usda": "5438f50a6ee2d81f46cb76d57d3ba0718786b26f02505af3ebe18a9f1544632a",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_right/payloads/materials.usda": "5175cf374df15656240f2e12317cb20f5f4fb10baec294c275187a830c04f703",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/geometries.usd": "f2e781970411c8799a1cb3122e44249241684d381642c9506856a997fda5e07a",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/rb3_730es_u.usda": "1a573af61eab862ff493a8647f3f4d7164c40dee99a1c705cdb336b676fc4966",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/base.usda": "31a1a6c2a88b45dfa3ac59c9a8309ca881af4cdeab455ef8fefbab85c1ae56b2",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/robot.usda": "17d1073c095a76e3a72d966f4d658818d7206ad6c6a40f21e71da8ee2e0b9305",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/Physics/physx.usda": "13880a707e6b2bc3a5d8a437befe25a85f42c74cef84a573961f0a62dbb8a18d",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/revo2_vertical_adapter/revo2_vertical_adapter.usd": "b7bdc1f5830f6f632270c206f1283f97f6760c81c6703f03f155314e6a6ece43",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_730es_u/payloads/Physics/physics.usda": "95b01db6509ed33cb0c80daf8904e5fd76af3bf7a13a0d9a8f4af77e7a47ec62",
+    "/home/wanjunkim/ARSL/dex-manipulation/assets/USD/rb3_revo2.usd": "9f5d5f8e97ef7164b6a6319fa7bb766d4970d59d74fb3b35220017ec60542fb1"
+  },
+  "length_unit": "m",
+  "angle_unit": "rad",
+  "quaternion_order": "xyzw",
+  "usd_meters_per_unit": 1.0,
+  "usd_up_axis": "Z",
+  "root_link": "link0",
+  "root_usd_path": "/World/rb3_730es_u/Geometry/link0",
+  "flange_link": "link6",
+  "flange_usd_path": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5/link6",
+  "wrist_link": "right_hand_base_link",
+  "wrist_usd_path": "/World/revo2_right/Geometry/world/right_hand_base_link",
+  "flange_frame_definition": "selected USD last arm rigid-link frame; no inferred flange face/TCP",
+  "flange_to_wrist": [
+    [
+      0.9999999999999987,
+      0.0,
+      -5.960464477539061e-08,
+      5.243411926869601e-09
+    ],
+    [
+      0.0,
+      1.0000000000000004,
+      0.0,
+      -8.67361737988404e-19
+    ],
+    [
+      5.960464477539061e-08,
+      0.0,
+      0.9999999999999987,
+      0.1413049709731442
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "joints": [
+    {
+      "name": "base",
+      "usd_path": "/World/rb3_730es_u/Physics/base",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0",
+        "/World/rb3_730es_u/Geometry/link0/link1"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0",
+      "body1": "/World/rb3_730es_u/Geometry/link0/link1",
+      "frame0": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.1453000009059906
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "revolute",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lower": -6.283185307179586,
+      "upper": 6.283185307179586,
+      "velocity": 3.140000083257926,
+      "velocity_source": "physxJoint:maxJointVelocity",
+      "has_mimic": false,
+      "parent": "link0",
+      "child": "link1",
+      "reversed": false
+    },
+    {
+      "name": "shoulder",
+      "usd_path": "/World/rb3_730es_u/Physics/shoulder",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0/link1",
+        "/World/rb3_730es_u/Geometry/link0/link1/link2"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0/link1",
+      "body1": "/World/rb3_730es_u/Geometry/link0/link1/link2",
+      "frame0": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "revolute",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "lower": -6.283185307179586,
+      "upper": 6.283185307179586,
+      "velocity": 3.140000083257926,
+      "velocity_source": "physxJoint:maxJointVelocity",
+      "has_mimic": false,
+      "parent": "link1",
+      "child": "link2",
+      "reversed": false
+    },
+    {
+      "name": "elbow",
+      "usd_path": "/World/rb3_730es_u/Physics/elbow",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0/link1/link2",
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0/link1/link2",
+      "body1": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3",
+      "frame0": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          -0.0064500002190470695
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.28600001335144043
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "revolute",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "lower": -2.6179938779914944,
+      "upper": 2.6179938779914944,
+      "velocity": 3.140000083257926,
+      "velocity_source": "physxJoint:maxJointVelocity",
+      "has_mimic": false,
+      "parent": "link2",
+      "child": "link3",
+      "reversed": false
+    },
+    {
+      "name": "wrist1",
+      "usd_path": "/World/rb3_730es_u/Physics/wrist1",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3",
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3",
+      "body1": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4",
+      "frame0": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "revolute",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lower": -6.283185307179586,
+      "upper": 6.283185307179586,
+      "velocity": 3.140000083257926,
+      "velocity_source": "physxJoint:maxJointVelocity",
+      "has_mimic": false,
+      "parent": "link3",
+      "child": "link4",
+      "reversed": false
+    },
+    {
+      "name": "wrist2",
+      "usd_path": "/World/rb3_730es_u/Physics/wrist2",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4",
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4",
+      "body1": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5",
+      "frame0": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.3440000116825104
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "revolute",
+      "axis": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "lower": -6.283185307179586,
+      "upper": 6.283185307179586,
+      "velocity": 3.140000083257926,
+      "velocity_source": "physxJoint:maxJointVelocity",
+      "has_mimic": false,
+      "parent": "link4",
+      "child": "link5",
+      "reversed": false
+    },
+    {
+      "name": "wrist3",
+      "usd_path": "/World/rb3_730es_u/Physics/wrist3",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5",
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5/link6"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5",
+      "body1": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5/link6",
+      "frame0": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "revolute",
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "lower": -6.283185307179586,
+      "upper": 6.283185307179586,
+      "velocity": 3.140000083257926,
+      "velocity_source": "physxJoint:maxJointVelocity",
+      "has_mimic": false,
+      "parent": "link5",
+      "child": "link6",
+      "reversed": false
+    },
+    {
+      "name": "AssemblerFixedJoint",
+      "usd_path": "/World/revo2_right/Geometry/world/right_hand_base_link/rb3_mount/AssemblerFixedJoint",
+      "mimic": null,
+      "attachment_paths": [
+        "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5/link6/revo2_mount",
+        "/World/revo2_right/Geometry/world/right_hand_base_link/rb3_mount"
+      ],
+      "body0": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5/link6",
+      "body1": "/World/revo2_right/Geometry/world/right_hand_base_link",
+      "frame0": [
+        [
+          0.9999999999999998,
+          0.0,
+          -2.9802322387695312e-08,
+          1.369141688911668e-09
+        ],
+        [
+          0.0,
+          1.0000000000000002,
+          0.0,
+          0.0
+        ],
+        [
+          2.9802322387695312e-08,
+          0.0,
+          0.9999999999999998,
+          0.14130497097314387
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "frame1": [
+        [
+          0.9999999999999998,
+          0.0,
+          2.9802322387695312e-08,
+          -3.874270237957944e-09
+        ],
+        [
+          0.0,
+          1.0000000000000002,
+          0.0,
+          8.673617379884035e-19
+        ],
+        [
+          -2.9802322387695312e-08,
+          0.0,
+          0.9999999999999998,
+          -1.1102230246251565e-16
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "kind": "fixed",
+      "parent": "link6",
+      "child": "right_hand_base_link",
+      "reversed": false
+    }
+  ],
+  "keypoints": [],
+  "colliders": [],
+  "link_paths": {
+    "link6": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5/link6",
+    "link4": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4",
+    "link2": "/World/rb3_730es_u/Geometry/link0/link1/link2",
+    "link1": "/World/rb3_730es_u/Geometry/link0/link1",
+    "link5": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3/link4/link5",
+    "link0": "/World/rb3_730es_u/Geometry/link0",
+    "right_hand_base_link": "/World/revo2_right/Geometry/world/right_hand_base_link",
+    "link3": "/World/rb3_730es_u/Geometry/link0/link1/link2/link3"
+  },
+  "base_in_stage": [
+    [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "authored_zero_link_transforms": {
+    "link6": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        -0.00645
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.7753
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "link4": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        -0.00645
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.4313
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "link2": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.1453
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "link1": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.1453
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "link5": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        -0.00645
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.7753
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "link0": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "right_hand_base_link": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        -0.00645
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.916604972
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "link3": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        -0.00645
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.4313
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "zero_fk_usd_max_matrix_error": 5.960464477539061e-08
+}

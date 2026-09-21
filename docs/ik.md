@@ -4,14 +4,21 @@
 
 ## 모델과 좌표
 
-`config/ik.json`이 실제 조립 USD와 base/flange/wrist prim을 지정합니다. 기본 모델은 `assets/USD/rb3_revo2.usd`입니다. `rb3_revo2_vertical.usda`를 사용할 때는 설정의 USD 경로를 바꾸고 **반드시 다시 추출**합니다. 장착 변환은 USD에서 계산하므로 두 조립 모델을 섞어 쓰지 않습니다.
+`config/ik.json`이 실제 조립 USD와 base/flange/wrist prim을 지정합니다. 기본 조립은
+`assets/USD/rb3_revo2_vertical.usda`, 추출 모델은 `assets/models/rb3_vertical.json`입니다.
+원본 폴더와 동일한 `revo2_vertical_adapter` 부품으로 팔 끝과 손을 일직선 연결합니다.
+90도 꺾인 이전 조립 `rb3_revo2.usd`와 추출 모델 `rb3.json`은 보존합니다.
+USD 또는 장착을 바꾸면 **다시 추출하고 IK 궤적도 다시 생성**해야 합니다. 두 조립 모델을 섞어 쓰지 않습니다.
 
 - Base: `/World/rb3_730es_u/Geometry/link0`.
 - Flange: 마지막 arm rigid link인 `.../link6`. 제조사 flange-face나 TCP의 별도 원점을 추정하지 않습니다.
 - Wrist: `/World/revo2_right/Geometry/world/right_hand_base_link`. semantic wrist keypoint와는 다른 프레임입니다.
 - arm 관절 순서: `base, shoulder, elbow, wrist1, wrist2, wrist3`.
 - 조립 USD의 실제 axis는 Z/Y/Y/Z/Y/Z입니다. 한계는 elbow ±150°, 나머지 ±360°, 속도 한계는 각 약 3.14 rad/s입니다. 이는 **USD에서 추출한 값**이며 실물 제조사 제한을 검증했다는 의미는 아닙니다.
-- 기본 조립의 link6→wrist translation은 약 `(0.03, 0, 0.14) m`, 회전은 Y축 약 −90°입니다. 코드에는 이 수치를 하드코딩하지 않습니다.
+- 기본 일자 조립의 link6→wrist translation은 약 `(0, 0, 0.141304971) m`, 회전은 identity입니다.
+  손 base의 +Z와 link6 +Z가 일치합니다. 마운트 mesh는 link6 +Z의 100mm 부근에서 시작하여
+  141.305mm까지 이어지고, visual과 collision이 모두 포함됩니다. 이 값은 USD에서 추출하며 코드에 하드코딩하지 않습니다.
+- 이전 꺾인 조립은 translation 약 `(0.03, 0, 0.14) m`, Y축 회전 약 −90°였습니다.
 
 AssemblerFixedJoint의 body 관계가 rigid link 대신 attachment Xform을 가리키므로, 양쪽 attachment→rigid-link 변환을 joint frame에 합성합니다. 이 변환과 authored zero pose를 대조합니다. 모든 계산은 m/rad, column-vector SE(3), quaternion은 XYZW입니다.
 
@@ -20,9 +27,9 @@ T_base_wrist_target = T_base_source @ T_source_wrist_target
 T_base_flange_target = T_base_wrist_target @ inverse(T_flange_wrist)
 ```
 
-원본 궤적은 카메라 좌표이며 현재 기본 입력은 `data/grounded/reference.npz`입니다. `scripts/ground.py`가 첫 캔의 밑면을 `z=0`, 초기 캔 로컬 +Z를 위쪽으로 만드는 고정 강체 변환을 손·캔 전체에 적용합니다. 모든 프레임의 관절·시간·상대 자세는 유지합니다. 현재 [복합 원통 캔](object.md)의 두 collider와 중심 오프셋을 반영하므로 첫 캔 pose 원점은 `z=0.0201195 m`입니다.
+원본 궤적은 카메라 좌표이며 현재 기본 입력은 `data/demo2/grounded/reference.npz`입니다. `scripts/ground.py`가 첫 캔의 밑면을 `z=0`, 초기 캔 로컬 +Z를 위쪽으로 만드는 고정 강체 변환을 손·캔 전체에 적용합니다. 모든 프레임의 관절·시간·상대 자세는 유지합니다. 현재 [복합 원통 캔](object.md)의 두 collider와 중심 오프셋을 반영하므로 첫 캔 pose 원점은 `z=0.0201195 m`입니다.
 
-**카메라→RB3 베이스 실측 보정은 현재 없습니다.** 기본 `config/arm_ground_frame.json`의 `world_from_source`는 바닥 데이터 원점을 책상 좌표 `(0.3,0,0)` m에 놓고 Z축으로 −90° 회전하는 시뮬레이션 배치입니다. `config/workcell.json`의 로봇 장착면은 `z=-0.02m`이므로 `base_from_source = inverse(world_from_base) @ world_from_source`로 계산하며 베이스 기준 translation은 `(0.3,0,0.02)` m입니다. 손·캔의 world 목표 높이와 기존 방향은 유지합니다. 명시적 alignment JSON 없이는 solve가 중단됩니다.
+**카메라→RB3 베이스 실측 보정은 현재 없습니다.** 기본 `config/arm_ground_frame.json`의 `world_from_source`는 바닥 데이터 원점을 책상 좌표 `(0.55,0,0)` m에 놓고 Z축으로 −90° 회전하는 시뮬레이션 배치입니다. 캔 초기 pose 원점의 XY 거리는 베이스 중심에서 55cm이며 팔 정책 재생에도 같은 배치를 적용합니다. `config/workcell.json`의 로봇 장착면은 `z=-0.02m`이므로 `base_from_source = inverse(world_from_base) @ world_from_source`로 계산하며 베이스 기준 translation은 `(0.55,0,0.02)` m입니다. 손·캔의 world 목표 높이와 기존 방향은 유지합니다. 명시적 alignment JSON 없이는 solve가 중단됩니다.
 
 실측 변환이 있다면 아래 형식의 JSON을 전달합니다. 실제 행렬로 채워야 합니다.
 
@@ -30,7 +37,7 @@ T_base_flange_target = T_base_wrist_target @ inverse(T_flange_wrist)
 {"base_from_source": <4×4 SE(3) 행렬>, "status": "measured_camera_to_base"}
 ```
 
-위 카메라→베이스 행렬은 원본 카메라 reference를 입력할 때 사용합니다. 바닥 reference를 사용할 때는 `T_base_ground = T_base_camera @ T_camera_ground`로 합성해야 하며, `T_camera_ground`는 `data/grounded/frame.json`의 `source_from_world`입니다. 좌표계 변경만으로 하드웨어 보정이 검증되지는 않습니다.
+위 카메라→베이스 행렬은 원본 카메라 reference를 입력할 때 사용합니다. 바닥 reference를 사용할 때는 `T_base_ground = T_base_camera @ T_camera_ground`로 합성해야 하며, `T_camera_ground`는 `data/demo2/grounded/frame.json`의 `source_from_world`입니다. 좌표계 변경만으로 하드웨어 보정이 검증되지는 않습니다.
 
 바닥 데이터의 `place`는 설정된 배치와 world/base 변환을 복사합니다. 책상 world 좌표에서 바닥 데이터를 공중으로 옮기는 시뮬레이션 alignment는 CLI에서 거부합니다. 베이스 좌표의 +2cm는 실제 장착 높이에 대한 보정입니다. 원본 카메라 좌표를 명시적으로 입력할 때만 이전의 첫 손목→`FK(seed)` 배치를 사용합니다. 수치 seed는 실제 로봇의 현재 자세가 아닙니다.
 

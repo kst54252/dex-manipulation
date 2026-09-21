@@ -14,6 +14,7 @@ def main():
     from dex_manipulation.ik import IKOptions, solve_trajectory, checked_pose
     from dex_manipulation.transforms import inverse
     from dex_manipulation.scene import Workcell
+    from dex_manipulation.data import resolve_demo_path
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=('extract', 'solve', 'place'))
     parser.add_argument('--config', type=Path, default=ROOT/'config/ik.json')
@@ -32,7 +33,7 @@ def main():
         print(ROOT/config['arm_model']); return
     model = ArmModel.load(ROOT/config['arm_model'])
     hand = HandModel.load(ROOT/config['hand_model'])
-    source = args.input or ROOT/config['input']
+    source = resolve_demo_path(args.input or config['input'], ROOT)
     seed = np.array(args.seed if args.seed is not None else config['seed_q_rad'])
     alignment_path = args.alignment or (ROOT/config['alignment'] if config['alignment'] else None)
     with np.load(source, allow_pickle=False) as data:
