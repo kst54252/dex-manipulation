@@ -1,7 +1,6 @@
-# Demo 1 raw input — local only
+# 데모1 원본 입력
 
-`human_demo.npz`는 DexYCB `20200709_143747_left`의 사람 annotation을 기존 프로젝트에서
-전처리한 입력입니다. 로컬 파일을 그대로 보존하며 Git에 올리지 않습니다.
-`../manifest.json`의 source hash로 정확한 파일을 확인합니다.
+`human_demo.npz`: DexYCB `20200709_143747_left`의 전처리 사람 annotation.
+원본 NPZ는 Git에서 제외하며 `../manifest.json`의 SHA-256으로 대응시킵니다.
 
-[DexYCB 출처·라이선스·데모 정보](../../../docs/dataset.md).
+[데이터 출처·다운로드·라이선스](../../../docs/dataset.md)
