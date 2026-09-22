@@ -66,5 +66,9 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 [데모 구성](docs/data.md) · [리타게팅](docs/retargeting.md) · [IK](docs/ik.md) ·
 [정책](docs/policy.md) · [환경](docs/scene.md) · [캔](docs/object.md) · [접촉 물성](docs/contact.md)
 
+저장 궤적의 팔·손 통합 실행과 실시간 상태 반영은 [ROS 2 연동](docs/ros.md)을 사용합니다.
+`./run.sh ros bridge` → `./run.sh ros mirror` → `./run.sh ros send` 순으로 별도 터미널에서 실행합니다.
+기본 bridge는 실물 연결이 없는 모의 장치입니다.
+
 사람 손·물체 데이터는 **[DexYCB](https://dex-ycb.github.io/)**를 사용합니다.
 원본 이미지·annotation은 로컬에 보관합니다. [데이터 출처](docs/dataset.md) · [방법론 출처](docs/PROVENANCE.md)

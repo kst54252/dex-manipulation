@@ -25,7 +25,7 @@ def vector(value, count, name):
     return value
 
 
-class JointCalibration:
+class ArmCalibration:
     def __init__(self, names, config):
         if tuple(names[:6]) != ARM_NAMES:
             raise ValueError('RBpodo joint order differs from the recorded model')
@@ -33,6 +33,30 @@ class JointCalibration:
         self.offset = vector(config['arm_offset_deg'], 6, 'arm_offset_deg')
         if not np.isin(self.sign, [-1, 1]).all():
             raise ValueError('arm_sign must contain measured +1/-1 axis directions')
+
+    def encode_arm(self, q):
+        return np.rad2deg(vector(q, 6, 'arm target'))*self.sign+self.offset
+
+    def decode_arm(self, degrees):
+        return np.deg2rad((vector(degrees, 6, 'RB3 feedback')-self.offset)/self.sign)
+
+
+def rb_status(s):
+    """Decode current faults, excluding historical collision/timezone bits."""
+    masks = {'init_error': 0xfff, 'op_stat_collision_occur': 0x3,
+             'op_stat_ems_flag': 0x3f, 'op_stat_self_collision': 0x3,
+             'op_stat_sos_flag': 0x3f, 'is_freedrive_mode': 0x3}
+    faults = {key: int(getattr(s, key)) & mask for key, mask in masks.items()}
+    faults['op_stat_soft_estop_occur'] = int(s.op_stat_soft_estop_occur)
+    return dict(mode=int(s.real_vs_simulation_mode) & 0xf,
+                init_stage=int(s.init_state_info) & 0x3f,
+                robot_state=int(s.robot_state), task_state=int(s.task_state),
+                faults=faults, raw={key: int(getattr(s, key)) for key in faults})
+
+
+class JointCalibration(ArmCalibration):
+    def __init__(self, names, config):
+        super().__init__(names, config)
         rows = config['fingers']
         if len(rows) != 6 or {r['joint'] for r in rows} != set(names[6:]):
             raise ValueError('Six explicit Revo2 model-to-SDK joint mappings required')
@@ -53,7 +77,7 @@ class JointCalibration:
 
     def encode(self, q):
         q = vector(q, 12, 'joint targets')
-        arm = np.rad2deg(q[:6])*self.sign+self.offset
+        arm = self.encode_arm(q[:6])
         fingers = np.empty(6, int)
         for value, (index, knots, units) in zip(q[6:], self.fingers):
             if not knots[0]-1e-7 <= value <= knots[-1]+1e-7:
@@ -63,7 +87,7 @@ class JointCalibration:
 
     def decode(self, arm, fingers):
         arm, fingers = vector(arm, 6, 'RB3 feedback'), vector(fingers, 6, 'Revo2 feedback')
-        q = list(np.deg2rad((arm-self.offset)/self.sign))
+        q = list(self.decode_arm(arm))
         for index, knots, units in self.fingers:
             order = np.argsort(units)
             if not units.min()-1 <= fingers[index] <= units.max()+1:
@@ -72,18 +96,37 @@ class JointCalibration:
         return np.asarray(q)
 
 
-def hardware_plan(trajectory, config):
-    """No connection; reject missing commissioning information before any I/O."""
+def connection_plan(names, config):
+    """Validate read-only connection and encoder mapping without motion settings."""
     if config.get('schema') != 'dex_rb3_revo2_hardware_v1':
         raise ValueError('Unsupported hardware configuration')
     calibration = config['calibration']
     if not calibration.get('id'):
         raise ValueError('Supply measured arm/hand/mount/table calibration; example config is not commissioned')
+    mapping = JointCalibration(names, calibration)
+    rb, revo = config['rb3'], config['revo2']
+    if not rb['address'] or not revo['port'] or revo['transport'] != 'rs485':
+        raise ValueError('Provide explicit RB3 IP and Revo2 RS485 port')
+    if not isinstance(revo['baudrate_enum'], str) or not revo['baudrate_enum'].startswith('Baud'):
+        raise ValueError('Provide the official SDK baudrate enum for the connected hand')
+    if not isinstance(revo['slave_id'], int) or not 1 <= revo['slave_id'] <= 247:
+        raise ValueError('Provide the actual Revo2 slave ID')
+    if not np.isfinite(config['io_timeout_s']) or config['io_timeout_s'] <= 0:
+        raise ValueError('I/O timeout must be positive and finite')
+    for key in ('command_port', 'data_port'):
+        if not isinstance(rb[key], int) or not 1 <= rb[key] <= 65535:
+            raise ValueError('Invalid RB3 port')
+    return mapping
+
+
+def hardware_plan(trajectory, config):
+    """No connection; reject missing commissioning information before any I/O."""
+    mapping = connection_plan(trajectory.names, config)
+    calibration = config['calibration']
     if calibration['workcell_fingerprint'] != trajectory.metadata['workcell']['fingerprint']:
         raise ValueError('Real tabletop/base placement has not been matched to this recording')
     if calibration['mount_asset_sha256'] != trajectory.metadata['arm_asset_sha256']:
         raise ValueError('Physical straight mount is not confirmed against the recorded assembly')
-    mapping = JointCalibration(trajectory.names, calibration)
     arm, hand = zip(*(mapping.encode(q) for q in np.vstack([trajectory.initial, trajectory.q])))
     arm, hand = np.asarray(arm), np.asarray(hand)
     lower = vector(config['rb3']['lower_deg'], 6, 'RB3 physical lower limits')
@@ -101,17 +144,8 @@ def hardware_plan(trajectory, config):
     if np.any(hv <= 0) or np.any(np.abs(np.diff(hand, axis=0)/trajectory.dt)>hv):
         raise ValueError('Recorded finger speed exceeds commissioned limits')
     rb, revo = config['rb3'], config['revo2']
-    if not rb['address'] or not revo['port'] or revo['transport'] != 'rs485':
-        raise ValueError('Provide explicit RB3 IP and Revo2 RS485 port')
-    if not isinstance(revo['baudrate_enum'], str) or not revo['baudrate_enum'].startswith('Baud'):
-        raise ValueError('Provide the official SDK baudrate enum for the connected hand')
-    if not isinstance(revo['slave_id'], int) or not 1 <= revo['slave_id'] <= 247:
-        raise ValueError('Provide the actual Revo2 slave ID')
     if not np.isfinite(config['io_timeout_s']) or not 0 < config['io_timeout_s'] < trajectory.dt:
         raise ValueError('I/O timeout must be finite and shorter than one command interval')
-    for key in ('command_port', 'data_port'):
-        if not isinstance(rb[key], int) or not 1 <= rb[key] <= 65535:
-            raise ValueError('Invalid RB3 port')
     servo = rb['servo']
     values = np.asarray([servo[k] for k in ('t1_s','t2_s','gain','alpha')], float)
     if (not np.isfinite(values).all() or values[0]<.002 or not .02<values[1]<.2
@@ -132,6 +166,7 @@ def hardware_plan(trajectory, config):
 
 class RBPodoStark:
     hardware = True
+    feedback_source = dict(arm='physical_encoder_jnt_ang', hand='physical_motor_positions')
 
     def __init__(self, names, config):
         self.config = config
@@ -176,16 +211,19 @@ class RBPodoStark:
         if not np.isfinite(device_time) or (self.previous_device_time is not None and device_time<=self.previous_device_time):
             raise RuntimeError('RB3 feedback clock is stale or moved backwards')
         self.previous_device_time = device_time
-        flags = ('init_error','op_stat_collision_occur','op_stat_ems_flag','op_stat_self_collision',
-                 'op_stat_soft_estop_occur','op_stat_sos_flag','is_freedrive_mode')
-        ready = (s.real_vs_simulation_mode==0 and (s.init_state_info & 0x3f)==6
-                 and all(getattr(s,k)==0 for k in flags) and s.robot_state in (1,3))
+        status = rb_status(s)
+        ready = (status['mode']==0 and status['init_stage']==6
+                 and not any(status['faults'].values()) and s.robot_state in (1,3))
         if not self.sent: ready &= s.robot_state == 1 and s.task_state == 1
         allowed = (self.hand_sdk.MotorState.Idle, self.hand_sdk.MotorState.Running)
         ready &= len(hand.states)==6 and all(state in allowed for state in hand.states)
         self.last_finger = list(hand.positions)
         return dict(q_rad=self.mapping.decode(s.jnt_ang, hand.positions), ready=bool(ready),
-                    sample_time_s=started, rb3_device_time_s=device_time)
+                    sample_time_s=started, rb3_device_time_s=device_time,
+                    read_window_s=time.monotonic()-started,
+                    rb3_status=status,
+                    feedback_source=dict(arm='physical_encoder_jnt_ang', hand='physical_motor_positions'),
+                    revo2_status=dict(motor_states=[str(value) for value in hand.states]))
 
     async def send(self, q, arm_velocity, dt):
         arm, fingers = self.mapping.encode(q)

@@ -111,7 +111,8 @@ async def stream(trajectory, backend, output, *, start_tolerance_rad, tracking_t
     output.mkdir(parents=True, exist_ok=False)
     events = []
     report = dict(completed=False, source_sha256=sha256(trajectory.path),
-                  hardware=bool(getattr(backend, 'hardware', False)), speed=1., object_feedback=False)
+                  hardware=bool(getattr(backend, 'hardware', False)), speed=1., object_feedback=False,
+                  feedback_source=getattr(backend,'feedback_source',None))
     try:
         await backend.connect()
         state = await backend.read()
@@ -138,7 +139,8 @@ async def stream(trajectory, backend, output, *, start_tolerance_rad, tracking_t
                 await backend.send(command, velocity, trajectory.dt)
                 event = dict(index=i, scheduled_s=i*trajectory.dt, sent_s=clock()-start,
                              hold=i>=len(trajectory.times), q_command_rad=command.tolist(),
-                             q_measured_rad=np.asarray(state['q_rad']).tolist())
+                             q_measured_rad=np.asarray(state['q_rad']).tolist(),
+                             feedback_source=report['feedback_source'])
                 log.write(json.dumps(event)+'\n'); log.flush(); events.append(event)
                 previous = command
                 if clock()-deadline >= trajectory.dt:
@@ -169,6 +171,7 @@ async def stream(trajectory, backend, output, *, start_tolerance_rad, tracking_t
 class MockBackend:
     """Named-joint transport exercise. It models perfect tracking, not physics."""
     hardware = False
+    feedback_source = dict(arm='mock_command_hold', hand='mock_command_hold')
 
     def __init__(self, initial, clock=time.monotonic):
         self.q = np.asarray(initial).copy()

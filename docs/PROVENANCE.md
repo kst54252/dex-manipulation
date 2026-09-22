@@ -47,6 +47,8 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 | 팔 정책 | source-frame 관측, 가상 PD→IK 연결, batched IK를 포함한 팔 학습 |
 | 재생 | 시간 재조정, 저장된 12-DoF 궤적 추종, IK 격자 내 회차별 랜덤 배치 |
 | 고정 궤적 실행 | 적용된 30Hz 팔·손 명령 기록, 정책 없는 물리 재생, 단위 보정표·초기 자세·지연·feedback 검사 |
+| ROS 2 연동 | 단일 장치 I/O 담당, 기록 궤적 action, 측정 12축·모델 종속 관절 구분, 최신 상태의 USD FK 표시 |
+| VCB 연결 | 제조사 SDK를 통한 가상 팔 통신, 가상 손 유지, Simulation 모드 검사, 실물과 구분한 ROS namespace·feedback 출처 |
 
 책상·받침대 치수와 위치는 `regrind-revo2/config/workcell/rb3_revo2_table.json`,
 일자 손 장착은 원본 어댑터 USD와 attachment 변환을 사용합니다.
@@ -67,3 +69,8 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 - [BrainCo Revo2 SDK](https://staging.brainco.tech/docs/revolimb-hand/en/revo2/python_sdk.html):
   RS485 연결·0~1000 위치 명령·motor feedback. `hardware.py`에서 공식 `bc-stark-sdk` API 사용.
   실물 관절 변환은 측정 보정표를 요구하며 USD 관절 범위로 SDK 명령값을 추정하지 않습니다.
+- [ROS JointState](https://github.com/ros2/common_interfaces/blob/jazzy/sensor_msgs/msg/JointState.msg),
+  [FollowJointTrajectory](https://github.com/ros-controls/control_msgs/blob/jazzy/control_msgs/action/FollowJointTrajectory.action): 표준 메시지·action 정의.
+  `rclpy` action/QoS API를 사용해 독립 구현했으며 제조사 ROS driver나 예제 server 소스를 복사하지 않습니다.
+- [Isaac Sim ROS 설치](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/installation/install_ros.html): Ubuntu 24.04/Jazzy 환경.
+  표시는 직접 `rclpy` 구독과 USD FK를 사용하며 명령 기반 물리 추종과 구분합니다.
