@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "id": "drilling",
+  "label": "드릴 집기·나사 정렬·트리거 접촉",
+  "catalog": "config/tasks/drilling/play.json",
+  "phases": ["grasp_drill", "approach_screw", "align_bit", "press_trigger", "maintain_contact"],
+  "entrypoints": {},
+  "data": {"1": "data/drilling/demo1"},
+  "inputs": [
+    {"role": "human_hand_21_and_drill_pose", "path": "data/drilling/demo1/poses.npz"},
+    {"role": "drill_asset", "path": "assets/tasks/drilling/drill.usda"},
+    {"role": "screw_fixture_asset", "path": "assets/tasks/drilling/fixture.usda"},
+    {"role": "geometry_frames_trigger_parameters", "path": "config/tasks/drilling/object.json"},
+    {"role": "scene_placement", "path": "config/tasks/drilling/scene.json"},
+    {"role": "retargeting_parameters", "path": "config/tasks/drilling/retargeting_demo1.json"},
+    {"role": "arm_placement_and_ik", "path": "config/tasks/drilling/ik_demo1.json"},
+    {"role": "policy_rewards_and_success", "path": "config/tasks/drilling/policy_demo1.json"}
+  ],
+  "control": {
+    "robot_action": "wrist SE(3) residual + independent finger joint residual",
+    "tool_activation": "physical trigger press activates rotation; no extra policy spin action",
+    "units": "SI; frame definitions and quaternion order must be declared with inputs"
+  }
+}

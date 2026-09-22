@@ -3,17 +3,17 @@
   "demos": {
     "1": {
       "label": "1번 데모 · 40자세 · 5.2초 · 밑면 수평·바닥 밀착",
-      "config": "config/policy_demo1.json",
-      "arm_config": "config/ik_demo1.json",
+      "config": "config/tasks/can_pick/policy_demo1.json",
+      "arm_config": "config/tasks/can_pick/ik_demo1.json",
       "arm_reference": "local/results/ik/demo1_stable/trajectory.npz",
-      "training_config": "config/policy_demo1.json"
+      "training_config": "config/tasks/can_pick/policy_demo1.json"
     },
     "2": {
       "label": "2번 데모 · 27자세 · 5.2초",
-      "config": "config/policy_demo2.json",
-      "arm_config": "config/ik_demo2.json",
+      "config": "config/tasks/can_pick/policy_demo2.json",
+      "arm_config": "config/tasks/can_pick/ik_demo2.json",
       "arm_reference": "local/results/ik/full/trajectory.npz",
-      "training_config": "config/policy_demo2_contact.json",
+      "training_config": "config/tasks/can_pick/policy_demo2_contact.json",
       "random_can_regions": {
         "1": "local/reports/table_ik_current_20260921/demo2_1x",
         "2": "local/reports/table_ik_current_20260921/demo2_2x"
@@ -24,30 +24,30 @@
     "1": {
       "label": "1번 정책 · 최신 학습 완료",
       "latest_demo": "1",
-      "arm_config": "config/ik_demo1.json"
+      "arm_config": "config/tasks/can_pick/ik_demo1.json"
     },
     "2": {
       "label": "2번 정책 · 최신 학습 완료",
       "latest_demo": "2",
-      "arm_config": "config/ik_demo2.json",
+      "arm_config": "config/tasks/can_pick/ik_demo2.json",
       "playback_speed": 1.0
     },
     "1-arm-trial": {
       "label": "1번 팔 학습 시험 정책 · 20iter · 5.2초 (파지 미성공)",
       "checkpoint": "local/reports/arm_training_20260921/pilot20/policy.pt",
-      "arm_config": "config/ik_demo1_legacy.json",
+      "arm_config": "config/tasks/can_pick/ik_demo1_legacy.json",
       "note": "수평 교정 전 입력으로 학습한 과거 팔 시험 정책입니다."
     },
     "1-before-contact": {
       "label": "1번 정책 · 2000iter · 5.2초 · 밑면 수평 교정 전",
       "checkpoint": "local/results/policy/original_slow_table_safe_2000_20260921_035416/policy.pt",
-      "arm_config": "config/ik_demo1_legacy.json",
+      "arm_config": "config/tasks/can_pick/ik_demo1_legacy.json",
       "note": "이 정책은 기울어진 첫 자세로 학습했습니다. 현재 데모1의 수평·바닥 밀착 입력으로 새로 학습한 뒤 해당 checkpoint 경로로 실행하세요."
     },
     "2-before-contact": {
       "label": "2번 정책 · 1000iter · 5.2초",
       "checkpoint": "local/results/policy/recovery_20260920/train_contact_1000/policy.pt",
-      "arm_config": "config/ik_demo2.json"
+      "arm_config": "config/tasks/can_pick/ik_demo2.json"
     }
   },
   "aliases": {

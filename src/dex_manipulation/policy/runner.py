@@ -106,7 +106,7 @@ def run(args, root, on_ready=None, is_running=None):
         arm_path = getattr(args, "arm_config", None) or (
             root / config["arm_training"]["arm_config"]
             if native_arm
-            else root / "config/ik_demo2.json"
+            else root / "config/tasks/can_pick/ik_demo2.json"
         )
         arm_config = read_config(Path(arm_path))
         if native_arm:
@@ -149,12 +149,12 @@ def run(args, root, on_ready=None, is_running=None):
             root, config, arm_config, speed, getattr(args, "placement_seed", None), reference
         )
     if contact_mode == "rubber":
-        env_config["contact_materials"] = read_config(root / "config/policy_demo2.json")[
-            "contact_materials"
-        ]
+        env_config["contact_materials"] = read_config(
+            root / "config/tasks/can_pick/policy_demo2.json"
+        )["contact_materials"]
     control_mode = getattr(args, "motion_control", None) or "checkpoint"
     stable = (
-        read_config(root / "config/policy_demo2.json")["motion_control"]
+        read_config(root / "config/tasks/can_pick/policy_demo2.json")["motion_control"]
         if control_mode == "stable"
         else None
     )
@@ -188,7 +188,9 @@ def run(args, root, on_ready=None, is_running=None):
         "protect" if args.mode == "play" and not native_arm else "checkpoint"
     )
     if table_mode == "protect":
-        table_settings = read_config(root / "config/policy_demo2.json")["table_safety"]
+        table_settings = read_config(root / "config/tasks/can_pick/policy_demo2.json")[
+            "table_safety"
+        ]
         env.configure_table_safety(dict(table_settings, enabled=True, guard_enabled=True))
     attach_grasp_reward(env, metadata, training_reference)
     metadata["physics"] = env.metadata

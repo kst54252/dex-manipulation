@@ -18,11 +18,11 @@ def main():
     parser.add_argument(
         "--reference", type=Path, default=ROOT / "local/results/ik/full/trajectory.npz"
     )
-    parser.add_argument("--config", type=Path, default=ROOT / "config/ik_demo2.json")
+    parser.add_argument("--config", type=Path, default=ROOT / "config/tasks/can_pick/ik_demo2.json")
     parser.add_argument(
         "--physics-config",
         type=Path,
-        default=ROOT / "config/policy_demo2.json",
+        default=ROOT / "config/tasks/can_pick/policy_demo2.json",
         help="Localized fingertip contact settings for physical target replay",
     )
     parser.add_argument("--output", type=Path, default=ROOT / "local/results/ik/replay")

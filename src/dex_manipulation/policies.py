@@ -5,12 +5,15 @@ import json
 from pathlib import Path
 
 from .data import resolve_demo_path
+from .tasks import DEFAULT_TASK, config_task_id
 
 
 def demo_id(root, config):
     explicit = config.get("demo_id")
-    if explicit in ("1", "2"):
+    if isinstance(explicit, str) and explicit:
         return explicit
+    if config_task_id(config) != DEFAULT_TASK:
+        return None
     reference = resolve_demo_path(config["reference"], root).resolve()
     for demo in ("1", "2"):
         if reference.is_relative_to((Path(root) / f"data/demo{demo}").resolve()):
@@ -26,7 +29,7 @@ def _last_stats(path):
         return json.loads(stream.read().splitlines()[-1])
 
 
-def latest_policy(root, demo, robot, search_root="local/results/policy"):
+def latest_policy(root, demo, robot, search_root="local/results/policy", *, task=DEFAULT_TASK):
     """Select newest completed checkpoint compatible with the requested demo.
 
     Completion requires all iterations in this invocation AND matching saved
@@ -41,7 +44,7 @@ def latest_policy(root, demo, robot, search_root="local/results/policy"):
             if exit_path.is_file() and read_config(exit_path).get("exit_code") != 0:
                 continue
             cfg = read_config(checkpoint.parent / "config.resolved.json")
-            if demo_id(root, cfg) != demo:
+            if config_task_id(cfg) != task or demo_id(root, cfg) != demo:
                 continue
             native_arm = cfg.get("arm_training", {}).get("enabled", False)
             if native_arm and robot != "arm":
@@ -84,6 +87,7 @@ def latest_policy(root, demo, robot, search_root="local/results/policy"):
                 # An incomplete/corrupt checkpoint must not displace a usable run.
                 continue
             return dict(
+                task=task,
                 checkpoint=path,
                 iteration=saved["iteration"],
                 demo=demo,
@@ -92,5 +96,5 @@ def latest_policy(root, demo, robot, search_root="local/results/policy"):
                 search_root=str(root / search_root),
             )
     raise ValueError(
-        f"데모 {demo}: {robot}에서 사용할 학습 완료 정책이 없습니다 ({root / search_root})."
+        f"{task} 데모 {demo}: {robot}에서 사용할 학습 완료 정책이 없습니다 ({root / search_root})."
     )

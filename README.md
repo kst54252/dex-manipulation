@@ -1,6 +1,7 @@
 # dex-manipulation
 
 사람 손·물체 데모를 Revo2 동작으로 리타게팅하고, RB3-730 팔 IK와 residual RL을 연결하는 Isaac Sim 프로젝트입니다.
+작업별 설정·데모·정책은 task로 구분하며 기본 작업은 `can_pick`입니다.
 
 ```text
 DexYCB 손 21점 + 물체 6D pose
@@ -21,6 +22,9 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 ./run.sh arm retarget 1        # 로봇팔 연결 · 리타게팅
 ./run.sh floating policy 1     # 플로팅 손 · 학습 정책
 ./run.sh arm policy 1          # 로봇팔 연결 · 학습 정책
+./run.sh tasks                 # 작업 목록
+./run.sh tasks drilling        # 드릴 작업의 구성·필요 입력
+./run.sh arm policy 2 --task can_pick
 ```
 
 마지막 번호는 **데모1 / 데모2** 선택입니다. 정책은 `local/results/policy/`에서 데모별 최신 학습 완료 checkpoint를 자동 선택합니다.
@@ -57,7 +61,8 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 |---|---|
 | `assets/` | RB3·Revo2 USD, 캔 형상, 키포인트, 추출 모델 |
 | `data/demo1/`, `data/demo2/` | 사람 손·물체 데모와 리타게팅 궤적 |
-| `config/` | 데모·환경·IK·정책 설정 |
+| `config/tasks/<task>/` | 작업별 데모·환경·IK·정책 설정 |
+| `config/` | 공통 로봇 실행·통신·작업대 설정 |
 | `src/dex_manipulation/` | FK, IK, 리타게팅, 시뮬레이션, 정책 패키지 |
 | `scripts/` | 데이터 처리·모델 추출·학습 진입점 |
 | `docs/` | 기능과 설정 설명 |
@@ -69,6 +74,7 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 
 [데모 구성](docs/data.md) · [리타게팅](docs/retargeting.md) · [IK](docs/ik.md) ·
 [정책](docs/policy.md) · [환경](docs/scene.md) · [캔](docs/object.md) · [접촉 물성](docs/contact.md)
+[작업 구성·추가](docs/tasks.md): `can_pick`과 `drilling`의 입력·설정·실행 어댑터 구조입니다.
 
 저장 궤적의 팔·손 통합 실행과 실시간 상태 반영은 [ROS 2 연동](docs/ros.md)을 사용합니다.
 `./run.sh ros bridge` → `./run.sh ros mirror` → `./run.sh ros send` 순으로 별도 터미널에서 실행합니다.

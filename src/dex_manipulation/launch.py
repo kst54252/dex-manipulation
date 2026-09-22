@@ -2,15 +2,14 @@
 
 from .configuration import read_config
 import argparse
-from datetime import datetime
 import hashlib
 import json
-import math
 from pathlib import Path
 import subprocess
 import sys
 from .data import resolve_demo_path
-from .policies import demo_id, latest_policy
+from .policies import latest_policy
+from .tasks import DEFAULT_TASK, load_task
 
 
 def read(path):
@@ -34,6 +33,7 @@ def parser():
         epilog="학습: ./train.sh 또는 ./run.sh train --help",
     )
     p.add_argument("robot", nargs="?", choices=("floating", "arm"))
+    p.add_argument("--task", default=DEFAULT_TASK, help="작업 이름; 목록: ./run.sh tasks")
     p.add_argument("mode", nargs="?", choices=("retarget", "policy"))
     p.add_argument(
         "selection", nargs="?", help="데모 번호 1/2, 등록 정책 이름 또는 checkpoint 경로"
@@ -51,7 +51,7 @@ def parser():
     p.add_argument(
         "--speed",
         type=float,
-        help="학습/reference 시간 기준 배속 (데모2 정책 기본 1; 나머지는 config/play.json)",
+        help="학습/reference 시간 기준 배속 (데모2 정책 기본 1; 나머지는 config/tasks/can_pick/play.json)",
     )
     p.add_argument(
         "--random-can",
@@ -123,222 +123,19 @@ def arm_reference_error(root, path, config_path):
 
 
 def resolve_plan(root, args, catalog):
-    """Pure input/command resolution: never import Isaac or write any files."""
-
-    def required(path):
-        path = resolve_demo_path(Path(path).expanduser(), root)
-        if not path.is_file():
-            raise ValueError(f"필수 파일이 없습니다: {path}")
-        return path
-
-    commands = []
-    random_can = getattr(args, "random_can", False)
-    placement_seed = getattr(args, "placement_seed", None)
-    if random_can and (args.robot != "arm" or args.mode != "policy"):
-        raise ValueError("--random-can은 데모2 arm policy에서만 지원합니다.")
-    if placement_seed is not None and (not random_can or placement_seed < 0):
-        raise ValueError("--placement-seed는 --random-can과 함께 0 이상의 정수로 지정하세요.")
-    requested = args.policy or args.selection or "1"
-    selected = catalog.get("aliases", {}).get(requested, requested)
-    entry = catalog["policies"].get(selected) if args.mode == "policy" else None
-    speed = getattr(args, "speed", None)
-    if speed is None:
-        speed = catalog.get("playback_speed", {}).get(args.robot, 1.0)
-        if isinstance(speed, dict):
-            speed = speed.get(args.mode, 1.0)
-        if entry:
-            speed = entry.get("playback_speed", speed)
-    if not math.isfinite(speed) or speed <= 0:
-        raise ValueError("--speed는 양의 유한한 수여야 합니다.")
-    if args.robot == "arm" and args.mode == "retarget" and speed != 1.0:
-        raise ValueError(
-            "팔 retarget은 검증된 IK 궤적의 1배속을 사용합니다. 팔 정책은 --speed를 지원합니다."
-        )
-    label = Path(selected).stem
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    output = root / "local/results/play" / f"{stamp}_{args.robot}_{args.mode}_{label}"
-    details = dict(
-        robot=args.robot,
-        mode=args.mode,
-        selected=selected,
-        output=str(output),
-        training=False,
-        repeat=args.repeat,
-        unlimited=args.repeat == 0,
-        speed=speed,
-    )
-    flags = ["--headless"] if args.headless else []
-    flags += ["--speed", str(speed)]
-    if args.mode == "policy":
-        automatic = (
-            latest_policy(root, entry["latest_demo"], args.robot)
-            if entry and "latest_demo" in entry
-            else None
-        )
-        checkpoint = required(
-            automatic["checkpoint"] if automatic else (entry["checkpoint"] if entry else selected)
-        )
-        if automatic:
-            details["policy_selection"] = automatic
-        config_path = required(args.config or checkpoint.parent / "config.resolved.json")
-        cfg = read(config_path)
-        native_arm = cfg.get("arm_training", {}).get("enabled", False)
-        if native_arm and args.robot != "arm":
-            raise ValueError(
-                "이 정책은 실제 팔 상태를 관측하며 학습했습니다. arm 환경으로 실행하세요."
-            )
-        reference_path = required(cfg["reference"])
-        for key in ("model", "hand_asset", "object_asset", "object_geometry"):
-            required(cfg[key])
-        cmd = [
-            sys.executable,
-            str(root / "scripts/policy.py"),
-            "--mode",
-            "play",
-            "--robot",
-            args.robot,
-            "--checkpoint",
-            str(checkpoint),
-            "--config",
-            str(config_path),
-            "--episodes",
-            str(args.repeat),
-            "--evaluation-protocol",
-            "strict",
-            "--motion-control",
-            "checkpoint",
-            "--output",
-            str(output),
-            *flags,
-        ]
-        cmd.extend(
-            ["--table-safety", args.table_safety or ("checkpoint" if native_arm else "protect")]
-        )
-        if getattr(args, "contact_materials", None):
-            cmd.extend(["--contact-materials", args.contact_materials])
-        if args.robot == "arm":
-            arm_path = args.arm_config or (
-                cfg["arm_training"]["arm_config"]
-                if native_arm
-                else (entry["arm_config"] if entry else None)
-            )
-            if arm_path is None and demo_id(root, cfg) in catalog["demos"]:
-                arm_path = catalog["demos"][demo_id(root, cfg)]["arm_config"]
-            if arm_path is None:
-                # Fresh training uses a demo's current derived input. Historical
-                # checkpoints still resolve through their registered policy below.
-                ref = resolve_demo_path(cfg["reference"], root).resolve()
-                for demo in catalog["demos"].values():
-                    candidates = [demo["config"]]
-                    if demo.get("training_config"):
-                        candidates.append(demo["training_config"])
-                    if any(
-                        resolve_demo_path(read(root / path)["reference"], root).resolve() == ref
-                        for path in candidates
-                    ):
-                        arm_path = demo["arm_config"]
-                        break
-            if arm_path is None:
-                # Recognize custom checkpoints that still use a registered demo's
-                # exact input; never guess a coordinate transform for new inputs.
-                ref = resolve_demo_path(cfg["reference"], root).resolve()
-                for candidate in catalog["policies"].values():
-                    if "checkpoint" not in candidate:
-                        continue
-                    saved = root / candidate["checkpoint"]
-                    config = saved.parent / "config.resolved.json"
-                    if (
-                        config.is_file()
-                        and resolve_demo_path(read(config)["reference"], root).resolve() == ref
-                    ):
-                        arm_path = candidate["arm_config"]
-                        break
-            if arm_path is None:
-                raise ValueError(
-                    "이 사용자 정책의 팔 배치를 알 수 없습니다. --arm-config <팔 설정.json>을 지정하세요."
-                )
-            arm_path = required(arm_path)
-            for key in ("alignment", "workcell", "arm_model", "hand_model", "usd"):
-                required(read(arm_path)[key])
-            cmd.extend(["--arm-config", str(arm_path)])
-            details["arm_config"] = str(arm_path)
-            if random_can:
-                from .policy.placement import load_random_placement
-
-                placement = load_random_placement(root, cfg, read(arm_path), speed, placement_seed)
-                # Choose entropy once in the launcher and forward it, including
-                # dry-run commands, so the logged plan exactly reproduces play.
-                cmd.extend(["--random-can", "--placement-seed", str(placement.seed)])
-                details["random_can"] = placement.metadata
-        details.update(
-            checkpoint=str(checkpoint),
-            config=str(config_path),
-            reference=str(reference_path.resolve()),
-            label=entry["label"] if entry else checkpoint.name,
-        )
-        if automatic:
-            details["label"] += f" · {automatic['iteration']}iter"
-        if entry and entry.get("note"):
-            details["note"] = entry["note"]
-        commands.append(cmd)
-    else:
-        if selected not in catalog["demos"]:
-            raise ValueError("리타게팅 데모는 1 또는 2를 선택하세요.")
-        entry = catalog["demos"][selected]
-        config = required(entry["config"])
-        arm_config = required(args.arm_config or entry["arm_config"])
-        reference = required(read(arm_config)["input"])
-        cmd = [
-            sys.executable,
-            str(root / "scripts/physics.py"),
-            args.robot,
-            "--config",
-            str(config),
-            "--arm-config",
-            str(arm_config),
-            "--loops",
-            str(args.repeat),
-            "--output",
-            str(output),
-            *flags,
-        ]
-        if args.robot == "arm":
-            cached = root / entry["arm_reference"]
-            reason = arm_reference_error(root, cached, arm_config)
-            if reason:
-                # A separate cache avoids overwriting previously validated runs.
-                cache = root / "local/results/play/ik" / selected
-                cached = cache / "trajectory.npz"
-                if arm_reference_error(root, cached, arm_config):
-                    commands.append(
-                        [
-                            sys.executable,
-                            str(root / "scripts/ik.py"),
-                            "solve",
-                            "--config",
-                            str(arm_config),
-                            "--output",
-                            str(cache),
-                        ]
-                    )
-                    details["prepare_ik"] = reason
-            cmd.extend(["--arm-reference", str(cached)])
-            details["arm_reference"] = str(cached)
-        commands.append(cmd)
-        details.update(
-            config=str(config),
-            arm_config=str(arm_config),
-            reference=str(reference),
-            label=entry["label"],
-        )
-    return dict(**details, commands=commands)
+    task = load_task(root, getattr(args, "task", DEFAULT_TASK))
+    return task.entrypoint("playback_plan")(root, args, catalog)
 
 
 def main(root=None, argv=None):
     root = Path(root or Path(__file__).resolve().parents[2]).resolve()
     p = parser()
     args = p.parse_args(argv)
-    catalog = read(root / "config/play.json")
+    try:
+        task = load_task(root, args.task)
+        catalog = task.catalog()
+    except (OSError, ValueError) as error:
+        p.error(str(error))
     if args.list:
         for group in ("demos", "policies"):
             print("데모" if group == "demos" else "\n정책")
@@ -348,7 +145,9 @@ def main(root=None, argv=None):
                     print("             " + entry["checkpoint"])
                 if "latest_demo" in entry:
                     try:
-                        latest = latest_policy(root, entry["latest_demo"], args.robot or "floating")
+                        latest = latest_policy(
+                            root, entry["latest_demo"], args.robot or "floating", task=task.id
+                        )
                         print(f"             {latest['checkpoint']} ({latest['iteration']}iter)")
                     except ValueError as error:
                         print("             " + str(error))
@@ -358,6 +157,7 @@ def main(root=None, argv=None):
     if args.repeat < 0:
         p.error("--repeat는 0(무한 반복) 또는 양수여야 합니다.")
     try:
+        task.entrypoint("playback_plan")
         if not args.robot or not args.mode:
             if not sys.stdin.isatty():
                 p.error("예: ./run.sh floating retarget 1 (전체 도움말: --help)")

@@ -26,11 +26,11 @@ python scripts/contact_reference.py --source data/demo2/grounded/reference.npz \
 ```
 
 FK/FCL·SLSQP로 관절·속도·캔·상판 조건을 계산하고 입력 hash와 생성 설정을 기록합니다.
-`config/policy_demo2_contact.json`은 접근·접촉 보상과 preload를 함께 사용합니다.
+`config/tasks/can_pick/policy_demo2_contact.json`은 접근·접촉 보상과 preload를 함께 사용합니다.
 기하 궤적을 유지하고 접촉력 보상만 사용하려면 다음 설정을 선택합니다.
 
 ```bash
-./run.sh train floating 2 --config config/policy_demo2_contact_only.json -i 1000
+./run.sh train floating 2 --config config/tasks/can_pick/policy_demo2_contact_only.json -i 1000
 ./run.sh floating policy 2
 ```
 

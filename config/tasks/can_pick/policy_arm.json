@@ -357,7 +357,7 @@
   },
   "arm_training": {
     "enabled": true,
-    "arm_config": "config/ik_demo1.json",
+    "arm_config": "config/tasks/can_pick/ik_demo1.json",
     "ik_iterations": 12,
     "reset_ik_iterations": 40,
     "compile_fk": true,

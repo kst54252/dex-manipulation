@@ -14,6 +14,8 @@
 - Keep `data/demo*/raw/` images and NPZ untracked; track only placement READMEs. Keep DexYCB attribution in `docs/dataset.md`.
 - Demo 1 is `data/demo1/` (40 poses, historical `original`); demo 2 is `data/demo2/` (27 poses, historical `current`). Use `1`/`2` in user-facing commands.
 - Resolve historical input paths with `resolve_demo_path` rather than editing saved metadata.
+- Group task-specific settings under `config/tasks/<task>/` and adapters under `src/dex_manipulation/tasks/`. Default task is `can_pick`; its existing `data/demo1/` and `data/demo2/` remain stable.
+- Add new task inputs under `data/<task>/demoN/` and task assets under `assets/tasks/<task>/`. Raw inputs remain untracked. Keep task identity separate from demo number and never silently reuse another task's policy or physics.
 
 ## Documentation
 

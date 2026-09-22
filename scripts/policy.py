@@ -12,7 +12,9 @@ sys.path.insert(0, str(ROOT / "src"))
 
 def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="train"):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=ROOT / "config/policy_demo2.json")
+    parser.add_argument(
+        "--config", type=Path, default=ROOT / "config/tasks/can_pick/policy_demo2.json"
+    )
     parser.add_argument("--output", type=Path, default=ROOT / "local/results/policy")
     parser.add_argument("--mode", choices=modes, default=default_mode)
     parser.add_argument(
@@ -106,7 +108,7 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
         "--motion-control",
         choices=("checkpoint", "stable"),
         default=None,
-        help="Play/evaluate default to the trained controller. Stable explicitly enables the optional command governor from config/policy_demo2.json. Training uses its config.",
+        help="Play/evaluate default to the trained controller. Stable explicitly enables the optional command governor from config/tasks/can_pick/policy_demo2.json. Training uses its config.",
     )
     parser.add_argument(
         "--table-safety",
@@ -130,7 +132,7 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
     if args.placement_seed is not None and (not args.random_can or args.placement_seed < 0):
         parser.error("--placement-seed requires --random-can and a nonnegative integer")
     if args.robot == "arm":
-        if args.mode != "play" and args.config == ROOT / "config/policy_demo2.json":
+        if args.mode != "play" and args.config == ROOT / "config/tasks/can_pick/policy_demo2.json":
             parser.error("Arm training/evaluation requires an explicit arm-training config")
         if args.evaluation_protocol == "source" or args.motion_control == "stable":
             parser.error("Arm playback uses strict observations and the checkpoint target mapping")
@@ -167,6 +169,13 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
 
 
 def launch(args, on_ready=None):
+    from dex_manipulation.configuration import read_config
+    from dex_manipulation.tasks import config_task_id, load_task
+
+    task = load_task(ROOT, config_task_id(read_config(args.config)))
+    # Reject an unconfigured task before starting Kit or creating an environment.
+    if "policy" not in task.definition["entrypoints"]:
+        task.entrypoint("policy")
     from isaacsim import SimulationApp
 
     app = SimulationApp(
@@ -181,8 +190,7 @@ def launch(args, on_ready=None):
     )
     code = 0
     try:
-        from dex_manipulation.policy.runner import run
-
+        run = task.entrypoint("policy")
         run(args, ROOT, on_ready=on_ready, is_running=app.is_running)
     except Exception:
         import traceback

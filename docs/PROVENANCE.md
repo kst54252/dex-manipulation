@@ -26,7 +26,7 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 | `mdp/rewards.py`, `mdp/terminations.py` | 물체 50점·속도·손목·action 보상과 종료 조건 | `policy/task.py` |
 | `mdp/commands.py`, `mdp/rb3_revo2_commands.py` | reference-frame RSI, 자세·속도 reset, phase·속도 차분 | `policy/curriculum.py`, `policy/reference.py`, `policy/floating_env.py` |
 | `envs/events.py`, `dexterous_env_cfg.py` | 중력 단계, 물성·질량·관성·gain·COM randomization, 외란 | `policy/randomization.py`, `curriculum.py` |
-| Revo2 floating config, `free_revo2_right_hand.py`, `tuna_can.py` | 120/30Hz, 손 중력 OFF, 손가락 drive, solver·접촉 설정 | `config/policy*.json`, `policy/floating_env.py` |
+| Revo2 floating config, `free_revo2_right_hand.py`, `tuna_can.py` | 120/30Hz, 손 중력 OFF, 손가락 drive, solver·접촉 설정 | `config/tasks/can_pick/policy*.json`, `policy/floating_env.py` |
 | RSL-RL PPO config와 train/play 구성 | PPO·정규화·actor 초기화·checkpoint 흐름 | `policy/ppo.py`, `runner.py` |
 | `regrind-revo2`의 접촉 reference 구성 | 물리 rollout의 손–물체 관계를 기준 궤적에 반영 | `policy/rollout_reference.py` |
 
@@ -80,3 +80,8 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
   VM 설치·Simulation 전용 모드, 5000/5001 포트, `jnt_ref`/`jnt_ang` 의미와 packed fault bit.
   공식 `rbpodo==0.16.14`를 사용합니다. 가상 손·초기 자세 Move J·30Hz ROS 연결·지연 검사는 자체 설계이며
   Servo J 시험값은 제조사 권장 튜닝값으로 간주하지 않습니다.
+
+## 작업 구성
+
+Task registry, 작업별 설정·데모·정책 분리, `drilling`의 입력/단계 정의는 이 프로젝트의 자체 설계입니다.
+공통 리타게팅·PPO와 작업별 환경·보상을 분리합니다. 드릴 입력과 단계 구성은 독립적으로 정의했습니다.

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "id": "can_pick",
+  "label": "캔 집기",
+  "catalog": "config/tasks/can_pick/play.json",
+  "arm_training_config": "config/tasks/can_pick/policy_arm.json",
+  "phases": ["approach", "grasp", "lift"],
+  "entrypoints": {
+    "playback_plan": "dex_manipulation.tasks.can_pick:plan_playback",
+    "training_plan": "dex_manipulation.tasks.can_pick:plan_training",
+    "policy": "dex_manipulation.policy.runner:run",
+    "reward": "dex_manipulation.tasks.can_pick:attach_reward"
+  },
+  "data": {"1": "data/demo1", "2": "data/demo2"},
+  "inputs": [
+    {"role": "object_asset", "path": "assets/can/can.usda"},
+    {"role": "object_geometry", "path": "assets/models/can_mesh.json"}
+  ]
+}

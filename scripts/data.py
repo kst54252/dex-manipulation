@@ -47,7 +47,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=ROOT / "data/demo2/raw")
     parser.add_argument("--output", type=Path, default=ROOT / "data/demo2/poses.npz")
-    parser.add_argument("--config", type=Path, default=ROOT / "config/retargeting_demo2.json")
+    parser.add_argument(
+        "--config", type=Path, default=ROOT / "config/tasks/can_pick/retargeting_demo2.json"
+    )
     parser.add_argument(
         "--frame-range", nargs=2, type=int, help="Inclusive frame IDs; defaults to dataset config"
     )

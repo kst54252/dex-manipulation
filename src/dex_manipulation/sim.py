@@ -169,11 +169,13 @@ def replay_floating(
         raise ValueError("loops must be nonnegative; 0 repeats until stopped")
     root, output = Path(root), Path(output)
     output.mkdir(parents=True, exist_ok=True)
-    cfg = read_config(Path(config_path or root / "config/policy_demo2.json"))
+    cfg = read_config(Path(config_path or root / "config/tasks/can_pick/policy_demo2.json"))
     # This command previews geometric retargeting, like the arm preview. A
     # separately prepared policy contact reference belongs to policy.py.
     cfg.pop("table_safety", None)  # Policy safety is separate from raw retargeting diagnostics.
-    cfg["reference"] = read_config(Path(arm_config_path or root / "config/ik_demo2.json"))["input"]
+    cfg["reference"] = read_config(
+        Path(arm_config_path or root / "config/tasks/can_pick/ik_demo2.json")
+    )["input"]
     for name in (
         "rsi",
         "augmentation",

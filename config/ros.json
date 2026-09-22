@@ -1,6 +1,6 @@
 {
   "namespace": "/dex",
-  "arm_config": "config/ik_demo2.json",
+  "arm_config": "config/tasks/can_pick/ik_demo2.json",
   "state_rate_hz": 30.0,
   "state_timeout_s": 0.2,
   "mirror_rate_hz": 60.0,

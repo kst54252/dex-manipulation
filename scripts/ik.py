@@ -21,7 +21,7 @@ def main():
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("extract", "solve", "place"))
-    parser.add_argument("--config", type=Path, default=ROOT / "config/ik_demo2.json")
+    parser.add_argument("--config", type=Path, default=ROOT / "config/tasks/can_pick/ik_demo2.json")
     parser.add_argument("--input", type=Path)
     parser.add_argument("--output", type=Path, default=ROOT / "local/results/ik/full")
     parser.add_argument(

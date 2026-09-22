@@ -1,8 +1,6 @@
 """Prepare isolated, headless training runs without changing source configs."""
 
 import argparse
-from copy import deepcopy
-from datetime import datetime
 import json
 from pathlib import Path
 import shlex
@@ -11,7 +9,7 @@ import sys
 
 from .data import resolve_demo_path
 from .launch import choose, read
-from .policies import demo_id
+from .tasks import config_task_id, load_task
 
 
 def parser():
@@ -20,7 +18,8 @@ def parser():
         description="학습: ./train.sh [floating|arm] [1|2] 또는 ./run.sh train ...",
     )
     p.add_argument("robot", nargs="?", choices=("floating", "arm"))
-    p.add_argument("demo", nargs="?", choices=("1", "2"))
+    p.add_argument("demo", nargs="?", help="선택한 task의 데모 번호")
+    p.add_argument("--task", help="작업 이름; 기본 can_pick, 이어 학습은 checkpoint에서 읽음")
     p.add_argument(
         "-i", "--iterations", type=int, help="실행할 iteration 수; 이어 학습은 추가 횟수"
     )
@@ -69,170 +68,19 @@ def scale_gravity(config, iterations):
 
 
 def resolve_plan(root, args):
-    """Read inputs only: no Isaac import, checkpoint mutation, or file creation."""
-    root = Path(root).resolve()
-
-    def required(path):
-        path = resolve_demo_path(Path(path).expanduser(), root)
-        if not path.is_file():
-            raise ValueError(f"필수 파일이 없습니다: {path}")
-        return path
-
-    for name in ("iterations", "num_envs", "save_every"):
-        value = getattr(args, name)
-        if value is not None and value < 1:
-            raise ValueError(f"--{name.replace('_', '-')}는 양수여야 합니다.")
-    checkpoint = required(args.resume) if args.resume else None
-    actor = required(args.initialize_actor) if args.initialize_actor else None
-    if checkpoint and actor:
-        raise ValueError("--resume와 --initialize-actor를 함께 사용할 수 없습니다.")
-    custom_config = getattr(args, "config", None)
-    if checkpoint and custom_config:
-        raise ValueError("--resume는 저장된 설정을 사용합니다. --config로 덮어쓸 수 없습니다.")
-    if checkpoint:
-        source = required(checkpoint.parent / "config.resolved.json")
-        config = read(source)
-        robot = "arm" if config.get("arm_training", {}).get("enabled", False) else "floating"
-        reference = required(config["reference"]).resolve()
-        demo = next(
-            (n for n in ("1", "2") if reference.is_relative_to(root / f"data/demo{n}")), None
+    task_id = getattr(args, "task", None)
+    if args.resume:
+        saved = (
+            resolve_demo_path(Path(args.resume).expanduser(), root).parent / "config.resolved.json"
         )
-        # Derived contact references are deliberately stored under local/;
-        # their new configs explicitly identify the original demo.
-        if demo is None and config.get("demo_id") in ("1", "2"):
-            demo = config["demo_id"]
-        if demo is None:
-            raise ValueError(
-                "checkpoint 입력이 demo1/demo2에 속하지 않습니다. scripts/policy.py로 직접 설정하세요."
-            )
-        if (args.robot and args.robot != robot) or (args.demo and args.demo != demo):
-            raise ValueError(
-                f"checkpoint는 {robot}, {demo}번 데모입니다. 다른 환경/데모로 이어 학습할 수 없습니다."
-            )
-        saved_metadata = checkpoint.parent / "run_metadata.json"
-        saved_envs = (
-            read(saved_metadata).get("physics", {}).get("num_envs")
-            if saved_metadata.is_file()
-            else None
-        ) or config["training"]["num_envs"]
-        if args.num_envs is not None and args.num_envs != saved_envs:
-            raise ValueError(
-                f"이어 학습은 저장된 환경 수 {saved_envs}개를 유지해야 합니다 (환경별 물리 상태 복원)."
-            )
-        num_envs = saved_envs
-    else:
-        if not args.robot or not args.demo:
-            raise ValueError(
-                "환경과 데모를 지정하세요. 예: ./train.sh floating 2 --iterations 2000"
-            )
-        robot, demo = args.robot, args.demo
-        catalog = read(root / "config/play.json")["demos"][demo]
-        source = required(
-            custom_config
-            or (
-                catalog.get("training_config", catalog["config"])
-                if robot == "floating"
-                else "config/policy_arm.json"
-            )
-        )
-        config = deepcopy(read(source))
-        if custom_config:
-            configured_robot = (
-                "arm" if config.get("arm_training", {}).get("enabled") else "floating"
-            )
-            if configured_robot != robot or demo_id(root, config) != demo:
-                raise ValueError("선택한 --config의 로봇 환경/데모가 명령과 다릅니다.")
-        if robot == "arm" and not custom_config:
-            # The arm template owns physical/controller/PPO settings; only the
-            # selected demo's reference, coordinate description and placement vary.
-            demo_config = read(required(catalog["config"]))
-            config["reference"] = demo_config["reference"]
-            config["scene_assumption"] = demo_config["scene_assumption"]
-            config["arm_training"]["arm_config"] = catalog["arm_config"]
-            if demo_config["reference"] != read(source)["reference"]:
-                config["recipe"] = f"revo2_rb3_online_ik_demo{demo}_v1"
-        num_envs = args.num_envs or config["training"]["num_envs"]
-    if actor and robot != "arm":
-        raise ValueError("--initialize-actor는 새 arm 학습에서만 사용하세요.")
-    iterations = args.iterations or config["training"]["iterations"]
-    save_every = args.save_every or config["training"]["save_every"]
-    if not checkpoint:
-        scale_gravity(config, iterations)
-        config["training"].update(iterations=iterations, num_envs=num_envs, save_every=save_every)
-    # Resumes pass execution counts as CLI args only. Editing the snapshot would
-    # invalidate the strict checkpoint contract and restart curriculum timing.
-    reference = required(config["reference"])
-    for key in ("model", "hand_asset", "object_asset", "object_geometry"):
-        required(config[key])
-    arm_path = None
-    if robot == "arm":
-        arm_path = required(config["arm_training"]["arm_config"])
-        for key in ("alignment", "workcell", "arm_model", "hand_model", "usd"):
-            required(read(arm_path)[key])
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    output = args.output or Path(f"local/results/policy/demo{demo}_{robot}_{iterations}_{stamp}")
-    output = Path(output).expanduser()
-    output = (root / output).resolve()
-    if not output.is_relative_to(root / "local"):
-        raise ValueError("학습 결과는 Git 제외 영역인 local/ 아래에 저장하세요.")
-    if output.exists():
-        raise ValueError(f"결과를 덮어쓸 수 없습니다. 새 --output 폴더를 지정하세요: {output}")
-    snapshot = output / "config.input.json"
-    command = [
-        sys.executable,
-        "-u",
-        str(root / "scripts/policy.py"),
-        "--mode",
-        "train",
-        "--robot",
-        robot,
-        "--config",
-        str(snapshot),
-        "--output",
-        str(output),
-        "--num-envs",
-        str(num_envs),
-        "--iterations",
-        str(iterations),
-        "--save-every",
-        str(save_every),
-        "--headless",
-        "--skip-evaluation",
-        "--console",
-        "pretty",
-        "--logger",
-        args.logger,
-    ]
-    if arm_path:
-        command += ["--arm-config", str(arm_path)]
-    if checkpoint:
-        command += ["--checkpoint", str(checkpoint)]
-    if actor:
-        command += ["--initialize-actor", str(actor)]
-    gravity = config["gravity_curriculum"]
-    full_steps = next(
-        (s for s, low, high in gravity["stages"] if low == high == config["gravity"]), None
-    )
-    full_iteration = full_steps / config["ppo"]["rollout_steps"] if full_steps is not None else None
-    return dict(
-        robot=robot,
-        demo=demo,
-        source_config=str(source),
-        config=config,
-        reference=str(reference.resolve()),
-        output=str(output),
-        command=command,
-        iterations=iterations,
-        num_envs=num_envs,
-        save_every=save_every,
-        resume=str(checkpoint) if checkpoint else None,
-        initialize_actor=str(actor) if actor else None,
-        iteration_mode="additional" if checkpoint else "new",
-        gravity_full_iteration=full_iteration if gravity["enabled"] else 0,
-        gravity_schedule="checkpoint_unchanged" if checkpoint else "scaled_to_new_run",
-        headless=True,
-        skip_evaluation=True,
-    )
+        checkpoint_task = config_task_id(read(saved))
+        if task_id is not None and task_id != checkpoint_task:
+            raise ValueError(f"checkpoint task는 {checkpoint_task}입니다.")
+        task_id = checkpoint_task
+    task = load_task(root, task_id)
+    resolved = argparse.Namespace(**vars(args))
+    resolved.task = task.id
+    return task.entrypoint("training_plan")(root, resolved)
 
 
 def main(root=None, argv=None):
@@ -240,6 +88,8 @@ def main(root=None, argv=None):
     p = parser()
     args = p.parse_args(argv)
     try:
+        if not args.resume:
+            load_task(root, args.task).entrypoint("training_plan")
         if not args.resume and (not args.robot or not args.demo):
             if not sys.stdin.isatty():
                 p.error("예: ./train.sh floating 2 --iterations 2000 (메뉴는 터미널에서 실행)")
@@ -257,7 +107,7 @@ def main(root=None, argv=None):
                 args.robot = args.robot or choose(
                     "환경", [("floating", "플로팅 핸드"), ("arm", "RB3 + Revo2 · 온라인 IK")]
                 )
-                demos = read(root / "config/play.json")["demos"]
+                demos = load_task(root, args.task).catalog()["demos"]
                 args.demo = args.demo or choose(
                     "데모", [(n, item["label"]) for n, item in demos.items()]
                 )

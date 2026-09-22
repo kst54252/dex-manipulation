@@ -26,3 +26,6 @@ dist/
 /data/demo*/raw/*
 !/data/demo*/raw/README.md
 /data/raw/
+# Raw inputs for additional manipulation tasks; keep placement instructions.
+/data/*/demo*/raw/*
+!/data/*/demo*/raw/README.md

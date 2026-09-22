@@ -17,6 +17,26 @@ CONFIG_PATH_ALIASES = {
     "config/policy_demo2_grasp.json": "config/policy_demo2_contact_only.json",
 }
 
+# Task-specific settings moved together; historical snapshots keep their strings.
+TASK_CONFIG_PATH_ALIASES = {
+    f"config/{name}.json": f"config/tasks/can_pick/{name}.json"
+    for name in (
+        "play",
+        "policy_demo1",
+        "policy_demo2",
+        "policy_demo2_contact",
+        "policy_demo2_contact_only",
+        "policy_arm",
+        "ik_demo1",
+        "ik_demo1_legacy",
+        "ik_demo2",
+        "retargeting_demo1",
+        "retargeting_demo2",
+        "arm_placement_demo1",
+        "arm_placement_demo2",
+    )
+}
+
 
 def resolve_demo_path(path, root=None):
     """Resolve historical demo/config paths without rewriting saved provenance.
@@ -35,7 +55,8 @@ def resolve_demo_path(path, root=None):
     except ValueError:
         return candidate
     aliases = {
-        **CONFIG_PATH_ALIASES,
+        **{old: TASK_CONFIG_PATH_ALIASES.get(new, new) for old, new in CONFIG_PATH_ALIASES.items()},
+        **TASK_CONFIG_PATH_ALIASES,
         "data/current": "data/demo2",
         "data/original": "data/demo1",
         "data/raw/839512060362": "data/demo2/raw",
@@ -66,6 +87,10 @@ def legacy_demo_paths(value):
     if isinstance(value, str):
         root = str(Path(__file__).resolve().parents[2]) + "/"
         for prefix in ("", root):
+            for old, new in TASK_CONFIG_PATH_ALIASES.items():
+                if value == prefix + new:
+                    value = prefix + old
+                    break
             for old, new in CONFIG_PATH_ALIASES.items():
                 if value == prefix + new:
                     return prefix + old

@@ -64,7 +64,7 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
     Subsequent residual commands still pass through the ordinary strict arm IK.
     """
     root = Path(root)
-    catalog = read_config(root / "config/play.json")
+    catalog = read_config(root / "config/tasks/can_pick/play.json")
     demo = catalog["demos"]["2"]
     known = [
         read_config(root / demo[key])["reference"]

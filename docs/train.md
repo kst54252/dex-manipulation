@@ -5,18 +5,20 @@
 ./run.sh train floating 1 -i 1000 -n 4096
 ./run.sh train floating 2 -i 1000 -n 4096
 ./run.sh train arm 2 -i 2000 -n 4096
+./run.sh train floating 1 --task can_pick -i 1000
 ```
 
 한 실행에서 한 데모를 학습합니다. 기본 4096환경, RSI·증강 사용, 창 없는 실행입니다.
+`--task`는 작업을 선택합니다. 기본은 `can_pick`이며 새 결과는 `local/results/policy/<task>/`에 저장합니다.
 학습 종료 후 재생은 [재생 명령](run.md)으로 직접 실행합니다. `train.sh`는 같은 실행기의 별칭입니다.
 
 | 설정 | 역할 |
 |---|---|
-| `config/policy_demo1.json` | 데모1 플로팅·손가락 접촉 보상 없음 |
-| `config/policy_demo2_contact.json` | 데모2 플로팅·패드 접근/접촉 보상 |
-| `config/policy_demo2_contact_only.json` | 데모2 기하 궤적·접촉력 보상만 사용 |
-| `config/policy_arm.json` | 실제 팔 상태와 온라인 IK를 포함한 학습 |
-| `config/play.json` | 데모별 입력·팔 설정 연결 |
+| `config/tasks/can_pick/policy_demo1.json` | 데모1 플로팅·손가락 접촉 보상 없음 |
+| `config/tasks/can_pick/policy_demo2_contact.json` | 데모2 플로팅·패드 접근/접촉 보상 |
+| `config/tasks/can_pick/policy_demo2_contact_only.json` | 데모2 기하 궤적·접촉력 보상만 사용 |
+| `config/tasks/can_pick/policy_arm.json` | 실제 팔 상태와 온라인 IK를 포함한 학습 |
+| `config/tasks/can_pick/play.json` | 데모별 입력·팔 설정 연결 |
 
 데모1은 바닥에 정렬된 기존 리타게팅 입력을 사용합니다.
 데모2의 기본 학습 입력은 [접촉 궤적 생성](contact_training.md)으로 준비합니다.

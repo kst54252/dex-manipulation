@@ -31,13 +31,13 @@ def main():
     parser.add_argument(
         "--config",
         type=Path,
-        default=ROOT / "config/policy_demo2.json",
+        default=ROOT / "config/tasks/can_pick/policy_demo2.json",
         help="Floating physics configuration",
     )
     parser.add_argument(
         "--arm-config",
         type=Path,
-        default=ROOT / "config/ik_demo2.json",
+        default=ROOT / "config/tasks/can_pick/ik_demo2.json",
         help="Demo input, arm model and placement",
     )
     parser.add_argument(
