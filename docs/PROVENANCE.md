@@ -24,11 +24,11 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 | `mdp/actions.py`, `mdp/rb3_revo2_actions.py` | clipped SE(3)/joint residual, 자세 PD, 질량 비례 torque 분배 | `control.py`, `policy/task.py` |
 | `mdp/observations.py`, `utils/buffers.py` | 비대칭 actor/critic, 회전 표현, history·noise·delay | `policy/observations.py` |
 | `mdp/rewards.py`, `mdp/terminations.py` | 물체 50점·속도·손목·action 보상과 종료 조건 | `policy/task.py` |
-| `mdp/commands.py`, `mdp/rb3_revo2_commands.py` | reference-frame RSI, 자세·속도 reset, phase·속도 차분 | `policy/curriculum.py`, `reference.py`, `env.py` |
+| `mdp/commands.py`, `mdp/rb3_revo2_commands.py` | reference-frame RSI, 자세·속도 reset, phase·속도 차분 | `policy/curriculum.py`, `policy/reference.py`, `policy/floating_env.py` |
 | `envs/events.py`, `dexterous_env_cfg.py` | 중력 단계, 물성·질량·관성·gain·COM randomization, 외란 | `policy/randomization.py`, `curriculum.py` |
-| Revo2 floating config, `free_revo2_right_hand.py`, `tuna_can.py` | 120/30Hz, 손 중력 OFF, 손가락 drive, solver·접촉 설정 | `config/policy*.json`, `policy/env.py` |
+| Revo2 floating config, `free_revo2_right_hand.py`, `tuna_can.py` | 120/30Hz, 손 중력 OFF, 손가락 drive, solver·접촉 설정 | `config/policy*.json`, `policy/floating_env.py` |
 | RSL-RL PPO config와 train/play 구성 | PPO·정규화·actor 초기화·checkpoint 흐름 | `policy/ppo.py`, `runner.py` |
-| `regrind-revo2`의 접촉 reference 구성 | 물리 rollout의 손–물체 관계를 기준 궤적에 반영 | `policy/prepare.py` |
+| `regrind-revo2`의 접촉 reference 구성 | 물리 rollout의 손–물체 관계를 기준 궤적에 반영 | `policy/rollout_reference.py` |
 
 ## 자체 설계
 

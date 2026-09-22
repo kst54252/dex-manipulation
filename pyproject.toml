@@ -13,6 +13,9 @@ dependencies = ["numpy>=1.24", "scipy>=1.11", "python-fcl>=0.7"]
 usd = ["usd-core>=25.5"]
 validation = ["opencv-python>=4", "websockets>=14"]
 rl = ["torch>=2.4", "matplotlib>=3.8", "rsl-rl-lib>=5.4,<6", "tensordict>=0.9", "onnx>=1.16"]
+hardware = ["rbpodo==0.16.14", "bc-stark-sdk==2.0.3"]
+vcb = ["rbpodo==0.16.14"]
+dev = ["pytest>=8.4", "ruff>=0.15.7"]
 
 [project.scripts]
 dex-retarget = "dex_manipulation.cli:main"
@@ -22,3 +25,14 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 dex_manipulation = ["static/*.html", "static/*.js", "static/*LICENSE*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["local", ".deps", ".webdeps"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*.py" = ["E402"]

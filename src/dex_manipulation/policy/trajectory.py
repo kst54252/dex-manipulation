@@ -1,4 +1,6 @@
 """Validated trajectory adapter, SI units, column transforms, XYZW quaternions."""
+
+from ..configuration import read_config
 import hashlib
 import json
 import copy
@@ -23,38 +25,51 @@ class ReferenceMotion:
         with np.load(path, allow_pickle=False) as data:
             self.data = {key: data[key].copy() for key in data.files}
         d = self.data
-        if list(d["active_joint_names"]) != model.active_names or list(d["full_joint_names"]) != model.full_names:
+        if (
+            list(d["active_joint_names"]) != model.active_names
+            or list(d["full_joint_names"]) != model.full_names
+        ):
             raise ValueError("Reference joint order differs from the extracted USD model")
         if list(d["semantic_names"]) != model.semantic_names:
             raise ValueError("Reference semantic correspondence differs from model")
         if not d["valid"].all() or not d["transition_valid"][1:].all():
             raise ValueError("Invalid reference frames/transitions cannot silently seed RL")
         self.times = np.asarray(d["timestamps_s"], dtype=float)
-        if len(self.times) < 2 or not np.isfinite(self.times).all() or np.any(np.diff(self.times) <= 0):
+        if (
+            len(self.times) < 2
+            or not np.isfinite(self.times).all()
+            or np.any(np.diff(self.times) <= 0)
+        ):
             raise ValueError("Reference requires strictly increasing, finite timestamps")
         self.times -= self.times[0]
         self.duration = float(self.times[-1])
         self.model = model
-        geometry = json.loads(Path(geometry_path).read_text())
+        geometry = read_config(Path(geometry_path))
         from ..coordinates import collision_bottom, z_aligned_cylinders
         from ..geometry import geometry_fingerprint
+
         self.object_geometry = geometry
         self.collision_shapes = z_aligned_cylinders(geometry)
         fingerprint = geometry_fingerprint(geometry)
-        if geometry.get('fingerprint') and (geometry['fingerprint'] != fingerprint
-                or str(d.get('object_geometry_fingerprint', '')) != fingerprint):
-            raise ValueError('Reference object geometry is stale; rerun retargeting and grounding')
+        if geometry.get("fingerprint") and (
+            geometry["fingerprint"] != fingerprint
+            or str(d.get("object_geometry_fingerprint", "")) != fingerprint
+        ):
+            raise ValueError("Reference object geometry is stale; rerun retargeting and grounding")
         bottom = collision_bottom(np.eye(4), self.collision_shapes)
-        if world_frame == 'grounded_dataset':
-            frame = json.loads(str(d['frame_metadata_json']))
-            if frame['coordinate_frame'] != 'ground' or abs(collision_bottom(d['object_transform'][0], self.collision_shapes)) > 1e-7:
-                raise ValueError('Grounded reference must start with the can bottom at Z=0')
+        if world_frame == "grounded_dataset":
+            frame = json.loads(str(d["frame_metadata_json"]))
+            if (
+                frame["coordinate_frame"] != "ground"
+                or abs(collision_bottom(d["object_transform"][0], self.collision_shapes)) > 1e-7
+            ):
+                raise ValueError("Grounded reference must start with the can bottom at Z=0")
             # Historical attribute name: this maps INPUT coordinates to simulation.
             # The derived dataset is already in world coordinates: no second transform.
             self.camera_to_world = np.eye(4)
         else:
-            if 'frame_metadata_json' in d:
-                raise ValueError('Use grounded_dataset for already transformed data')
+            if "frame_metadata_json" in d:
+                raise ValueError("Use grounded_dataset for already transformed data")
             self.camera_to_world = inverse(d["object_transform"][0])
             self.camera_to_world[2, 3] += -bottom + 0.001
         self.wrist = self.camera_to_world @ d["wrist_transform"]
@@ -65,32 +80,48 @@ class ReferenceMotion:
                 raise ValueError("Nonfinite reference data")
         if np.any(self.q < model.lower - 1e-5) or np.any(self.q > model.upper + 1e-5):
             raise ValueError("Reference joint limits violated")
-        self._slerp = {name: Slerp(self.times, Rotation.from_matrix(poses[:, :3, :3]))
-                       for name, poses in (("wrist", self.wrist), ("object", self.object))}
+        self._slerp = {
+            name: Slerp(self.times, Rotation.from_matrix(poses[:, :3, :3]))
+            for name, poses in (("wrist", self.wrist), ("object", self.object))
+        }
         self.object_local = d["object_points_local"]
-        self.metadata = dict(reference_sha256=digest(path), model_source_sha256=model.description["source_sha256"],
-                             object_geometry_fingerprint=fingerprint, object_geometry_sha256=digest(geometry_path),
-                             object_asset_sha256=geometry.get('collision_source_sha256'),
-                             camera_to_world=self.camera_to_world.tolist(), quaternion_order="xyzw",
-                             time_basis="input trajectory timestamps; currently user-authorized 5 Hz retiming",
-                             duration_s=self.duration, frame_ids=d["frame_ids"].tolist(),
-                             world_frame=world_frame, ground_z_m=0.0)
-        if 'frame_metadata_json' in d:
-            self.metadata['dataset_frame'] = json.loads(str(d['frame_metadata_json']))
-            frame=self.metadata['dataset_frame']
-            if frame.get('time_basis')=='source_declared_playback_fps':
-                self.metadata['time_basis']=f"input timestamps; source-declared {frame['source_playback_fps']:g} Hz playback; capture rate not independently verified"
-            elif frame.get('time_basis')=='retimed_user_authorized':
-                self.metadata['time_basis']=f"user-authorized playback retiming to {self.duration:g} s; capture rate unchanged/unknown"
-            if frame.get('object_orientation_requirement')=='initial_base_below_body':
+        self.metadata = dict(
+            reference_sha256=digest(path),
+            model_source_sha256=model.description["source_sha256"],
+            object_geometry_fingerprint=fingerprint,
+            object_geometry_sha256=digest(geometry_path),
+            object_asset_sha256=geometry.get("collision_source_sha256"),
+            camera_to_world=self.camera_to_world.tolist(),
+            quaternion_order="xyzw",
+            time_basis="input trajectory timestamps; currently user-authorized 5 Hz retiming",
+            duration_s=self.duration,
+            frame_ids=d["frame_ids"].tolist(),
+            world_frame=world_frame,
+            ground_z_m=0.0,
+        )
+        if "frame_metadata_json" in d:
+            self.metadata["dataset_frame"] = json.loads(str(d["frame_metadata_json"]))
+            frame = self.metadata["dataset_frame"]
+            if frame.get("time_basis") == "source_declared_playback_fps":
+                self.metadata["time_basis"] = (
+                    f"input timestamps; source-declared {frame['source_playback_fps']:g} Hz playback; capture rate not independently verified"
+                )
+            elif frame.get("time_basis") == "retimed_user_authorized":
+                self.metadata["time_basis"] = (
+                    f"user-authorized playback retiming to {self.duration:g} s; capture rate unchanged/unknown"
+                )
+            if frame.get("object_orientation_requirement") == "initial_base_below_body":
                 self.validate_can_base_down()
 
     def validate_can_base_down(self):
         """Check actual collider orientation, independently of ground clearance."""
         from ..geometry import can_orientation_report
-        report=can_orientation_report(self.object,self.object_geometry)
-        if not report['initial_base_below_body']:
-            raise ValueError('Can wider base is upside down; correct mesh_to_object, retarget and ground before training')
+
+        report = can_orientation_report(self.object, self.object_geometry)
+        if not report["initial_base_below_body"]:
+            raise ValueError(
+                "Can wider base is upside down; correct mesh_to_object, retarget and ground before training"
+            )
         return report
 
     def for_playback(self, speed, control_dt):
@@ -100,22 +131,30 @@ class ReferenceMotion:
         time knots also rescales velocity targets, without changing physics dt.
         """
         if not np.isfinite([speed, control_dt]).all() or speed <= 0 or control_dt <= 0:
-            raise ValueError('Playback speed and control dt must be positive and finite')
+            raise ValueError("Playback speed and control dt must be positive and finite")
         if speed == 1.0:
             return self
         duration = self.duration / speed
         count = round(duration / control_dt) + 1
         if count < 2 or not np.isclose((count - 1) * control_dt, duration, atol=1e-7, rtol=0):
-            raise ValueError('Playback duration must span complete control intervals; choose another --speed')
+            raise ValueError(
+                "Playback duration must span complete control intervals; choose another --speed"
+            )
         result = copy.copy(self)
         result.times = self.times / speed
         result.duration = float(duration)
-        result._slerp = {name: Slerp(result.times, Rotation.from_matrix(poses[:, :3, :3]))
-                         for name, poses in (("wrist", self.wrist), ("object", self.object))}
+        result._slerp = {
+            name: Slerp(result.times, Rotation.from_matrix(poses[:, :3, :3]))
+            for name, poses in (("wrist", self.wrist), ("object", self.object))
+        }
         result.metadata = copy.deepcopy(self.metadata)
-        result.metadata.update(playback_speed=float(speed), playback_input_duration_s=self.duration,
-                               duration_s=result.duration, control_reference_frames=count,
-                               time_basis='runtime playback retiming; source timestamps and capture FPS unchanged')
+        result.metadata.update(
+            playback_speed=float(speed),
+            playback_input_duration_s=self.duration,
+            duration_s=result.duration,
+            control_reference_frames=count,
+            time_basis="runtime playback retiming; source timestamps and capture FPS unchanged",
+        )
         return result
 
     def sample(self, time):
@@ -127,16 +166,26 @@ class ReferenceMotion:
         q = self.q[lo] * (1 - a[:, None]) + self.q[hi] * a[:, None]
         out = dict(q=q, q_velocity=(self.q[hi] - self.q[lo]) / dt[:, None], time=t)
         for name, poses in (("wrist", self.wrist), ("object", self.object)):
-            out[name + "_position"] = poses[lo, :3, 3] * (1 - a[:, None]) + poses[hi, :3, 3] * a[:, None]
+            out[name + "_position"] = (
+                poses[lo, :3, 3] * (1 - a[:, None]) + poses[hi, :3, 3] * a[:, None]
+            )
             out[name + "_quaternion"] = self._slerp[name](t).as_quat()
             out[name + "_velocity"] = (poses[hi, :3, 3] - poses[lo, :3, 3]) / dt[:, None]
-            out[name + "_angular_velocity"] = Rotation.from_matrix(
-                poses[hi, :3, :3] @ poses[lo, :3, :3].transpose(0, 2, 1)).as_rotvec() / dt[:, None]
+            out[name + "_angular_velocity"] = (
+                Rotation.from_matrix(
+                    poses[hi, :3, :3] @ poses[lo, :3, :3].transpose(0, 2, 1)
+                ).as_rotvec()
+                / dt[:, None]
+            )
         return out
 
     def retime_for_control_horizon(self, episode_length_s, control_dt):
         """Explicit legacy horizon retiming, retained for checkpoint compatibility."""
-        if not np.isfinite([episode_length_s, control_dt]).all() or episode_length_s <= 0 or control_dt <= 0:
+        if (
+            not np.isfinite([episode_length_s, control_dt]).all()
+            or episode_length_s <= 0
+            or control_dt <= 0
+        ):
             raise ValueError("Episode length and control dt must be positive and finite")
         count = int(np.ceil(episode_length_s / control_dt))
         if count < 2:
@@ -144,13 +193,19 @@ class ReferenceMotion:
         previous_duration = self.duration
         self.duration = (count - 1) * control_dt
         self.times = self.times * (self.duration / previous_duration)
-        self._slerp = {name: Slerp(self.times, Rotation.from_matrix(poses[:, :3, :3]))
-                       for name, poses in (("wrist", self.wrist), ("object", self.object))}
-        self.metadata.update(input_duration_s=previous_duration, duration_s=self.duration,
-                             episode_length_s=episode_length_s, control_reference_frames=count,
-                             time_basis="source-style episode resampling; original capture fps remains unknown")
+        self._slerp = {
+            name: Slerp(self.times, Rotation.from_matrix(poses[:, :3, :3]))
+            for name, poses in (("wrist", self.wrist), ("object", self.object))
+        }
+        self.metadata.update(
+            input_duration_s=previous_duration,
+            duration_s=self.duration,
+            episode_length_s=episode_length_s,
+            control_reference_frames=count,
+            time_basis="source-style episode resampling; original capture fps remains unknown",
+        )
 
-    def configure_timing(self,config):
+    def configure_timing(self, config):
         """Reference playback duration and episode timeout are separate concepts.
 
         Legacy checkpoints explicitly retain their old stretched horizon. The
@@ -159,27 +214,42 @@ class ReferenceMotion:
         Input timestamps preserve this project's explicitly retimed playback
         clock. One-frame-per-tick is a separate, explicit diagnostic choice.
         """
-        dt=config['physics_dt']*config['control_decimation']
-        mode=config.get('reference_timing','legacy_episode_horizon')
-        if mode=='legacy_episode_horizon':duration=config['episode_length_s']
-        elif mode=='one_frame_per_control_step':duration=len(self.times)*dt
-        elif mode=='input_timestamps':
+        dt = config["physics_dt"] * config["control_decimation"]
+        mode = config.get("reference_timing", "legacy_episode_horizon")
+        if mode == "legacy_episode_horizon":
+            duration = config["episode_length_s"]
+        elif mode == "one_frame_per_control_step":
+            duration = len(self.times) * dt
+        elif mode == "input_timestamps":
             # Respect the supplied playback clock. Passing duration + dt to
             # ceil-based retiming can add a tick due to floating-point rounding
             # and silently alter all supplied timestamps.
-            count=round(self.duration/dt)+1
-            if count<2 or not np.isclose((count-1)*dt,self.duration,atol=1e-7,rtol=0):
-                raise ValueError('Input duration must span complete control intervals; explicitly retime the input first')
-            self.metadata.update(reference_timing=mode,input_duration_s=self.duration,
-                duration_s=self.duration,control_reference_frames=count,
-                episode_timeout_s=config['episode_length_s'],
-                time_basis='input trajectory playback timestamps preserved; capture FPS remains unknown')
+            count = round(self.duration / dt) + 1
+            if count < 2 or not np.isclose((count - 1) * dt, self.duration, atol=1e-7, rtol=0):
+                raise ValueError(
+                    "Input duration must span complete control intervals; explicitly retime the input first"
+                )
+            self.metadata.update(
+                reference_timing=mode,
+                input_duration_s=self.duration,
+                duration_s=self.duration,
+                control_reference_frames=count,
+                episode_timeout_s=config["episode_length_s"],
+                time_basis="input trajectory playback timestamps preserved; capture FPS remains unknown",
+            )
             return
-        else:raise ValueError('Unknown reference timing mode')
-        self.retime_for_control_horizon(duration,dt)
-        self.metadata.update(reference_timing=mode,episode_timeout_s=config['episode_length_s'],
-            time_basis=('configured playback at control rate, not an estimate of capture FPS'
-                        if mode=='one_frame_per_control_step' else self.metadata['time_basis']))
+        else:
+            raise ValueError("Unknown reference timing mode")
+        self.retime_for_control_horizon(duration, dt)
+        self.metadata.update(
+            reference_timing=mode,
+            episode_timeout_s=config["episode_length_s"],
+            time_basis=(
+                "configured playback at control rate, not an estimate of capture FPS"
+                if mode == "one_frame_per_control_step"
+                else self.metadata["time_basis"]
+            ),
+        )
 
     def points(self, position, quaternion):
         rotation = Rotation.from_quat(quaternion).as_matrix()

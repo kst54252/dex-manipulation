@@ -63,6 +63,10 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 | `docs/` | 기능과 설정 설명 |
 | `local/` | Git 제외: 실행 결과·체크포인트·테스트·분석·공유 파일 |
 
+설정 파일은 `policy_demo1.json`, `ik_demo2.json`처럼 기능과 데모를 이름에 표시합니다.
+정책 코드는 환경(`floating_env`, `arm_play_env`, `arm_train_env`), 보상, 학습(`trainer`), 평가(`evaluation`)로 구분합니다.
+저장된 checkpoint의 이전 설정 경로는 자동으로 해석하므로 기존 `run.sh` 명령을 그대로 사용합니다.
+
 [데모 구성](docs/data.md) · [리타게팅](docs/retargeting.md) · [IK](docs/ik.md) ·
 [정책](docs/policy.md) · [환경](docs/scene.md) · [캔](docs/object.md) · [접촉 물성](docs/contact.md)
 

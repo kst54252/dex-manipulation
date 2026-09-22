@@ -8,11 +8,12 @@
 | 원본 frame ID | 12~51, 40자세 | 15~41, 27자세 |
 | 기준 궤적 길이 | 5.2초 | 5.2초 |
 | 기하 재생 입력 | `stable/reference.npz` | `grounded/reference.npz` |
-| 리타게팅 설정 | `config/retargeting_original.json` | `config/retargeting.json` |
-| 팔 설정 | `config/ik_demo1.json` | `config/ik.json` |
-| 플로팅 학습 입력 | `local/references/contact/demo1.npz` | `local/references/contact/demo2.npz` |
+| 리타게팅 설정 | `config/retargeting_demo1.json` | `config/retargeting_demo2.json` |
+| 팔 설정 | `config/ik_demo1.json` | `config/ik_demo2.json` |
+| 기본 플로팅 학습 입력 | `data/demo1/stable/reference.npz` | `local/references/contact/demo2.npz` |
 
-5.2초는 시뮬레이션용 기준 시간입니다. `run.sh`의 기본 2배속 정책 재생은 2.6초입니다.
+5.2초는 기하 궤적의 기준 시간입니다. 정책은 각 checkpoint에 저장된 시간축을 사용하며
+`run.sh --speed`는 그 시간축에 적용하는 배속입니다.
 
 | 파일 | 내용 |
 |---|---|

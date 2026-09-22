@@ -1,4 +1,5 @@
 """Source Delaunay connectivity and uniform Laplacian, including object rows."""
+
 from itertools import combinations
 import numpy as np
 from scipy.spatial import Delaunay
@@ -26,7 +27,7 @@ def deformation(laplacian, source, target, norm="regrind", epsilon=1e-7):
     residual = laplacian @ (target - source)
     squared = np.sum(residual * residual, axis=1)
     if norm == "regrind":
-        return float(np.sum(np.sqrt(squared + epsilon ** 2) - epsilon)), residual
+        return float(np.sum(np.sqrt(squared + epsilon**2) - epsilon)), residual
     if norm == "omni":
         return float(np.sum(squared)), residual
     raise ValueError(f"Unknown Laplacian norm: {norm}")

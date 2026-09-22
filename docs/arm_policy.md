@@ -21,7 +21,7 @@ IK는 이전 해를 시작점으로 삼고 실제 dt의 관절 속도·step 제�
 ./run.sh arm policy local/results/policy/my_arm_run/policy.pt
 ```
 
-`config/policy_arm.json`은 학습 환경·보상, `config/ik_demo1.json`과 `config/ik.json`은
+`config/policy_arm.json`은 학습 환경·보상, `config/ik_demo1.json`과 `config/ik_demo2.json`은
 각 데모의 모델·장착·좌표변환·IK 조건을 지정합니다.
 팔은 joint position/velocity target, 손가락은 USD coupling으로 확장한 target을 받습니다.
 

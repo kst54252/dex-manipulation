@@ -1,4 +1,5 @@
 """Column-vector SE(3); serialized quaternions always XYZW."""
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 

@@ -1,5 +1,6 @@
 """Pure NumPy/SciPy FK. This module never imports USD or Isaac Sim."""
-import json
+
+from .configuration import read_config
 from pathlib import Path
 import numpy as np
 from .transforms import inverse, rotation_about, apply
@@ -64,12 +65,14 @@ class HandModel:
             self.velocity[k] = min(self.velocity[k], self.full_velocity[i] / abs(row[k]))
         if np.any(self.lower > self.upper):
             raise ValueError("Inconsistent coupled limits")
-        self._frames = [(np.asarray(j["frame0"]), inverse(np.asarray(j["frame1"]))) for j in self.joints]
+        self._frames = [
+            (np.asarray(j["frame0"]), inverse(np.asarray(j["frame1"]))) for j in self.joints
+        ]
         self._indices = {name: i for i, name in enumerate(self.full_names)}
 
     @classmethod
     def load(cls, path):
-        return cls(json.loads(Path(path).read_text()))
+        return cls(read_config(Path(path)))
 
     def expand(self, active):
         active = np.asarray(active, dtype=float)
@@ -133,7 +136,9 @@ class ArmModel(HandModel):
         columns = []
         for joint in self.moving:
             reverse = joint.get("reversed", False)
-            axis_frame = links[joint["parent"]] @ np.asarray(joint["frame1" if reverse else "frame0"])
+            axis_frame = links[joint["parent"]] @ np.asarray(
+                joint["frame1" if reverse else "frame0"]
+            )
             axis = axis_frame[:3, :3] @ np.asarray(joint["axis"]) * (-1 if reverse else 1)
             columns.append(np.r_[np.cross(axis, point - axis_frame[:3, 3]), axis])
         return np.stack(columns, axis=1)

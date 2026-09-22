@@ -1,4 +1,5 @@
 """Batched SI/XYZW rotation operations, independent of the simulator."""
+
 import torch
 
 
@@ -12,7 +13,13 @@ def quat_inverse(q):
 
 def quat_multiply(a, b):
     av, aw, bv, bw = a[..., :3], a[..., 3:], b[..., :3], b[..., 3:]
-    return torch.cat((aw * bv + bw * av + torch.cross(av, bv, dim=-1), aw * bw - (av * bv).sum(-1, keepdim=True)), -1)
+    return torch.cat(
+        (
+            aw * bv + bw * av + torch.cross(av, bv, dim=-1),
+            aw * bw - (av * bv).sum(-1, keepdim=True),
+        ),
+        -1,
+    )
 
 
 def quat_apply(q, v):
@@ -22,7 +29,7 @@ def quat_apply(q, v):
 
 def from_rotvec(v):
     theta = v.norm(dim=-1, keepdim=True)
-    return torch.cat((v * (.5 * torch.sinc(theta / (2 * torch.pi))), torch.cos(theta / 2)), -1)
+    return torch.cat((v * (0.5 * torch.sinc(theta / (2 * torch.pi))), torch.cos(theta / 2)), -1)
 
 
 def to_rotvec(q):
@@ -45,11 +52,21 @@ def slerp(a, b, t):
 def rotation6d(q):
     # First two matrix columns, row-major flatten, as in REGRIND's observations.
     x, y, z, w = quat_normalize(q).unbind(-1)
-    return torch.stack((1-2*(y*y+z*z), 2*(x*y-z*w), 2*(x*y+z*w), 1-2*(x*x+z*z), 2*(x*z-y*w), 2*(y*z+x*w)), -1)
+    return torch.stack(
+        (
+            1 - 2 * (y * y + z * z),
+            2 * (x * y - z * w),
+            2 * (x * y + z * w),
+            1 - 2 * (x * x + z * z),
+            2 * (x * z - y * w),
+            2 * (y * z + x * w),
+        ),
+        -1,
+    )
 
 
 def uniform(shape, low, high, device, generator):
-    return torch.rand(shape, device=device, generator=generator) * (high-low) + low
+    return torch.rand(shape, device=device, generator=generator) * (high - low) + low
 
 
 def numpy_tree(value):
