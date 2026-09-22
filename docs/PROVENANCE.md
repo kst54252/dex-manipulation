@@ -46,6 +46,7 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 | 접촉 학습 | FK/FCL로 옆면 파지 입력 생성, 패드 접근·대향·동시 접촉 보상, preload |
 | 팔 정책 | source-frame 관측, 가상 PD→IK 연결, batched IK를 포함한 팔 학습 |
 | 재생 | 시간 재조정, 저장된 12-DoF 궤적 추종, IK 격자 내 회차별 랜덤 배치 |
+| 고정 궤적 실행 | 적용된 30Hz 팔·손 명령 기록, 정책 없는 물리 재생, 단위 보정표·초기 자세·지연·feedback 검사 |
 
 책상·받침대 치수와 위치는 `regrind-revo2/config/workcell/rb3_revo2_table.json`,
 일자 손 장착은 원본 어댑터 USD와 attachment 변환을 사용합니다.
@@ -61,3 +62,8 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 - [PhysX compliant contact](https://docs.omniverse.nvidia.com/kit/docs/omni_physics/110.1/dev_guide/rigid_bodies_articulations/rigid_bodies.html#configure-materials-for-compliant-contacts): 패드 spring/damper 접촉.
 - [Physics Tensor API](https://docs.omniverse.nvidia.com/kit/docs/omni_physics/107.0/extensions/runtime/source/omni.physics.tensors/docs/api/python.html): 패드–캔 pair force.
 - Three.js/OrbitControls: 비교 뷰어. 배포 번들에 MIT 라이선스를 포함합니다.
+- [Rainbow Robotics Servo J](https://rainbowrobotics.github.io/rb_cobot_docs/technical_docs/ui_script):
+  관절 degree 명령, 도달/유지 시간과 gain/filter 의미. `hardware.py`에서 공식 `rbpodo` API 사용.
+- [BrainCo Revo2 SDK](https://staging.brainco.tech/docs/revolimb-hand/en/revo2/python_sdk.html):
+  RS485 연결·0~1000 위치 명령·motor feedback. `hardware.py`에서 공식 `bc-stark-sdk` API 사용.
+  실물 관절 변환은 측정 보정표를 요구하며 USD 관절 범위로 SDK 명령값을 추정하지 않습니다.

@@ -1,0 +1,104 @@
+{
+  "schema": "dex_rb3_revo2_hardware_v1",
+  "simulation_validation": "local/results/execution/demo2_half_capture_55cm_20260922/validation.json",
+  "io_timeout_s": 0.02,
+  "rb3": {
+    "address": null,
+    "command_port": 5000,
+    "data_port": 5001,
+    "lower_deg": null,
+    "upper_deg": null,
+    "velocity_deg_s": null,
+    "acceleration_deg_s2": null,
+    "servo": {
+      "t1_s": 0.03333333333333333,
+      "t2_s": null,
+      "gain": null,
+      "alpha": null
+    }
+  },
+  "revo2": {
+    "transport": "rs485",
+    "port": null,
+    "baudrate_enum": null,
+    "slave_id": null,
+    "velocity_units_s": null
+  },
+  "calibration": {
+    "id": null,
+    "workcell_fingerprint": null,
+    "mount_asset_sha256": null,
+    "arm_sign": null,
+    "arm_offset_deg": null,
+    "fingers": [
+      {
+        "joint": "right_thumb_metacarpal_joint",
+        "sdk_index": null,
+        "rad": null,
+        "units": null
+      },
+      {
+        "joint": "right_thumb_proximal_joint",
+        "sdk_index": null,
+        "rad": null,
+        "units": null
+      },
+      {
+        "joint": "right_index_proximal_joint",
+        "sdk_index": null,
+        "rad": null,
+        "units": null
+      },
+      {
+        "joint": "right_middle_proximal_joint",
+        "sdk_index": null,
+        "rad": null,
+        "units": null
+      },
+      {
+        "joint": "right_ring_proximal_joint",
+        "sdk_index": null,
+        "rad": null,
+        "units": null
+      },
+      {
+        "joint": "right_pinky_proximal_joint",
+        "sdk_index": null,
+        "rad": null,
+        "units": null
+      }
+    ]
+  },
+  "guard": {
+    "start_tolerance_deg": [
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "tracking_tolerance_deg": [
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "maximum_feedback_age_s": 0.05,
+    "maximum_lateness_s": 0.015
+  }
+}
