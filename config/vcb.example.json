@@ -1,0 +1,18 @@
+{
+  "schema": "dex_rb3_vcb_v1",
+  "endpoint_kind": "virtual_control_box",
+  "io_timeout_s": 0.02,
+  "rb3": {
+    "address": null,
+    "command_port": 5000,
+    "data_port": 5001,
+    "servo": {"t1_s": 0.03333333333333333, "t2_s": 0.1, "gain": 1.0, "alpha": 0.5}
+  },
+  "mapping": {"arm_sign": null, "arm_offset_deg": null},
+  "guard": {
+    "start_tolerance_deg": [2,2,2,2,2,2,2,2,2,2,2,2],
+    "tracking_tolerance_deg": [5,5,5,5,5,5,10,10,10,10,10,10],
+    "maximum_feedback_age_s": 0.05,
+    "maximum_lateness_s": 0.015
+  }
+}

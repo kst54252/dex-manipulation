@@ -74,3 +74,9 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
   `rclpy` action/QoS API를 사용해 독립 구현했으며 제조사 ROS driver나 예제 server 소스를 복사하지 않습니다.
 - [Isaac Sim ROS 설치](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/installation/install_ros.html): Ubuntu 24.04/Jazzy 환경.
   표시는 직접 `rclpy` 구독과 USD FK를 사용하며 명령 기반 물리 추종과 구분합니다.
+- [Rainbow VCB](https://rainbowrobotics.github.io/rb_cobot_docs/technical_docs/virtual_controlbox),
+  [TCP 통신](https://rainbowrobotics.github.io/rb_cobot_docs/technical_docs/socket_communication),
+  [상태 구조](https://rainbowrobotics.github.io/rb_cobot_docs/technical_docs/data_structure):
+  VM 설치·Simulation 전용 모드, 5000/5001 포트, `jnt_ref`/`jnt_ang` 의미와 packed fault bit.
+  공식 `rbpodo==0.16.14`를 사용합니다. 가상 손·초기 자세 Move J·30Hz ROS 연결·지연 검사는 자체 설계이며
+  Servo J 시험값은 제조사 권장 튜닝값으로 간주하지 않습니다.

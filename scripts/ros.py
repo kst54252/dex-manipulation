@@ -80,10 +80,11 @@ def monitor(root,settings,seconds,output):
 def main(argv=None):
     parser=argparse.ArgumentParser(prog='./run.sh ros')
     parser.add_argument('mode',choices=('bridge','send','status','mirror'))
-    parser.add_argument('--backend',choices=('mock','hardware'),default='mock')
+    parser.add_argument('--backend',choices=('mock','hardware','vcb'),default='mock')
     parser.add_argument('--enable-motion',action='store_true',help='Allow the selected recorded ROS goal')
     parser.add_argument('--config',type=Path,default=ROOT/'config/ros.json')
     parser.add_argument('--hardware-config',type=Path,default=ROOT/'config/hardware.example.json')
+    parser.add_argument('--vcb-config',type=Path,default=ROOT/'local/vcb.json')
     parser.add_argument('--recording',type=Path)
     parser.add_argument('--hold',type=float)
     parser.add_argument('--seconds',type=float,default=0.,help='Duration for bridge/status/mirror; 0 keeps running')
@@ -92,8 +93,8 @@ def main(argv=None):
     parser.add_argument('--output',type=Path,help='Local JSON report for status/mirror')
     args=parser.parse_args(argv)
     try:
-        if args.enable_motion and (args.mode!='bridge' or args.backend!='hardware'):
-            raise ValueError('--enable-motion requires bridge --backend hardware')
+        if args.enable_motion and (args.mode!='bridge' or args.backend not in ('hardware','vcb')):
+            raise ValueError('--enable-motion requires bridge --backend hardware or vcb')
         for key in ('seconds','wait'):
             if not math.isfinite(getattr(args,key)) or getattr(args,key)<0: raise ValueError('Invalid duration')
         settings=json.loads((ROOT/args.config).read_text())
@@ -117,8 +118,8 @@ def main(argv=None):
             if args.mode=='send': return send(recording,settings,hold,args.wait)
             from rclpy.executors import MultiThreadedExecutor
             from dex_manipulation.ros_bridge import make_node
-            config=json.loads((ROOT/args.hardware_config).read_text())
-            config['simulation_validation']=str(ROOT/config['simulation_validation'])
+            config=json.loads((ROOT/(args.vcb_config if args.backend=='vcb' else args.hardware_config)).read_text())
+            if args.backend!='vcb':config['simulation_validation']=str(ROOT/config['simulation_validation'])
             node=make_node(ROOT,settings,recording,config,backend=args.backend,
                            enable_motion=args.enable_motion,hold_s=hold)
             executor=MultiThreadedExecutor(num_threads=3);executor.add_node(node)

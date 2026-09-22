@@ -32,6 +32,7 @@ ROS 2 Jazzy가 설치된 환경에서 터미널을 나누어 실행합니다.
 ```
 
 모의 장치는 완벽한 위치 추종을 가정합니다. 물리 파지 평가용 환경은 아닙니다.
+제조사 Virtual Control Box로 통신을 시험하려면 [VCB 실행](vcb.md)을 사용합니다.
 `mirror --headless --seconds 10`은 화면 없이 수신·USD 반영을 실행합니다.
 `config/ros.json`에서 namespace·상태 수신 제한 시간·표시 주기를 설정합니다.
 
@@ -63,7 +64,7 @@ bridge가 두 장치의 연결을 소유합니다. 별도 `execute hardware`나 
 | 이름 | 형식 | 내용 |
 |---|---|---|
 | `/dex/follow_joint_trajectory` | `control_msgs/action/FollowJointTrajectory` | 팔·손 12축 궤적, 진행 feedback·완료·취소 |
-| `/dex/joint_states` | `sensor_msgs/msg/JointState` | 독립 관절 12개, rad; 실물은 측정값, mock는 가상 상태 |
+| `/dex/joint_states` | `sensor_msgs/msg/JointState` | 독립 관절 12개, rad; 실물은 측정값, mock/VCB는 가상 상태 |
 | `/dex/model_joint_states` | `sensor_msgs/msg/JointState` | 팔 6개 + 손 전체 11개; 종속 5개는 coupling 계산값 |
 | `/dex/wrist_pose` | `geometry_msgs/msg/PoseStamped` | 수신 팔 관절의 FK 손목 pose, 베이스 `link0` 기준 |
 | `/dex/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | 준비·동작·오류 상태, feedback 나이, RB3 clock·상태, 손 모터 상태 |
@@ -89,7 +90,7 @@ action은 `config/execution.json` 또는 `--recording`으로 선택한 **기존 
 ROS 메시지 stamp는 호스트의 읽기 시작 시각이며, 두 장치는 하나의 읽기 구간에서 병렬로 조회합니다.
 동시 샘플링을 보장하지 않으므로 `read_window_s`와 RB3 device time을 diagnostics에 함께 보냅니다.
 측정하지 않은 속도·토크는 빈 배열로 둡니다. 실물에서는 명령을 측정 상태로 발행하지 않습니다.
-mock 가상 상태의 출처는 diagnostics의 `feedback_source`로 구분합니다.
+mock/VCB 가상 상태의 출처는 diagnostics의 `feedback_source`로 구분합니다.
 
 상태 QoS는 best-effort·최신 1개입니다. 늦거나 순서가 뒤집힌 상태는 버리고,
 0.2초 동안 새 상태가 없으면 마지막 자세를 유지합니다. 외삽하지 않습니다.

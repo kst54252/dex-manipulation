@@ -191,6 +191,8 @@ def make_node(root, settings, recording, hardware_config, *, backend='mock', ena
     if backend=='hardware':
         connection_plan(recording.names,hardware_config)
         if enable_motion: hardware_plan(recording,hardware_config)
+    elif backend=='vcb':
+        from .vcb import VCBBackend
     elif backend!='mock': raise ValueError('Unknown ROS device backend')
     guard=hardware_config['guard']
     arm_config=json.loads((root/settings['arm_config']).read_text())
@@ -211,6 +213,7 @@ def make_node(root, settings, recording, hardware_config, *, backend='mock', ena
             self.busy=False;self.goal_lock=threading.Lock();self.cancel=threading.Event()
             self.last_error='';self.samples=0
             if backend=='mock': device=MockBackend(recording.initial)
+            elif backend=='vcb': device=VCBBackend(recording,hardware_config)
             else: device=RBPodoStark(recording.names,hardware_config)
             self.worker=DeviceWorker(recording,device,guard,settings['state_rate_hz'],self.publish_state)
             self.action=ActionServer(self,FollowJointTrajectory,'follow_joint_trajectory',
