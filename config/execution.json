@@ -1,0 +1,6 @@
+{
+  "demo_id": "2",
+  "arm_config": "config/ik.json",
+  "recording": "local/results/execution/demo2_half_capture_55cm_20260922/final_record/commands.npz",
+  "hold_s": 1.0
+}

@@ -1,5 +1,7 @@
 # 재생
 
+물체 pose 입력 없이 저장된 팔·손 궤적을 실행하려면 [고정 궤적 실행](execution.md)을 사용합니다.
+
 ```bash
 ./run.sh
 ```
@@ -19,7 +21,7 @@
 | 옵션 | 설명 |
 |---|---|
 | `--repeat N` | 반복 횟수. 기본 `0`은 무한 반복 |
-| `--speed N` | 재생 배속. 플로팅·팔 정책 기본 2, 팔 리타게팅은 1 |
+| `--speed N` | 학습/reference 기준 배속. 데모2 정책 1, 데모1 정책·플로팅 리타게팅 2, 팔 리타게팅 1이 기본 |
 | `--headless` | 창 없이 물리 재생 |
 | `--dry-run` | 파일 생성 없이 실행 계획 출력 |
 | `--list` | 등록 데모·정책 목록 |
@@ -38,9 +40,15 @@
 ./run.sh arm policy local/results/policy/my_run/policy.pt
 ```
 
-`config/play.json`에 정책 이름과 checkpoint를 등록합니다. 직접 지정한 checkpoint는 옆의
-`config.resolved.json`을 읽습니다. 해당 설정의 모델·reference 파일도 함께 준비합니다.
-팔에서 학습한 정책은 `arm` 환경을 사용합니다.
+번호 `1`/`2`는 `local/results/policy/`의 데모별 최신 학습 완료 정책을 자동 선택합니다.
+전체 학습 로그와 checkpoint의 iteration·설정이 일치하는 실행 중 저장 시각이 가장 최근인 것을 사용합니다.
+학습 중·중단·손상된 실행은 제외합니다. 팔 학습 정책은 `arm` 환경에서만 선택합니다.
+선택한 경로는 터미널과 `launch.json`에 표시됩니다.
+
+직접 지정한 checkpoint나 등록된 고정 정책 이름은 자동 교체하지 않습니다.
+checkpoint 옆의 `config.resolved.json`과 해당 모델·reference 파일을 함께 사용합니다.
+별도 경로에 저장한 정책은 경로로 지정하거나 `local/results/policy/` 아래에 실행 폴더를 보관합니다.
+`config/play.json`에서 자동 선택 데모·고정 정책·기본 배속을 설정합니다.
 
 ## 데모2 랜덤 캔 배치
 
