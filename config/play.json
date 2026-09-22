@@ -6,7 +6,7 @@
       "config": "config/policy_original.json",
       "arm_config": "config/ik_demo1.json",
       "arm_reference": "local/results/ik/demo1_stable/trajectory.npz",
-      "training_config": "config/policy_demo1_contact.json"
+      "training_config": "config/policy_original.json"
     },
     "2": {
       "label": "2번 데모 · 27자세 · 5.2초",
