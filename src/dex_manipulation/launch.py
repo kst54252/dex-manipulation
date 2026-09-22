@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 from .data import resolve_demo_path
+from .policies import demo_id, latest_policy
 
 
 def read(path):
@@ -35,7 +36,7 @@ def parser():
     p.add_argument('--config', type=Path, help='직접 선택한 정책의 학습 설정; 기본은 checkpoint 옆 config.resolved.json')
     p.add_argument('--arm-config', type=Path, help='사용자 정책의 팔 배치/IK 설정')
     p.add_argument('--repeat', type=int, default=0, help='반복 횟수 (기본 0: 무한 반복, 양수: 지정 횟수)')
-    p.add_argument('--speed',type=float,help='재생 배속 (플로팅·팔 정책 기본 2, --speed 1은 이전 속도; 팔 retarget은 1)')
+    p.add_argument('--speed',type=float,help='학습/reference 시간 기준 배속 (데모2 정책 기본 1; 나머지는 config/play.json)')
     p.add_argument('--random-can', action='store_true', help='데모2 arm policy: 매 반복 검증된 IK 격자점에 캔·손 궤적 랜덤 배치')
     p.add_argument('--placement-seed', type=int, help='랜덤 캔 배치 순서를 재현할 seed (--random-can 전용)')
     p.add_argument('--headless', action='store_true', help='창 없이 동일 물리 재생')
@@ -99,15 +100,17 @@ def resolve_plan(root, args, catalog):
         raise ValueError('--random-can은 데모2 arm policy에서만 지원합니다.')
     if placement_seed is not None and (not random_can or placement_seed < 0):
         raise ValueError('--placement-seed는 --random-can과 함께 0 이상의 정수로 지정하세요.')
+    requested = args.policy or args.selection or '1'
+    selected = catalog.get('aliases', {}).get(requested, requested)
+    entry = catalog['policies'].get(selected) if args.mode == 'policy' else None
     speed=getattr(args,'speed',None)
     if speed is None:
         speed=catalog.get('playback_speed',{}).get(args.robot,1.0)
         if isinstance(speed,dict):speed=speed.get(args.mode,1.0)
+        if entry: speed=entry.get('playback_speed',speed)
     if not math.isfinite(speed) or speed<=0:raise ValueError('--speed는 양의 유한한 수여야 합니다.')
     if args.robot=='arm' and args.mode=='retarget' and speed!=1.0:
         raise ValueError('팔 retarget은 검증된 IK 궤적의 1배속을 사용합니다. 팔 정책은 --speed를 지원합니다.')
-    requested = args.policy or args.selection or '1'
-    selected = catalog.get('aliases', {}).get(requested, requested)
     label = Path(selected).stem
     stamp = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
     output = root / 'local/results/play' / f'{stamp}_{args.robot}_{args.mode}_{label}'
@@ -116,8 +119,9 @@ def resolve_plan(root, args, catalog):
     flags = ['--headless'] if args.headless else []
     flags += ['--speed',str(speed)]
     if args.mode == 'policy':
-        entry = catalog['policies'].get(selected)
-        checkpoint = required(entry['checkpoint'] if entry else selected)
+        automatic = latest_policy(root, entry['latest_demo'], args.robot) if entry and 'latest_demo' in entry else None
+        checkpoint = required(automatic['checkpoint'] if automatic else (entry['checkpoint'] if entry else selected))
+        if automatic: details['policy_selection'] = automatic
         config_path = required(args.config or checkpoint.parent / 'config.resolved.json')
         cfg = read(config_path)
         native_arm=cfg.get('arm_training',{}).get('enabled',False)
@@ -134,6 +138,8 @@ def resolve_plan(root, args, catalog):
             cmd.extend(['--contact-materials',args.contact_materials])
         if args.robot == 'arm':
             arm_path = args.arm_config or (cfg['arm_training']['arm_config'] if native_arm else (entry['arm_config'] if entry else None))
+            if arm_path is None and demo_id(root, cfg) in catalog['demos']:
+                arm_path = catalog['demos'][demo_id(root, cfg)]['arm_config']
             if arm_path is None:
                 # Fresh training uses a demo's current derived input. Historical
                 # checkpoints still resolve through their registered policy below.
@@ -149,6 +155,7 @@ def resolve_plan(root, args, catalog):
                 # exact input; never guess a coordinate transform for new inputs.
                 ref = resolve_demo_path(cfg['reference'],root).resolve()
                 for candidate in catalog['policies'].values():
+                    if 'checkpoint' not in candidate: continue
                     saved = root / candidate['checkpoint']
                     config = saved.parent / 'config.resolved.json'
                     if config.is_file() and resolve_demo_path(read(config)['reference'],root).resolve() == ref:
@@ -170,6 +177,7 @@ def resolve_plan(root, args, catalog):
                 details['random_can'] = placement.metadata
         details.update(checkpoint=str(checkpoint), config=str(config_path), reference=str(reference_path.resolve()),
                        label=entry['label'] if entry else checkpoint.name)
+        if automatic: details['label'] += f" · {automatic['iteration']}iter"
         if entry and entry.get('note'):
             details['note'] = entry['note']
         commands.append(cmd)
@@ -213,6 +221,12 @@ def main(root=None, argv=None):
                 print(f"  {name:10} {entry['label']}")
                 if 'checkpoint' in entry:
                     print('             ' + entry['checkpoint'])
+                if 'latest_demo' in entry:
+                    try:
+                        latest = latest_policy(root, entry['latest_demo'], args.robot or 'floating')
+                        print(f"             {latest['checkpoint']} ({latest['iteration']}iter)")
+                    except ValueError as error:
+                        print('             ' + str(error))
                 if entry.get('note'):
                     print('             ' + entry['note'])
         return 0
@@ -248,6 +262,8 @@ def main(root=None, argv=None):
         repetition = '무한 반복' if args.repeat == 0 else f'{args.repeat}회'
         print(f"\n{plan['label']} | {args.robot} | {args.mode} | {plan['speed']:g}배속 | {repetition}", flush=True)
         print(f"입력: {plan['reference']}\n결과: {plan['output']}\n종료: 창 닫기 또는 Ctrl+C", flush=True)
+        if plan.get('checkpoint'):
+            print(f"정책: {plan['checkpoint']}", flush=True)
         if plan.get('note'):
             print('[policy] ' + plan['note'], flush=True)
         output = Path(plan['output'])

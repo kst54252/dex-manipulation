@@ -22,16 +22,15 @@
   },
   "policies": {
     "1": {
-      "label": "1번 정책 · 패드 접촉 보정 · 1000iter",
-      "checkpoint": "local/results/policy/contact_pair_1000_20260921_145610/demo1/policy.pt",
-      "arm_config": "config/ik_demo1.json",
-      "note": "학습 완료. 별도 전체 궤적 재생·팔 연결 평가는 실행하지 않았습니다."
+      "label": "1번 정책 · 최신 학습 완료",
+      "latest_demo": "1",
+      "arm_config": "config/ik_demo1.json"
     },
     "2": {
-      "label": "2번 정책 · 패드 접촉 보정 · 1000iter",
-      "checkpoint": "local/results/policy/contact_pair_1000_20260921_145610/demo2/policy.pt",
+      "label": "2번 정책 · 최신 학습 완료",
+      "latest_demo": "2",
       "arm_config": "config/ik.json",
-      "note": "학습 완료. 별도 전체 궤적 재생·팔 연결 평가는 실행하지 않았습니다."
+      "playback_speed": 1.0
     },
     "1-arm-trial": {
       "label": "1번 팔 학습 시험 정책 · 20iter · 5.2초 (파지 미성공)",
