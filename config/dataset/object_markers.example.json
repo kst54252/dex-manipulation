@@ -1,0 +1,9 @@
+{
+  "frame": "object",
+  "length_unit": "m",
+  "dictionary": "DICT_4X4_50",
+  "measurement_source": null,
+  "markers": [],
+  "max_reprojection_px": 3.0,
+  "ambiguity_px": 0.15
+}

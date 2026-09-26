@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "repo": "local/external/hamer",
+  "checkpoint": "local/external/hamer/_DATA/hamer_ckpts/checkpoints/hamer.ckpt",
+  "python": null,
+  "device": "cuda:0"
+}

@@ -1,0 +1,16 @@
+<!doctype html><html lang="ko"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>데모 데이터 검수</title>
+<style>
+body{font:15px system-ui;margin:0;background:#edf1f5;color:#172b40}main{max-width:1400px;margin:auto;padding:22px}h1{font-size:23px}.views{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel,.controls{background:white;padding:16px;border-radius:9px;margin-bottom:15px}canvas{width:100%;display:block;touch-action:none}#world{height:440px}.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}input[type=range]{flex:1}button,select,input{padding:8px;border:1px solid #c6d0dc;border-radius:5px;background:white}button{cursor:pointer}#status,#assumptions{white-space:pre-wrap;line-height:1.7}#assumptions-panel{background:#fff5db;border:1px solid #e5c67a}#prediction-warning{background:#fff0eb;border:1px solid #d9957b;color:#833818}[hidden]{display:none!important}p{line-height:1.65}.muted{color:#54697d}@media(max-width:800px){.views{grid-template-columns:1fr}}
+</style><main><h1>RGB 데모 · 손과 물체</h1>
+<div class="controls"><button id="play">재생</button><input id="frame" type="range" min="0" value="0" step="1"><span id="time"></span></div>
+<div class="panel" id="assumptions-panel" hidden><strong id="assumptions-title"></strong><div id="assumptions"></div></div>
+<div class="panel" id="prediction-warning" role="status" hidden></div>
+<div class="controls"><label><input id="show-meshes" type="checkbox"> 손 표면</label><label><input id="show-joints" type="checkbox"> 손 21점</label><label><input id="show-projection" type="checkbox"> Mesh projection · 보정 확인용 윤곽</label><span class="muted" id="joints-note"></span></div>
+<div class="controls"><label>물체 표시 <select id="geometry"><option value="input" selected>Input only · 입력</option><option value="predicted">Predicted final pose · 최종 예측</option><option value="contact">Contact-stage mesh · 접촉 단계</option><option value="compare">Compare · 비교</option></select></label><button id="source-camera">원본 카메라 시점</button><button id="world-orbit">전체 회전 시점</button><label><input id="show-grid" type="checkbox"> Assumed grid · 가정한 격자</label></div>
+<div class="views"><div class="panel"><h3>원본 영상 · 손 관절 오버레이</h3><canvas id="rgb"></canvas><p class="muted" id="projection-note"></p></div><div class="panel"><h3 id="world-title">입력 geometry · metres</h3><div id="world"></div><p class="muted" id="view-note"></p><p class="muted" id="geometry-legend"></p></div></div>
+<div class="panel" id="status"></div>
+<div class="panel"><strong>HaMeR 입력 영역 지정</strong><p class="muted">손을 선택한 뒤 RGB 화면에서 드래그합니다. 없는 손은 비워둡니다. 이동은 방향키, 결과는 boxes.json으로 저장합니다.</p>
+<div class="controls"><select id="side"><option value="none">검수 모드</option><option value="right">오른손 영역</option><option value="left">왼손 영역</option></select><button id="clear">현재 손 영역 삭제</button><button id="previous">이전 영역 복사</button><button id="interpolate">지정 영역 사이 보간</button><button id="save">boxes.json 저장</button><label>불러오기 <input id="load" type="file" accept=".json"></label></div>
+<p class="muted">보라/초록 표면: 입력 왼손/오른손 mesh. 접촉 단계의 색은 예측 접촉 확률이며 실측 힘이 아닙니다. 최종 예측 pose와 접촉 단계 mesh는 별도 출력입니다. 3D 화면: 드래그 회전 · 휠 확대.</p></div></main>
+<script id="dataset" type="application/json">__PAYLOAD__</script><script>__BUNDLE__</script></html>

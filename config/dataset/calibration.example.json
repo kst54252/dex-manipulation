@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "camera_axes": "x_right_y_down_z_forward",
+  "image_size": null,
+  "K": null,
+  "distortion": null,
+  "camera_motion": "unknown",
+  "T_world_camera": null,
+  "world_axes": "x_right_y_forward_z_up",
+  "world_origin": "table_surface",
+  "extrinsics_source": null
+}

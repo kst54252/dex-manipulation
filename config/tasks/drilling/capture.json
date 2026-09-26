@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "task_id": "drilling",
+  "motion": "grasp_drill",
+  "sensor": "rgb",
+  "hand_side": "right",
+  "capture": "{demo_dir}/raw/rgb/capture.json",
+  "calibration": "{demo_dir}/calibration.json",
+  "boxes": "{demo_dir}/raw/boxes.json",
+  "hands": "{work_dir}/hands.npz",
+  "object_poses": "{work_dir}/object_poses.npz",
+  "camera_poses": "{work_dir}/camera_poses.npz",
+  "events": "{demo_dir}/raw/events.json",
+  "object": {
+    "name": "drill",
+    "mesh": "assets/tasks/drilling/drill.obj",
+    "mesh_unit_to_m": null,
+    "mesh_to_object": null,
+    "measurement_source": null,
+    "rigid_during_capture": true
+  },
+  "egophi_config": "config/dataset/egophi.json",
+  "hamer_config": "config/dataset/hamer.json"
+}

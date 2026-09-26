@@ -1,0 +1,11 @@
+{
+  "frame": "world",
+  "length_unit": "m",
+  "world_axes": "x_right_y_forward_z_up",
+  "world_origin": "table_surface",
+  "dictionary": "DICT_4X4_50",
+  "measurement_source": null,
+  "markers": [],
+  "max_reprojection_px": 3.0,
+  "ambiguity_px": 0.15
+}

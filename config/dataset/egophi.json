@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "repo": "local/external/egophi",
+  "checkpoint": "local/checkpoints/egophi/best_EgoPHI.pth",
+  "python": null,
+  "device": "cuda:0",
+  "missing_hand_policy": "skip",
+  "max_pose_difference_m": 0.02,
+  "max_pose_difference_deg": 15.0,
+  "max_mesh_pose_error_m": 0.005,
+  "model": {
+    "d_model": 512,
+    "n_head": 4,
+    "num_pose_blocks": 4,
+    "num_force_blocks": 4,
+    "backbone_feature_dim": 768,
+    "num_pose_iterations": 3
+  }
+}

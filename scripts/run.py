@@ -8,7 +8,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 if __name__ == "__main__":
-    if sys.argv[1:2] == ["tasks"]:
+    if sys.argv[1:2] == ["dataset"]:
+        from dex_manipulation.dataset.cli import main
+
+        sys.exit(main(ROOT, sys.argv[2:]))
+    elif sys.argv[1:2] == ["tasks"]:
         from scripts.tasks import main
 
         sys.exit(main(sys.argv[2:]))

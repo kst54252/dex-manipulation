@@ -24,6 +24,9 @@ if [[ -z "${DEX_PYTHON:-}" ]]; then
         fi
     done
 fi
+if [[ -z "${DEX_PYTHON:-}" && "${1:-}" == dataset ]]; then
+    DEX_PYTHON="$(command -v python3 || true)"
+fi
 if [[ -z "${DEX_PYTHON:-}" || ! -x "$DEX_PYTHON" ]]; then
     echo 'Isaac Python을 찾지 못했습니다. DEX_PYTHON=/절대경로/python ./run.sh 로 지정하세요.' >&2
     exit 2
