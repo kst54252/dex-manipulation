@@ -46,7 +46,7 @@ GPU·Isaac Sim 없이 사용할 수 있습니다. 아래 검사는 실물에 명
 설치기는 `local/hardware-venv`와 비어 있는 연결·보정 예제 `local/hardware.json`을 만듭니다.
 실제 IP·시리얼 장치·팔 영점·손가락 단위 보정은 사용하는 장비에 맞춰 입력해야 합니다.
 `--send`를 지정해야 실물 명령을 보냅니다. [연결부터 실행·측정까지](hardware_measurement.md)
-ROS 기능에는 ROS 2와 해당 Python 환경을 별도로 설치합니다. [ROS 연동](ros.md)
+ROS 기능에는 ROS 2와 해당 Python 환경을 별도로 설치합니다. [ROS 연동](robot.md)
 
 ## 배포 입력 갱신
 

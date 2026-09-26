@@ -196,7 +196,7 @@ DEX_PYTHON=local/hardware-venv/bin/python ./run.sh ros bridge \
 
 회차 기록은 action 결과에 출력되는 `local/results/ros/<시각>/`에 저장됩니다.
 그래프에는 그 폴더의 `tactile.csv`를 사용합니다. 별도 `tactile record`를 동시에 실행하지 않습니다.
-관절 상태·진단·stop service·다른 시뮬레이터 연동은 [ROS 설명](ros.md)을 따릅니다.
+관절 상태·진단·stop service·다른 시뮬레이터 연동은 [ROS 설명](robot.md)을 따릅니다.
 ROS bridge의 `Ctrl+C` 또는 `/dex/stop`도 같은 stop/hold 경로를 사용합니다.
 
 ## 다른 PC로 옮길 때

@@ -28,11 +28,11 @@ T_base_flange = T_base_wrist @ inverse(T_flange_wrist)
 ./run.sh arm policy 2
 ```
 
-모델 추출·궤적 생성 진입점은 `scripts/ik.py extract` / `solve`입니다.
+모델 추출·궤적 생성 진입점은 `./run.sh ik extract` / `solve`입니다.
 결과 `trajectory.npz`에는 timestamp, q_arm/q_finger, wrist 목표/FK pose,
 위치·회전 오차, 특이점·joint-limit 지표, success/transition mask를 저장합니다.
 CSV 출력은 관절 이름·시각·12축 rad 목표를 담습니다.
 
 `joint_trajectory.py`의 `JointReference`가 이름 순서에 맞는 목표를 반환하고
 `sim.py`의 Isaac adapter가 articulation target으로 전달합니다.
-[정책을 팔에 연결](arm_policy.md) · [환경 좌표](scene.md)
+[정책을 팔에 연결](train.md) · [환경 좌표](environment.md)

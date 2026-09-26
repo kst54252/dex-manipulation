@@ -76,18 +76,36 @@ cd dex-manipulation
 | `config/tasks/<task>/` | 작업별 데모·환경·IK·정책 설정 |
 | `config/` | 공통 로봇 실행·통신·작업대 설정 |
 | `src/dex_manipulation/` | FK, IK, 리타게팅, 시뮬레이션, 정책 패키지 |
-| `scripts/` | 데이터 처리·모델 추출·학습 진입점 |
+| `scripts/` | `run.sh`에서 사용하는 실행 진입점 |
 | `docs/` | 기능과 설정 설명 |
 | `runtime/` | 최신 정책·필수 참조·실물 명령·IK 지도 배포 묶음과 SHA256 목록 |
 | `local/` | Git 제외: 실행 결과·체크포인트·테스트·분석·공유 파일 |
 
-설정 파일은 `policy_demo2.json`, `ik_demo2.json`처럼 기능과 데모를 이름에 표시합니다.
-정책 코드는 환경(`floating_env`, `arm_play_env`, `arm_train_env`), 보상, 학습(`trainer`), 평가(`evaluation`)로 구분합니다.
-저장된 checkpoint의 이전 설정 경로는 자동으로 해석하므로 기존 `run.sh` 명령을 그대로 사용합니다.
+코드는 다음 기능별로 나뉩니다.
 
-[데모 구성](docs/data.md) · [리타게팅](docs/retargeting.md) · [IK](docs/ik.md) ·
-[정책](docs/policy.md) · [환경](docs/scene.md) · [캔](docs/object.md) · [접촉 물성](docs/contact.md)
-[작업 구성·추가](docs/tasks.md): `can_pick`과 `drilling`의 입력·설정·실행 어댑터 구조입니다.
+```text
+src/dex_manipulation/
+├── fk.py · ik.py · retargeting.py   # 손·팔 운동학과 리타게팅
+├── geometry.py · scene.py          # 형상·충돌·작업대
+├── policy/                        # 물리 환경·보상·PPO 학습·재생
+├── robot/                         # 저장 궤적·실물 장치·ROS·가상 제어·표시
+├── sensors/                       # tactile 수집·그래프·비교
+├── dataset/                       # RGB 영상의 손·물체 pose 복원
+└── tasks/                         # can_pick·drilling 작업 등록과 어댑터
+```
+
+정책 설정은 `policy_demo2.json`을 상속하고 다른 값만 명시합니다.
+학습 시 전체 설정을 `config.resolved.json`으로 저장하므로 기존 정책과 궤적의 계약을 유지합니다.
+
+```bash
+./run.sh data --help           # 추출·가져오기·바닥 정렬·캔/접촉 참조 생성
+./run.sh retargeting --help    # USD 추출·리타게팅·비교 뷰어
+./run.sh ik --help             # 팔 모델 추출·IK 궤적 생성
+./run.sh tracking --help       # 저장 정책 궤적의 팔 추종
+```
+
+[데이터](docs/dataset.md) · [리타게팅](docs/retargeting.md) · [IK](docs/ik.md) ·
+[정책·학습](docs/train.md) · [환경·물성](docs/environment.md) · [작업 추가](docs/tasks.md)
 
 ## RGB 데모 제작
 
@@ -103,11 +121,15 @@ cd dex-manipulation
 영상·mesh·카메라 보정값을 추가한 뒤 [RGB 데이터 제작](docs/dataset_capture.md)의 순서로 처리합니다.
 HaMeR/EgoPHI는 별도 환경·체크포인트를 사용합니다. 단안 손 pose와 힘 출력은 측정 정답과 구분해 저장합니다.
 
-저장 궤적의 팔·손 통합 실행과 실시간 상태 반영은 [ROS 2 연동](docs/ros.md)을 사용합니다.
-`./run.sh ros bridge` → `./run.sh ros mirror` → `./run.sh ros send` 순으로 별도 터미널에서 실행합니다.
-기본 bridge는 실물 연결이 없는 모의 장치입니다.
-제조사 Virtual Control Box를 통한 가상 통신 시험은 [VCB 실행](docs/vcb.md)을 사용합니다.
-`./run.sh vcb probe`로 연결 확인 후 `prepare` → `bridge` → `mirror` → `send` 순으로 실행합니다.
+팔·손 통합 조작과 실시간 표시에는 [ROS 2 연동](docs/robot.md)을 사용합니다.
+
+```bash
+./run.sh robot virtual    # 가상 관절 조작 패널 + RViz
+./run.sh robot sim        # Isaac 물리 시뮬레이션 + RViz
+./run.sh robot hardware   # 실물 관절 상태 수신 + RViz (읽기 전용)
+```
+
+실물 명령·보정 설정과 제조사 Virtual Control Box 연결은 [통합 제어 안내](docs/robot.md)를 참조합니다.
 
 기존 캔 데모의 사람 손·물체 데이터는 **[DexYCB](https://dex-ycb.github.io/)**를 사용합니다.
 원본 이미지·annotation은 로컬에 보관합니다. [데이터 출처](docs/dataset.md) · [방법론 출처](docs/PROVENANCE.md)
