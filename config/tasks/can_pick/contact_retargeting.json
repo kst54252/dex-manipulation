@@ -1,0 +1,46 @@
+{
+  "task_id": "can_pick",
+  "demo_id": "2",
+  "physics_config": "config/tasks/can_pick/policy_demo2_finger_tracking.json",
+  "reference": "local/results/policy/demo2_half_capture_2000_20260922_120939/reference.npz",
+  "model": "assets/models/revo2.json",
+  "object_geometry": "assets/models/can_mesh.json",
+  "object_mesh": "assets/models/can_mesh.npz",
+  "contacts": {
+    "start_frame_id": 26,
+    "end_frame_id": 41,
+    "cluster_radius_m": 0.012,
+    "minimum_duration_s": 0.15,
+    "maximum_drift_m": 0.025,
+    "maximum_tip_gap_m": 0.025
+  },
+  "hard": {
+    "tolerance_m": 0.00075,
+    "table_margin_m": 0.002,
+    "max_iterations": 200,
+    "max_attempts": 3,
+    "collision_substeps": 5
+  },
+  "virtual": {
+    "num_envs": 64,
+    "updates_per_stage": 5,
+    "strength_stages": [
+      1.0,
+      0.5,
+      0.2,
+      0.0
+    ],
+    "spring_n_m": 200.0,
+    "damping_ns_m": 2.0,
+    "force_cap_n": 2.0,
+    "minimum_force_n": 0.05,
+    "temperature": 1.0,
+    "noise_initial": 0.6,
+    "noise_final": 0.15,
+    "control_knots": 12,
+    "hold_s": 1.0,
+    "seed": 42,
+    "grip_seeds": true
+  },
+  "anchor_mode": "human_surface_proxy"
+}

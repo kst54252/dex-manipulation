@@ -19,7 +19,11 @@ if __name__ == "__main__":
 
         print(json.dumps(status, indent=2))
         sys.exit(1 if status["conflicts"] else 0)
-    if sys.argv[1:2] == ["dataset"]:
+    if sys.argv[1:2] == ["retarget-contact"]:
+        from scripts.contact_retargeting import main
+
+        sys.exit(main(sys.argv[2:]))
+    elif sys.argv[1:2] == ["dataset"]:
         from dex_manipulation.dataset.cli import main
 
         sys.exit(main(ROOT, sys.argv[2:]))

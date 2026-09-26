@@ -129,3 +129,20 @@ rest offset은 0으로 유지합니다. 관통 깊이는 PhysX가 보고하는 �
 실측 관절각 기준 목표각 제한, USD 속도 한계와의 교집합 처리, 제한 전 명령·제한 후 실제 추종 오차 보상은 자체 설계입니다.
 작은 목표각 차이에서도 PD 파지 토크를 유지하도록 이 설정의 강성·감쇠를 조정하되 기존 토크 상한을 유지합니다. 도달 불가능한 제한 구간은 별도 기록합니다.
 기존 actor 평균·정규화 통계만 이관하고 critic·optimizer를 새로 시작합니다. 실물 관절 보정이나 힘 제어를 대신하지 않습니다.
+
+## 접촉점 리타게팅
+
+| 출처 | 참고한 방법 | 독립 구현·차이 |
+|---|---|---|
+| [C2Dex §III](https://arxiv.org/pdf/2608.07045v2) | object-local 접촉점 군집·medoid, semantic 접촉 대응, interaction mesh | 논문은 접촉 **손실**을 사용한다. `contact_retargeting.py`는 접촉점–패드 표면 거리를 hard inequality로 제한한다. MANO 피부 mesh·silhouette 대신 현재 캔 mesh에 투영한 21점 skeleton tip을 사용하므로 추정 접촉점이다. |
+| [SPIDER §2.2–2.3](https://arxiv.org/html/2511.09484v1#S2.SS3) | simulator-in-the-loop 궤적 샘플링, Boltzmann 가중 갱신, 접촉 쌍의 가상 힘과 점진적 제거, 짧거나 이동이 큰 접촉 제외 | `contact_physics.py`는 PhysX의 실제 패드·캔에 반대 방향의 spring/central-damper 힘과 COM 기준 torque를 가한다. 100→50→20→0% 보조 후 반드시 0 N 재생한다. 원본 소스는 사용하지 않는다. |
+
+접촉 구간 26–41번은 사용자 지정이다. 두 방법은 동일한 고정 접촉점을 공유할 수 있다.
+`human_surface_proxy`는 사람 손끝 투영점을 유지한다. `robot_surface_seed`는 기존 유효 로봇 궤적의 캔 표면 접촉점으로 위치를 재선정하는 자체 형상 적응이며, 원래 점과 이동량을 별도로 저장한다.
+
+Hard 방식은 0.75 mm 이내의 **표면 접촉**이며 패드 위 접촉 위치는 이동 가능하다. 고정된 로봇 local point 5개의 15차원 equality weld를 의미하지 않는다.
+전체 손 collision mesh의 비관통·관절/속도 한계·보간 표본을 별도로 검사하며, 목적함수 수렴 실패 시 입력 주변의 제약 복원 여부를 기록한다.
+
+SPIDER에서 PhysX, 현재 Revo2 PD·측정각 기반 governor, 12개 control knot, 64개 후보, 자체 tracking/contact 비용, 손가락 동시 굽힘 초기 후보는 자체 선택이다.
+분산은 본문의 coarse-to-fine 설명에 따라 감소시킨다. Eq. (3)의 인쇄된 지수식을 그대로 쓰지 않는다.
+worst-case 물성 최적화·정책 증류는 포함하지 않는다. 가상 힘이 있는 rollout과 무보조 결과를 구분하며, 접촉력·물체 오차·coupling 오차를 각각 기록한다.

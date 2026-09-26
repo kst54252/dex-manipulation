@@ -38,6 +38,9 @@ def solve_sequence(
     options=None,
     geometric_debug=False,
     max_frames=None,
+    *,
+    contact_constraints=None,
+    initial_trajectory=None,
 ):
     options = options or SolverOptions()
     if (
@@ -61,6 +64,24 @@ def solve_sequence(
         raise ValueError("Empty sequence")
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if contact_constraints is not None and (
+        not np.array_equal(contact_constraints.plan.frame_ids, sequence.frame_ids)
+        or sequence.times is None
+        or not np.allclose(contact_constraints.plan.times, sequence.times, atol=1e-9, rtol=0)
+    ):
+        raise ValueError("Contact plan must match source frame IDs and timestamps")
+    if contact_constraints is not None and geometric_debug:
+        raise ValueError("Hard contact requires full collision checks")
+    if initial_trajectory is not None and (
+        len(initial_trajectory["active_q_rad"]) != len(sequence.frame_ids)
+        or list(initial_trajectory["active_joint_names"]) != model.active_names
+    ):
+        raise ValueError("Initial trajectory does not match source/model")
+    pair_margins = (
+        options.collision_margin_m
+        if contact_constraints is None
+        else contact_constraints.margins(options.collision_margin_m)
+    )
     hand_count = len(model.keypoints)
     object_points = np.asarray(object_points)
     if object_points.shape != (50, 3):
@@ -114,6 +135,9 @@ def solve_sequence(
             q0 = model.lower + 0.2 * (model.upper - model.lower)
             local = model.keypoint_positions(q0)
             pose0 = rigid_fit(local[palm_indices], human[palm_indices])
+            if initial_trajectory is not None:
+                pose0 = initial_trajectory["wrist_transform"][frame].copy()
+                q0 = initial_trajectory["active_q_rad"][frame].copy()
             dt = None
         else:
             pose0, q0 = previous[0].copy(), previous[1].copy()
@@ -131,6 +155,17 @@ def solve_sequence(
             lower_q = np.maximum(lower_q, q0 - model.velocity * dt)
             upper_q = np.minimum(upper_q, q0 + model.velocity * dt)
         bounds = [(None, None)] * 3 + [(-np.pi, np.pi)] * 3 + list(zip(lower_q, upper_q))
+        if contact_constraints is not None:
+            # These component bounds are implied by the existing velocity
+            # norms. They also keep infeasible SQP line searches numerically sane.
+            translation_radius = 0.3 if dt is None else options.wrist_linear_velocity_m_s * dt
+            rotation_radius = (
+                np.pi if dt is None else min(np.pi, options.wrist_angular_velocity_rad_s * dt)
+            )
+            bounds[:3] = list(
+                zip(pose0[:3, 3] - translation_radius, pose0[:3, 3] + translation_radius)
+            )
+            bounds[3:6] = [(-rotation_radius, rotation_radius)] * 3
         cached_x, cached = None, None
         alphas = (
             np.array([1.0])
@@ -192,7 +227,15 @@ def solve_sequence(
             distances = np.array(distances)
             cached_x = x.copy()
             cached = (
-                energy + smoothing + direction_energy + position_energy,
+                energy
+                + smoothing
+                + direction_energy
+                + position_energy
+                + (
+                    0.0
+                    if contact_constraints is None
+                    else contact_constraints.guidance(frame, links, can_pose)
+                ),
                 energy,
                 smoothing,
                 residual,
@@ -207,7 +250,11 @@ def solve_sequence(
         def inequalities(x):
             result = []
             if collision_scene is not None:
-                result.extend(evaluate(x)[4] - options.collision_margin_m)
+                result.extend(
+                    evaluate(x)[4] - np.tile(pair_margins, len(alphas))
+                    if np.ndim(pair_margins)
+                    else evaluate(x)[4] - pair_margins
+                )
             if dt is not None:
                 result.extend(
                     [
@@ -262,6 +309,40 @@ def solve_sequence(
         constraints = []
         if collision_scene is not None or dt is not None:
             constraints = [dict(type="ineq", fun=inequalities, jac=inequality_jacobian)]
+
+        def contact_sample_frame(alpha):
+            if previous_index is None:
+                return frame
+            sample_time = (1 - alpha) * sequence.times[previous_index] + alpha * sequence.times[
+                frame
+            ]
+            return int(np.searchsorted(sequence.times, sample_time + 1e-9, side="right") - 1)
+
+        def extra_constraints(x):
+            return np.concatenate(
+                [
+                    contact_constraints.constraints(
+                        contact_sample_frame(alpha), kinematics(x, alpha)[1], pose
+                    )
+                    for alpha, pose in zip(alphas, collision_object_poses)
+                ]
+            )
+
+        def extra_jacobian(x):
+            return np.concatenate(
+                [
+                    contact_constraints.jacobian(
+                        contact_sample_frame(alpha),
+                        lambda candidate: kinematics(candidate, alpha),
+                        x,
+                        pose,
+                    )
+                    for alpha, pose in zip(alphas, collision_object_poses)
+                ]
+            )
+
+        if contact_constraints is not None:
+            constraints.append(dict(type="ineq", fun=extra_constraints, jac=extra_jacobian))
         initial_objective = evaluate(x0)[0]
         # Large unreachable jumps can make the extra squared point loss dwarf
         # the constraint derivatives. A fixed positive framewise scale changes
@@ -284,6 +365,8 @@ def solve_sequence(
                 ),
             )
             ineq = inequalities(result.x)
+            if contact_constraints is not None:
+                ineq = np.r_[ineq, extra_constraints(result.x)]
             minimum = float(ineq.min()) if len(ineq) else None
             attempts.append(
                 dict(
@@ -300,6 +383,52 @@ def solve_sequence(
             if not np.isfinite(result.x).all():
                 break
             seed = result.x.copy()
+            if contact_constraints is not None and initial_trajectory is not None:
+                baseline_pose = initial_trajectory["wrist_transform"][frame]
+                seed = np.r_[
+                    baseline_pose[:3, 3],
+                    Rotation.from_matrix(baseline_pose[:3, :3] @ base_rotation.T).as_rotvec(),
+                    initial_trajectory["active_q_rad"][frame],
+                ]
+                seed = np.clip(seed, [b[0] for b in bounds], [b[1] for b in bounds])
+        contact_recovery = False
+        if (
+            contact_constraints is not None
+            and initial_trajectory is not None
+            and (
+                not result.success
+                or np.min(np.r_[inequalities(result.x), extra_constraints(result.x)])
+                < -options.feasibility_tolerance
+            )
+        ):
+            # A feasibility restoration around the immutable input is preferable
+            # to accepting an infeasible objective minimizer. This is recorded;
+            # it does not claim convergence of the Laplacian objective.
+            recovery_seed = seed.copy()
+            scale = np.r_[[0.05] * 3, [0.3] * 3, [0.3] * n]
+            restored = minimize(
+                lambda x: np.sum(((x - recovery_seed) / scale) ** 2),
+                recovery_seed,
+                method="SLSQP",
+                bounds=bounds,
+                constraints=constraints,
+                options=dict(maxiter=options.max_iterations, ftol=options.ftol, eps=1e-6),
+            )
+            minimum = float(np.min(np.r_[inequalities(restored.x), extra_constraints(restored.x)]))
+            attempts.append(
+                dict(
+                    success=bool(restored.success),
+                    status=int(restored.status),
+                    message=str(restored.message),
+                    iterations=int(restored.nit),
+                    objective=float(evaluate(restored.x)[0]),
+                    minimum_inequality=minimum,
+                    purpose="feasibility restoration around input reference",
+                )
+            )
+            if restored.success and minimum >= -options.feasibility_tolerance:
+                result = restored
+                contact_recovery = True
         objective, energy, smoothing, residual, distances, wrist, points, links, _ = evaluate(
             result.x
         )
@@ -337,9 +466,13 @@ def solve_sequence(
             and velocity_violation <= options.feasibility_tolerance
             and (
                 path_separation is None
-                or path_separation >= options.collision_margin_m - options.feasibility_tolerance
+                or np.min(inequalities(result.x)) >= -options.feasibility_tolerance
             )
             and (collision_flags is None or not collision_flags.any())
+            and (
+                contact_constraints is None
+                or extra_constraints(result.x).min() >= -options.feasibility_tolerance
+            )
         )
         accepted = bool(result.success and feasible and np.isfinite(result.x).all())
         wrists[frame], active[frame], full[frame], robot_points[frame] = (
@@ -353,8 +486,12 @@ def solve_sequence(
         records.append(
             dict(
                 frame_id=int(sequence.frame_ids[frame]),
+                contact=None
+                if contact_constraints is None
+                else contact_constraints.report(frame, links, can_pose),
                 valid=bool(valid[frame]),
                 optimizer_success=bool(result.success),
+                contact_feasibility_restoration=contact_recovery,
                 feasible=bool(feasible),
                 status=int(result.status),
                 message=str(result.message),
@@ -406,6 +543,31 @@ def solve_sequence(
             previous = wrist.copy(), q.copy()
             previous_index = frame
 
+    if contact_constraints is not None:
+        from .contact_retargeting import validate_contact_path
+
+        valid, dense_records = validate_contact_path(
+            model,
+            collision_scene,
+            contact_constraints,
+            wrists,
+            active,
+            sequence.object_poses[:frame_count],
+            sequence.times[:frame_count],
+            valid,
+            options.collision_margin_m,
+            options.feasibility_tolerance,
+            max(10, 2 * options.collision_substeps),
+        )
+        for index, check in enumerate(dense_records):
+            records[index]["dense_validation"] = check
+            if check is not None and not check["passed"]:
+                records[index]["valid"] = False
+                records[index]["feasible"] = False
+                records[index]["rejection"] = (
+                    "denser interpolation check failed; pose retained for diagnosis"
+                )
+
     # A transition after any failed/missing source frame is not a contiguous valid trajectory segment.
     transition_valid = np.zeros(frame_count, dtype=bool)
     if frame_count > 1:
@@ -456,6 +618,11 @@ def solve_sequence(
         if geometric_debug
         else "constrained_geometric_retargeting",
         options=asdict(options),
+        contact_method=None if contact_constraints is None else "hard_object_anchor_to_pad_surface",
+        collision_margins_m=np.asarray(pair_margins).tolist(),
+        contact_scope=None
+        if contact_constraints is None
+        else "fixed object anchors to pad convex surfaces; phase-active endpoints and interpolation samples; table half-space at same samples",
         sequence_metadata=sequence.metadata,
         frames=records,
         frame_count=frame_count,

@@ -89,3 +89,5 @@ checkpoint 옆의 `config.resolved.json`과 해당 모델·reference 파일을 �
 연결·현장 보정·초기 자세 준비는 [실물 절차](hardware_measurement.md)를 따릅니다.
 
 관절 추종 제한 적용 전 정책은 `./run.sh arm policy 2-before-finger-tracking` 또는 `./run.sh floating policy 2-before-finger-tracking`으로 선택합니다. 기존 저장 궤적은 변경하지 않으며 새 녹화는 별도 경로를 사용합니다.
+
+접촉 제약을 포함한 새 궤적 생성: [접촉점 리타게팅](contact_retargeting.md).

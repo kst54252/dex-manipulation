@@ -838,6 +838,24 @@ class PhysxResidualEnv:
             all_forces, all_torques = wrist_pd_wrenches(
                 s, applied_target, self.body_mass, self.force_body_id, self.cfg
             )
+            external = getattr(self, "external_wrench_provider", None)
+            if external is not None:
+                if self.training:
+                    raise RuntimeError(
+                        "Trajectory contact guidance must not leak into policy training"
+                    )
+                hand_force, hand_torque, object_force, object_torque = external(self, s, substep)
+                for supplied, expected in ((hand_force, all_forces), (hand_torque, all_torques)):
+                    if supplied.shape != expected.shape or not torch.isfinite(supplied).all():
+                        raise ValueError("Invalid contact-guidance articulation wrench")
+                for supplied in (object_force, object_torque):
+                    if supplied.shape != (self.num_envs, 3) or not torch.isfinite(supplied).all():
+                        raise ValueError("Invalid contact-guidance object wrench")
+                all_forces = all_forces + hand_force
+                all_torques = all_torques + hand_torque
+                self.can._physics_view.apply_forces_and_torques_at_position(
+                    object_force, object_torque, None, self.all_ids.to(torch.int32), True
+                )
             self.robot._physics_view.apply_forces_and_torques_at_position(
                 all_forces, all_torques, None, self.all_ids.to(torch.int32), True
             )
