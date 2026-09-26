@@ -20,7 +20,8 @@ def build(root):
     output = root / 'runtime'
     output.mkdir(exist_ok=True)
     groups, selected = {}, {}
-    for demo in ('1', '2'):
+    catalog = read_config(root / 'config/tasks/can_pick/play.json')
+    for demo in catalog['demos']:
         choice = latest_policy(root, demo, 'floating')
         checkpoint = Path(choice['checkpoint'])
         selected[demo] = choice
@@ -48,7 +49,6 @@ def build(root):
     baseline = root / 'local/reports/hardware_measurement_20260926/sim_frozen/tactile'
     groups['execution.zip'].update(baseline / name for name in ('episode_0001.npz', 'metadata.json'))
     refs = groups['references.zip'] = set()
-    catalog = read_config(root / 'config/tasks/can_pick/play.json')
     for demo in catalog['demos'].values():
         path = root / demo['arm_reference']
         if path.is_file():

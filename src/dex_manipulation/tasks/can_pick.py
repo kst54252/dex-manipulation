@@ -61,7 +61,7 @@ def plan_playback(root, args, catalog):
         raise ValueError("--random-can은 데모2 arm policy에서만 지원합니다.")
     if placement_seed is not None and (not random_can or placement_seed < 0):
         raise ValueError("--placement-seed는 --random-can과 함께 0 이상의 정수로 지정하세요.")
-    requested = args.policy or args.selection or "1"
+    requested = args.policy or args.selection or next(iter(catalog["demos"]))
     selected = catalog.get("aliases", {}).get(requested, requested)
     entry = catalog["policies"].get(selected) if args.mode == "policy" else None
     speed = getattr(args, "speed", None)
@@ -294,16 +294,11 @@ def plan_training(root, args):
         config = read(source)
         robot = "arm" if config.get("arm_training", {}).get("enabled", False) else "floating"
         reference = required(config["reference"]).resolve()
-        demo = next(
-            (n for n in ("1", "2") if reference.is_relative_to(root / f"data/can_grasping/demo{n}")), None
-        )
-        # Derived contact references are deliberately stored under local/;
-        # their new configs explicitly identify the original demo.
-        if demo is None and config.get("demo_id") in ("1", "2"):
-            demo = config["demo_id"]
-        if demo is None:
+        demos = task.catalog()["demos"]
+        demo = demo_id(root, config)
+        if demo not in demos:
             raise ValueError(
-                "checkpoint 입력이 demo1/demo2에 속하지 않습니다. scripts/policy.py로 직접 설정하세요."
+                f"checkpoint 입력이 등록된 데모에 속하지 않습니다: {', '.join(demos)}"
             )
         if (args.robot and args.robot != robot) or (args.demo and args.demo != demo):
             raise ValueError(

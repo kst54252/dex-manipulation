@@ -11,7 +11,7 @@
     "policy": "dex_manipulation.policy.runner:run",
     "reward": "dex_manipulation.tasks.can_pick:attach_reward"
   },
-  "data": {"1": "data/can_grasping/demo1", "2": "data/can_grasping/demo2"},
+  "data": {"2": "data/can_grasping/demo2"},
   "inputs": [
     {"role": "object_asset", "path": "assets/can/can.usda"},
     {"role": "object_geometry", "path": "assets/models/can_mesh.json"}

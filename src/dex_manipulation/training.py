@@ -15,7 +15,7 @@ from .tasks import config_task_id, load_task
 def parser():
     p = argparse.ArgumentParser(
         prog="./train.sh",
-        description="학습: ./train.sh [floating|arm] [1|2] 또는 ./run.sh train ...",
+        description="학습: ./train.sh [floating|arm] [데모 번호] 또는 ./run.sh train ... (can_pick: 2)",
     )
     p.add_argument("robot", nargs="?", choices=("floating", "arm"))
     p.add_argument("demo", nargs="?", help="선택한 task의 데모 번호")

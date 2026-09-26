@@ -1,11 +1,11 @@
 {
-  "reference": "data/can_grasping/demo1/stable/reference.npz",
+  "reference": "data/can_grasping/demo2/policy_reference.npz",
   "model": "assets/models/revo2.json",
   "hand_asset": "assets/USD/revo2_floating.usda",
   "object_asset": "assets/can/can.usda",
   "object_geometry": "assets/models/can_mesh.json",
   "world_frame": "grounded_dataset",
-  "scene_assumption": "Initial can base is horizontal at Z=0; minimum scene tilt correction and shared hand/object floor lift <=2.5mm; same 40 poses and 5.2s timing. A derived simulation frame, not measured calibration.",
+  "scene_assumption": "Derived dataset has the initial can collision bottom at Z=0 and local +Z up; no second placement. Simulation convention, not measured camera extrinsics.",
   "physics_dt": 0.008333333333333333,
   "control_decimation": 4,
   "gravity": 9.81,
@@ -155,7 +155,7 @@
     "initial_std": 0.15,
     "observation_normalization": true
   },
-  "recipe": "revo2_rb3_online_ik_original_slow_v1",
+  "recipe": "revo2_rb3_online_ik_demo2_v1",
   "physics_device": "cuda:0",
   "env_spacing_m": 2.5,
   "self_collision": false,
@@ -357,7 +357,7 @@
   },
   "arm_training": {
     "enabled": true,
-    "arm_config": "config/tasks/can_pick/ik_demo1.json",
+    "arm_config": "config/tasks/can_pick/ik_demo2.json",
     "ik_iterations": 12,
     "reset_ik_iterations": 40,
     "compile_fk": true,

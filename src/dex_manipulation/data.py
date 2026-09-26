@@ -7,13 +7,9 @@ import numpy as np
 
 CONFIG_PATH_ALIASES = {
     "config/policy.json": "config/policy_demo2.json",
-    "config/policy_original.json": "config/policy_demo1.json",
     "config/ik.json": "config/ik_demo2.json",
-    "config/ik_original.json": "config/ik_demo1_legacy.json",
     "config/retargeting.json": "config/retargeting_demo2.json",
-    "config/retargeting_original.json": "config/retargeting_demo1.json",
     "config/arm_ground_frame.json": "config/arm_placement_demo2.json",
-    "config/arm_ground_frame_original.json": "config/arm_placement_demo1.json",
     "config/policy_demo2_grasp.json": "config/policy_demo2_contact_only.json",
 }
 
@@ -22,17 +18,12 @@ TASK_CONFIG_PATH_ALIASES = {
     f"config/{name}.json": f"config/tasks/can_pick/{name}.json"
     for name in (
         "play",
-        "policy_demo1",
         "policy_demo2",
         "policy_demo2_contact",
         "policy_demo2_contact_only",
         "policy_arm",
-        "ik_demo1",
-        "ik_demo1_legacy",
         "ik_demo2",
-        "retargeting_demo1",
         "retargeting_demo2",
-        "arm_placement_demo1",
         "arm_placement_demo2",
     )
 }
@@ -41,7 +32,7 @@ TASK_CONFIG_PATH_ALIASES = {
 def resolve_demo_path(path, root=None):
     """Resolve historical demo/config paths without rewriting saved provenance.
 
-    New callers use data/can_grasping/demo1 (40 poses) or demo2 (27 poses).
+    New can-pick callers use data/can_grasping/demo2 (27 poses).
     Older checkpoint configurations
     and immutable NPZ provenance retain their original path strings.
     """
@@ -59,10 +50,8 @@ def resolve_demo_path(path, root=None):
     aliases = {
         **{old: TASK_CONFIG_PATH_ALIASES.get(new, new) for old, new in CONFIG_PATH_ALIASES.items()},
         **TASK_CONFIG_PATH_ALIASES,
-        "data/demo1": "data/can_grasping/demo1",
         "data/demo2": "data/can_grasping/demo2",
         "data/current": "data/can_grasping/demo2",
-        "data/original": "data/can_grasping/demo1",
         "data/raw/839512060362": "data/can_grasping/demo2/raw",
         "data/poses/839512060362.npz": "data/can_grasping/demo2/poses.npz",
         "data/reference/839512060362.npz": "data/can_grasping/demo2/retargeted.npz",
@@ -78,8 +67,7 @@ def resolve_demo_path(path, root=None):
 def legacy_demo_paths(value):
     """Stable checkpoint-hash spelling for renamed data and configuration files.
 
-    Identities follow the data, not its mutable display number: demo1 is the
-    historical "original" demo and demo2 is the historical "current" demo.
+    The retained can-pick demo2 is the historical "current" demo.
     Only these exact path prefixes change. Reference bytes/hashes, model,
     controller and every other contract field remain checked as before.
     Do not use this representation for opening files or user-facing paths.
@@ -100,9 +88,7 @@ def legacy_demo_paths(value):
                     return prefix + old
             for new, old in (
                 ("data/can_grasping/demo2", "data/current"),
-                ("data/can_grasping/demo1", "data/original"),
                 ("data/demo2", "data/current"),
-                ("data/demo1", "data/original"),
             ):
                 if value == prefix + new or value.startswith(prefix + new + "/"):
                     return prefix + old + value[len(prefix + new) :]

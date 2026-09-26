@@ -29,14 +29,14 @@ def choose(title, options):
 
 def parser():
     p = argparse.ArgumentParser(
-        description="Isaac 재생: ./run.sh [floating|arm] [retarget|policy] [1|2|checkpoint.pt]",
+        description="Isaac 재생: ./run.sh [floating|arm] [retarget|policy] [2|checkpoint.pt]",
         epilog="학습: ./train.sh 또는 ./run.sh train --help",
     )
     p.add_argument("robot", nargs="?", choices=("floating", "arm"))
     p.add_argument("--task", default=DEFAULT_TASK, help="작업 이름; 목록: ./run.sh tasks")
     p.add_argument("mode", nargs="?", choices=("retarget", "policy"))
     p.add_argument(
-        "selection", nargs="?", help="데모 번호 1/2, 등록 정책 이름 또는 checkpoint 경로"
+        "selection", nargs="?", help="데모 번호 (can_pick: 2), 등록 정책 이름 또는 checkpoint 경로"
     )
     p.add_argument("--policy", dest="policy", help="정책 이름 또는 checkpoint 경로 (policy 모드)")
     p.add_argument(
@@ -163,7 +163,7 @@ def main(root=None, argv=None):
         task.entrypoint("playback_plan")
         if not args.robot or not args.mode:
             if not sys.stdin.isatty():
-                p.error("예: ./run.sh floating retarget 1 (전체 도움말: --help)")
+                p.error("예: ./run.sh floating retarget 2 (전체 도움말: --help)")
             args.robot = args.robot or choose(
                 "환경", [("floating", "플로팅 핸드"), ("arm", "RB3 로봇팔 + Revo2")]
             )

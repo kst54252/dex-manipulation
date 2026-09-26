@@ -4,47 +4,12 @@
     "/home/wanjunkim/ARSL/dex-manipulation"
   ],
   "policies": {
-    "1": {
-      "checkpoint": "local/results/policy/demo1_no_finger_contact_1000_20260922_062042/policy.pt",
-      "iteration": 1000
-    },
     "2": {
       "checkpoint": "local/results/policy/demo2_half_capture_2000_20260922_120939/policy.pt",
       "iteration": 2000
     }
   },
   "archives": {
-    "policy_demo1.zip": {
-      "size": 20612103,
-      "sha256": "ac0a37afc930b22af9cefc6d94db5cfa4586628f354f91dcf4c3ef56cfea47e8",
-      "files": {
-        "local/results/policy/demo1_no_finger_contact_1000_20260922_062042/config.resolved.json": {
-          "size": 8962,
-          "mtime_ns": 1790058077129026366,
-          "sha256": "5f8d306ffa5c04d53e53ef00a3160c6cc18a6f4d0ce29ed2724d8467ace3625c"
-        },
-        "local/results/policy/demo1_no_finger_contact_1000_20260922_062042/exit.json": {
-          "size": 17,
-          "mtime_ns": 1790060890979151594,
-          "sha256": "e89df0eae5ec7db81135aed16463968955c578bcc4f2ec43172eff351f080c17"
-        },
-        "local/results/policy/demo1_no_finger_contact_1000_20260922_062042/policy.pt": {
-          "size": 23440267,
-          "mtime_ns": 1790060889512565682,
-          "sha256": "2cb7e31f8b908a1f39c60137c8dbc6d21c0bee0f2990604724a1a1738aabf978"
-        },
-        "local/results/policy/demo1_no_finger_contact_1000_20260922_062042/run_metadata.json": {
-          "size": 281426,
-          "mtime_ns": 1790058077158542004,
-          "sha256": "8bc529158053b855987fed78608f827c8b377ba48db6352d22a2c8116facd8a3"
-        },
-        "local/results/policy/demo1_no_finger_contact_1000_20260922_062042/training.jsonl": {
-          "size": 3544226,
-          "mtime_ns": 1790060889458526576,
-          "sha256": "dd93bf3902c4152632c52931d2e2b07ae41077797270cfab678ccf8bb1990811"
-        }
-      }
-    },
     "policy_demo2.zip": {
       "size": 22414310,
       "sha256": "41d59b37256a7d32968fed96260f5fab2036b2b2b2d3a28a475bcb53da980419",
@@ -103,18 +68,13 @@
       }
     },
     "references.zip": {
-      "size": 198194,
-      "sha256": "92ce38b9126191827611a4c8a36437234ed35a63f56be29b74a34cc1744a3e2a",
+      "size": 125365,
+      "sha256": "f77c8d24c8dbc0879e3a062e50a1882815029c6d648851d8d70f0ee232801f52",
       "files": {
         "local/references/contact/demo2.npz": {
           "size": 77296,
           "mtime_ns": 1789970037155778780,
           "sha256": "714191b994fbb21a32f0766a9213957d731000f78e447c9151319728ac26613a"
-        },
-        "local/results/ik/demo1_stable/trajectory.npz": {
-          "size": 76201,
-          "mtime_ns": 1789955224785886408,
-          "sha256": "b1e6ecdb3c726b35d70b30f9c92070e40e4833fae77d1dc36352f5590c30d479"
         },
         "local/results/ik/full/trajectory.npz": {
           "size": 53681,

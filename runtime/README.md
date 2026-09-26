@@ -4,7 +4,7 @@
 `run.sh` restores missing files into ignored `local/` without overwriting existing runs.
 `./run.sh check` verifies the archives and restored files.
 
-- `policy_demo1.zip`, `policy_demo2.zip`: latest completed checkpoints, saved settings and completion metadata.
+- `policy_demo2.zip`: latest completed demo2 checkpoint, saved settings and completion metadata.
 - `references.zip`: derived policy inputs and arm IK trajectories.
 - `placements.zip`: demo2 reference-matched random-placement map and required provenance inputs.
 - `execution.zip`: recorded 12-joint commands, matching simulation validation and baseline tactile data.
