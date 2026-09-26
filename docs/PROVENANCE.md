@@ -2,7 +2,7 @@
 
 FK·기하 리타게팅은 논문과 USD·키포인트 정의로 독립 구현했습니다.
 Residual RL은 REGRIND와 로컬 `regrind-revo2`의 방법·설정을 참고했습니다.
-외부 task·환경 소스를 복사하거나 런타임에 import하지 않으며, PPO는 일반 RSL-RL 라이브러리를 사용합니다.
+FK·RL의 외부 task·환경 소스를 복사하거나 런타임에 import하지 않으며, PPO는 일반 RSL-RL 라이브러리를 사용합니다.
 
 ## 논문
 
@@ -85,3 +85,33 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 
 Task registry, 작업별 설정·데모·정책 분리, `drilling`의 입력/단계 정의는 이 프로젝트의 자체 설계입니다.
 공통 리타게팅·PPO와 작업별 환경·보상을 분리합니다. 드릴 입력과 단계 구성은 독립적으로 정의했습니다.
+
+## RGB 데이터 제작
+
+| 출처 | 사용 방식 |
+|---|---|
+| [EgoPHI 프로젝트](https://siplab.org/projects/EgoPHI), [공식 코드](https://github.com/eth-siplab/EgoPHI) | 외부 저장소의 `InteractionGNN`과 공식 checkpoint를 별도 Python 프로세스에서 호출. mesh 정규화·graph·RGB 전처리는 공식 추론 계약을 참고 |
+| [HaMeR 공식 코드](https://github.com/geopavlakos/hamer) | 외부 `load_hamer`, `ViTDetDataset`, `cam_crop_to_full` API로 손 mesh·21점 추정. 필요한 MANO 모델은 해당 이용 조건에 따라 별도 준비 |
+| [OpenCV 카메라 보정](https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html), [ArUco](https://docs.opencv.org/4.x/d9/d6a/group__aruco.html) | checkerboard 보정·측정한 marker corner의 PnP·재투영 오차 계산 |
+
+원본 신경망 코드를 프로젝트에 복사하지 않습니다. 저장소·가중치는 `local/`에 두고 모델 파일과 checkpoint의 hash를 출력 metadata에 남깁니다.
+HaMeR의 단안 절대 위치는 `monocular_estimate`로 표시합니다. EgoPHI 데이터 로더의 정답 손 위치 보정은 사용하지 않으며, 선택적 metric 정렬에는 별도로 측정한 손 관절 anchor가 필요합니다.
+
+촬영 시간 보존, 입력 계약, 측정한 mesh·책상 좌표, marker 기반 물체 pose, 누락 프레임 처리, 검수 화면, task별 내보내기는 자체 설계입니다.
+EgoPHI의 물체 추정은 독립 추적 pose와 일관성을 검사해 별도로 저장하며 원본 추적 궤적을 덮어쓰지 않습니다.
+양손 문맥이 없는 프레임은 기본적으로 접촉 추론을 건너뜁니다. `zero_context_debug`는 유효 라벨로 인정하지 않는 진단용 입력 방식입니다.
+힘은 `normalized_model_output`으로 저장하며 드릴에서 측정·보정한 Newton 값, 마찰력 또는 토크로 취급하지 않습니다.
+공식 checkpoint 전체를 strict load하며, 중복 다운로드를 피하도록 모델 생성 중에만 별도 backbone 사전학습 가중치 로딩을 끕니다. 가정한 보정값·관절 대용점을 쓰는 공개 샘플 시험은 `test_assumptions`로 분리합니다.
+
+## Revo2 tactile
+
+[BrainCo Revo2 Touch 프로토콜](https://staging.brainco.tech/docs/revolimb-hand/en/revo2/modbus_touch.html)의
+정상력·접선력 0.01 N/count, 0–25 N 범위, 방향각·status 의미를 사용합니다.
+공식 SDK의 `get_touch_sensor_status()`를 읽기 전용으로 호출하며 원본 예제 소스는 복사하지 않습니다.
+PhysX 접촉점 힘·마찰력 합산, 120 Hz 기록과 USD 패드 축 유도는 자체 구현입니다.
+센서 통신 형식 근사와 실물 센서 보정을 구분하며, ADC·근접 응답·노이즈·대역폭은 모델링하지 않습니다.
+
+동작 중 촉각 기록은 공식 `get_touch_sensor_status` API와 위 통신 단위를 사용합니다.
+단일 RS485 소유자, 명령 사이 여유 시간 폴링, 공통 monotonic 시각, 고정 명령 SHA-256 정렬,
+실측 관절·촉각 CSV 및 정상력/접선력/방향각 비교 그래프는 자체 설계입니다.
+제조사 내부 신호처리나 노이즈 모델을 복제하지 않습니다.

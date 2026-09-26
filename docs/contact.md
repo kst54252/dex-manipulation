@@ -22,3 +22,5 @@
 기본 재생은 패드 프로필을 적용합니다. `checkpoint` 옵션은 학습 당시 물성을 사용합니다.
 적용값은 `run_metadata.json`의 `execution.contact_materials`에 저장합니다.
 [패드 접근·접촉 학습](contact_training.md) · [구현 출처](PROVENANCE.md)
+
+[손끝 접촉력 측정과 실물 tactile 기록](tactile.md)

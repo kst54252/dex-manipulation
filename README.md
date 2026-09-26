@@ -4,7 +4,7 @@
 작업별 설정·데모·정책은 task로 구분하며 기본 작업은 `can_pick`입니다.
 
 ```text
-DexYCB 손 21점 + 물체 6D pose
+DexYCB / 직접 촬영한 RGB → 손 21점 + 물체 6D pose
   → 손목·손가락 리타게팅
   → 플로팅 Revo2 / RB3 + Revo2
   → 물리 재생·정책 학습
@@ -60,7 +60,8 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 | 경로 | 내용 |
 |---|---|
 | `assets/` | RB3·Revo2 USD, 캔 형상, 키포인트, 추출 모델 |
-| `data/demo1/`, `data/demo2/` | 사람 손·물체 데모와 리타게팅 궤적 |
+| `data/can_grasping/demo1/`, `data/can_grasping/demo2/` | 사람 손·물체 데모와 리타게팅 궤적 |
+| `data/<task>/demoN/` | 추가 작업의 촬영 입력·변환 데이터 |
 | `config/tasks/<task>/` | 작업별 데모·환경·IK·정책 설정 |
 | `config/` | 공통 로봇 실행·통신·작업대 설정 |
 | `src/dex_manipulation/` | FK, IK, 리타게팅, 시뮬레이션, 정책 패키지 |
@@ -76,11 +77,25 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 [정책](docs/policy.md) · [환경](docs/scene.md) · [캔](docs/object.md) · [접촉 물성](docs/contact.md)
 [작업 구성·추가](docs/tasks.md): `can_pick`과 `drilling`의 입력·설정·실행 어댑터 구조입니다.
 
+## RGB 데모 제작
+
+`drilling`의 첫 동작은 드릴에 접근해 잡고 들어 유지하는 동작입니다. RGB 영상과 실제 크기를 아는 드릴 mesh를 사용하며 RGB-D는 필요하지 않습니다.
+카메라·책상 좌표 보정, 손/물체 pose 복원, EgoPHI 접촉 추정, 검수와 리타게팅 입력 내보내기를 분리합니다.
+
+```bash
+./run.sh dataset init 1 --task drilling
+./run.sh dataset status 1 --task drilling
+./run.sh dataset --help
+```
+
+영상·mesh·카메라 보정값을 추가한 뒤 [RGB 데이터 제작](docs/dataset_capture.md)의 순서로 처리합니다.
+HaMeR/EgoPHI는 별도 환경·체크포인트를 사용합니다. 단안 손 pose와 힘 출력은 측정 정답과 구분해 저장합니다.
+
 저장 궤적의 팔·손 통합 실행과 실시간 상태 반영은 [ROS 2 연동](docs/ros.md)을 사용합니다.
 `./run.sh ros bridge` → `./run.sh ros mirror` → `./run.sh ros send` 순으로 별도 터미널에서 실행합니다.
 기본 bridge는 실물 연결이 없는 모의 장치입니다.
 제조사 Virtual Control Box를 통한 가상 통신 시험은 [VCB 실행](docs/vcb.md)을 사용합니다.
 `./run.sh vcb probe`로 연결 확인 후 `prepare` → `bridge` → `mirror` → `send` 순으로 실행합니다.
 
-사람 손·물체 데이터는 **[DexYCB](https://dex-ycb.github.io/)**를 사용합니다.
+기존 캔 데모의 사람 손·물체 데이터는 **[DexYCB](https://dex-ycb.github.io/)**를 사용합니다.
 원본 이미지·annotation은 로컬에 보관합니다. [데이터 출처](docs/dataset.md) · [방법론 출처](docs/PROVENANCE.md)

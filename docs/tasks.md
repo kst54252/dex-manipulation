@@ -10,13 +10,15 @@ config/tasks/
     policy_demo*.json        학습·보상
     retargeting_demo*.json   리타게팅
     ik_demo*.json            팔 IK
-  drilling/                  드릴 집기·나사 정렬
+  drilling/                  드릴 집기
     task.json
     play.json
+    capture.json             RGB 데이터 제작 설정
 src/dex_manipulation/tasks/   작업 등록·작업별 실행 구성
-data/demo1/, data/demo2/      기존 can_pick 입력·checkpoint 경로 유지
+data/can_grasping/demo1/      can_pick 데모 1
+data/can_grasping/demo2/      can_pick 데모 2
 data/drilling/demo1/          드릴 작업 입력
-assets/tasks/drilling/        드릴·나사·지그 USD
+assets/tasks/drilling/        드릴 mesh·물리 자산
 local/results/policy/<task>/  새 학습 결과
 local/results/play/<task>/    재생 결과
 ```
@@ -36,11 +38,12 @@ FK·IK·리타게팅·PPO·로봇 모델은 공통 모듈을 사용합니다.
 
 ## Drilling 입력
 
-동작은 드릴 집기 → 나사 접근 → 비트 정렬 → 트리거 누르기 → 접촉 유지로 구분합니다.
-정책은 손목·손가락을 제어하며, 비트 회전은 트리거를 누르는 물리적 상호작용으로 발생시킵니다.
+첫 동작은 접근 → 파지 → 들어 올리기 → 유지입니다. 촬영 중 드릴은 하나의 rigid object로 취급하며 비트 회전·트리거 작동을 사용하지 않습니다.
+나사 접근·정렬·트리거 누르기는 이후 확장할 별도 단계입니다. 드릴 집기 데이터에는 나사·지그·트리거 정보가 필요하지 않습니다.
 
-`task.json`의 `inputs`에 드릴·지그 형상, 사람 데모, 비트/나사/트리거 좌표계와 물성 입력 경로를 정의합니다.
-실제 회전 속도·토크·트리거 조건, 정렬·접촉 성공 조건을 설정한 뒤 실행 어댑터와 `play.json` 데모를 등록합니다.
+RGB 데이터 제작은 `capture.json`을 사용합니다. 영상·mesh를 준비하는 경로와 변환 방법은 [RGB 데이터 제작](dataset_capture.md)을 참조합니다.
+`task.json.inputs`에는 로봇 재생·학습에 사용할 드릴 자산, 데모, 장면, 리타게팅·IK·정책 설정을 정의합니다.
+데모 제작과 로봇 실행 등록은 별개이며, 로봇 실행에는 해당 작업의 환경·보상 어댑터와 `play.json` 등록이 필요합니다.
 입력이나 실행 어댑터가 없는 작업은 시뮬레이터를 시작하기 전에 중단합니다.
 
 ## 작업 추가

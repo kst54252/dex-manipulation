@@ -100,3 +100,6 @@ Isaac의 물리는 이 화면에서 끄며, 원본 USD 대신 메모리 내 표�
 다른 PC·시뮬레이터도 같은 joint 이름·rad 단위와 ROS domain/QoS로 구독할 수 있습니다.
 호스트 시계는 동기화하고 실제 로봇 피드백에는 `use_sim_time=false`를 사용합니다.
 MuJoCo/Gazebo에서는 받은 이름을 해당 모델의 joint에 대응시키는 adapter가 필요합니다.
+
+`bridge --backend hardware --enable-motion --record-tactile`은 action 동안 같은 RS485 연결로 촉각을 기록합니다.
+[동기 기록과 그래프 명령](hardware_measurement.md)을 참조합니다.

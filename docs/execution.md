@@ -62,3 +62,5 @@ DEX_PYTHON=local/hardware-venv/bin/python ./run.sh execute hardware --hardware-c
 실물 Servo J는 위치 명령 API여서 시뮬레이터의 속도 feedforward와 동일한 동역학을 보장하지 않습니다.
 Python/RS485 실행 주기는 현장에서 확인해야 하며 지연 시 시간을 늘리거나 명령을 몰아서 보내지 않습니다.
 소프트웨어 정지는 물리 비상정지를 대신하지 않습니다.
+
+실물 연결·관절 보정·동작 중 tactile 기록·그래프는 [실물 실행과 촉각 측정](hardware_measurement.md)을 참조합니다.

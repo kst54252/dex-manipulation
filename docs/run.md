@@ -58,14 +58,14 @@ checkpoint 옆의 `config.resolved.json`과 해당 모델·reference 파일을 �
 ./run.sh arm policy 2 --random-can --placement-seed 42 --repeat 3
 ```
 
-매 회차 5cm IK 격자점을 섞어 선택합니다. 2배속은 129개, 1배속은 133개이며 바로 직전 위치는 반복하지 않습니다.
+매 회차 현재 정책의 궤적·재생 속도에 맞는 5cm IK 격자점을 섞어 선택합니다. 바로 직전 위치는 반복하지 않습니다.
 손·캔의 XY를 함께 이동하고 높이·방향을 유지합니다. 팔 초기 관절값과 정책 좌표계도 함께 초기화합니다.
 
 후보는 리타게팅 궤적의 IK·충돌·특이점·관절 한계 조건으로 선택합니다.
 정책 residual은 실행 중 온라인 IK로 처리합니다. IK 실패 시 회차를 종료하고 다음 위치에서 시작합니다.
 `--placement-seed`로 순서를 재현하며, 옵션이 없으면 고정 배치입니다.
-지도 경로는 `config/tasks/can_pick/play.json`의 `demos.2.random_can_regions`에 지정합니다.
-지도·입력·USD·설정이 일치해야 실행할 수 있습니다.
+지도 경로는 `config/tasks/can_pick/play.json`에서 관리합니다. 정책별 궤적 해시와 배속으로 `demos.2.random_can_policy_regions`를 선택하며, 기존 데모는 `random_can_regions`를 사용합니다.
+전체 손·캔 궤적과 시간, 입력·USD·설정이 지도와 일치해야 실행할 수 있습니다.
 
 ## 출력
 
@@ -73,3 +73,17 @@ checkpoint 옆의 `config.resolved.json`과 해당 모델·reference 파일을 �
 `launch.json`·`run_metadata.json`은 설정, `episodes.jsonl`은 회차 지표,
 `first_episode.npz`는 첫 회차 상태·목표를 저장합니다.
 랜덤 배치의 첫 회차 좌표변환은 `first_episode_placement.json`에 저장합니다.
+
+## Tactile 기록
+
+```bash
+./run.sh arm policy 2 --record-tactile --repeat 1
+./run.sh floating policy 2 --record-tactile --repeat 1
+```
+
+회차별 정상력·접선력·방향각은 실행 폴더의 `tactile/`에 저장합니다.
+[센서 단위·시뮬레이션 근사·실물 기록](tactile.md)
+
+실물: `./run.sh execute probe --hardware-config local/hardware.json --record-tactile`로 읽기 연결을 확인한 뒤,
+`./run.sh execute hardware --hardware-config local/hardware.json --send --record-tactile`로 한 번 실행·측정합니다.
+연결·현장 보정·초기 자세 준비는 [실물 절차](hardware_measurement.md)를 따릅니다.
