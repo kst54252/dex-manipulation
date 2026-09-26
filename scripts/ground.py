@@ -13,13 +13,13 @@ def main():
     from dex_manipulation.coordinates import ground_dataset, stabilize_grounded_dataset
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--poses", type=Path, default=ROOT / "data/demo2/poses.npz")
-    parser.add_argument("--reference", type=Path, default=ROOT / "data/demo2/retargeted.npz")
+    parser.add_argument("--poses", type=Path, default=ROOT / "data/can_grasping/demo2/poses.npz")
+    parser.add_argument("--reference", type=Path, default=ROOT / "data/can_grasping/demo2/retargeted.npz")
     parser.add_argument("--geometry", type=Path, default=ROOT / "assets/models/can_mesh.json")
     parser.add_argument(
         "--config", type=Path, default=ROOT / "config/tasks/can_pick/retargeting_demo2.json"
     )
-    parser.add_argument("--output", type=Path, default=ROOT / "data/demo2/grounded")
+    parser.add_argument("--output", type=Path, default=ROOT / "data/can_grasping/demo2/grounded")
     parser.add_argument(
         "--stabilize",
         action="store_true",

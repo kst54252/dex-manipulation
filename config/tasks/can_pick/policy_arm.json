@@ -1,5 +1,5 @@
 {
-  "reference": "data/demo1/stable/reference.npz",
+  "reference": "data/can_grasping/demo1/stable/reference.npz",
   "model": "assets/models/revo2.json",
   "hand_asset": "assets/USD/revo2_floating.usda",
   "object_asset": "assets/can/can.usda",

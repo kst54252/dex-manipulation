@@ -13,7 +13,7 @@ from dex_manipulation.policy.rollout_reference import prepare_contact_reference
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--reference", type=Path, default=ROOT / "data/demo2/grounded/reference.npz")
+    p.add_argument("--reference", type=Path, default=ROOT / "data/can_grasping/demo2/grounded/reference.npz")
     p.add_argument("--rollout", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--model", type=Path, default=ROOT / "assets/models/revo2.json")

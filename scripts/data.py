@@ -45,8 +45,8 @@ def read_labels(source, frame_range=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=ROOT / "data/demo2/raw")
-    parser.add_argument("--output", type=Path, default=ROOT / "data/demo2/poses.npz")
+    parser.add_argument("--source", type=Path, default=ROOT / "data/can_grasping/demo2/raw")
+    parser.add_argument("--output", type=Path, default=ROOT / "data/can_grasping/demo2/poses.npz")
     parser.add_argument(
         "--config", type=Path, default=ROOT / "config/tasks/can_pick/retargeting_demo2.json"
     )

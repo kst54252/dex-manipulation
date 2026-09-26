@@ -26,6 +26,6 @@ dist/
 /data/demo*/raw/*
 !/data/demo*/raw/README.md
 /data/raw/
-# Raw inputs for additional manipulation tasks; keep placement instructions.
+# Raw inputs for all task folders (including can_grasping); keep placement instructions.
 /data/*/demo*/raw/*
 !/data/*/demo*/raw/README.md

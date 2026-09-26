@@ -30,10 +30,10 @@ REGRIND와 OmniRetarget의 방법 구분은 [출처 문서](PROVENANCE.md)에 �
 ```bash
 python -m pip install -e '.[usd]'
 python scripts/retargeting.py retarget --model-dir assets/models \
-  --input data/demo2/poses.npz --metadata config/tasks/can_pick/retargeting_demo2.json \
+  --input data/can_grasping/demo2/poses.npz --metadata config/tasks/can_pick/retargeting_demo2.json \
   --output local/results/retargeting/demo2
 python scripts/retargeting.py view --model-dir assets/models \
-  --result local/results/retargeting/demo2 --reference-dir data/demo2/raw
+  --result local/results/retargeting/demo2 --reference-dir data/can_grasping/demo2/raw
 ```
 
 `trajectory.npz`에는 손목·관절·키포인트·프레임/전이 mask를,

@@ -41,7 +41,7 @@ TASK_CONFIG_PATH_ALIASES = {
 def resolve_demo_path(path, root=None):
     """Resolve historical demo/config paths without rewriting saved provenance.
 
-    New callers use demo1 (imported 40 poses) or demo2 (retained 27 poses).
+    New callers use data/can_grasping/demo1 (40 poses) or demo2 (27 poses).
     Older checkpoint configurations
     and immutable NPZ provenance retain their original path strings.
     """
@@ -57,13 +57,15 @@ def resolve_demo_path(path, root=None):
     aliases = {
         **{old: TASK_CONFIG_PATH_ALIASES.get(new, new) for old, new in CONFIG_PATH_ALIASES.items()},
         **TASK_CONFIG_PATH_ALIASES,
-        "data/current": "data/demo2",
-        "data/original": "data/demo1",
-        "data/raw/839512060362": "data/demo2/raw",
-        "data/poses/839512060362.npz": "data/demo2/poses.npz",
-        "data/reference/839512060362.npz": "data/demo2/retargeted.npz",
-        "data/grounded": "data/demo2/grounded",
-        "local/policy/reference.npz": "data/demo2/policy_reference.npz",
+        "data/demo1": "data/can_grasping/demo1",
+        "data/demo2": "data/can_grasping/demo2",
+        "data/current": "data/can_grasping/demo2",
+        "data/original": "data/can_grasping/demo1",
+        "data/raw/839512060362": "data/can_grasping/demo2/raw",
+        "data/poses/839512060362.npz": "data/can_grasping/demo2/poses.npz",
+        "data/reference/839512060362.npz": "data/can_grasping/demo2/retargeted.npz",
+        "data/grounded": "data/can_grasping/demo2/grounded",
+        "local/policy/reference.npz": "data/can_grasping/demo2/policy_reference.npz",
     }
     for old, new in aliases.items():
         if relative.is_relative_to(old):
@@ -94,7 +96,12 @@ def legacy_demo_paths(value):
             for old, new in CONFIG_PATH_ALIASES.items():
                 if value == prefix + new:
                     return prefix + old
-            for new, old in (("data/demo2", "data/current"), ("data/demo1", "data/original")):
+            for new, old in (
+                ("data/can_grasping/demo2", "data/current"),
+                ("data/can_grasping/demo1", "data/original"),
+                ("data/demo2", "data/current"),
+                ("data/demo1", "data/original"),
+            ):
                 if value == prefix + new or value.startswith(prefix + new + "/"):
                     return prefix + old + value[len(prefix + new) :]
     return value

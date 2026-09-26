@@ -16,7 +16,7 @@ def demo_id(root, config):
         return None
     reference = resolve_demo_path(config["reference"], root).resolve()
     for demo in ("1", "2"):
-        if reference.is_relative_to((Path(root) / f"data/demo{demo}").resolve()):
+        if reference.is_relative_to((Path(root) / f"data/can_grasping/demo{demo}").resolve()):
             return demo
     return None
 

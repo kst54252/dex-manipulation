@@ -13,4 +13,4 @@ DexYCB 손·물체 데모입니다. Frame ID 15~41, 27자세, 기준 시간 5.2�
 - `policy_reference.npz`: 해당 입력을 사용하는 checkpoint용 궤적.
 - `manifest.json`: 파일 역할·좌표·프레임·SHA-256.
 
-[데모 구성](../../docs/data.md) · [데이터 출처](../../docs/dataset.md)
+[데모 구성](../../../docs/data.md) · [데이터 출처](../../../docs/dataset.md)

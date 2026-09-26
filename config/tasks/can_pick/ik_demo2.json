@@ -5,7 +5,7 @@
   "wrist_path": "/World/revo2_right/Geometry/world/right_hand_base_link",
   "arm_model": "assets/models/rb3_vertical.json",
   "hand_model": "assets/models/revo2.json",
-  "input": "data/demo2/grounded/reference.npz",
+  "input": "data/can_grasping/demo2/grounded/reference.npz",
   "alignment": "config/tasks/can_pick/arm_placement_demo2.json",
   "seed_q_rad": [
     -1.2849065286900365,

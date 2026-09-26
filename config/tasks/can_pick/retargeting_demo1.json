@@ -119,7 +119,7 @@
   "source_grasped_ycb_id": 6,
   "object_geometry": "assets/models/can_mesh.json",
   "source_demo": {
-    "path": "data/demo1/raw/human_demo.npz",
+    "path": "data/can_grasping/demo1/raw/human_demo.npz",
     "sha256": "b65141ff4bd34deeca1a10024fe3cb44e0798a0c83ab55d0efb5f13886929158",
     "sequence": "20200709_143747_left",
     "camera": "839512060362",

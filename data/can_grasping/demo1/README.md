@@ -13,4 +13,4 @@ DexYCB `20200709_143747_left`의 사람 데모입니다. Frame ID 12~51, 40자�
 - `grounded/`, `policy_reference.npz`: 해당 입력을 사용하는 checkpoint용 궤적.
 - `manifest.json`: 파일 역할·좌표·프레임·SHA-256.
 
-[데모 구성](../../docs/data.md) · [데이터 출처](../../docs/dataset.md)
+[데모 구성](../../../docs/data.md) · [데이터 출처](../../../docs/dataset.md)

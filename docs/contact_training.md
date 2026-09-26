@@ -20,7 +20,7 @@
 프로젝트를 설치한 Python 환경에서 실행하며 출력은 새 파일을 지정합니다.
 
 ```bash
-python scripts/contact_reference.py --source data/demo2/grounded/reference.npz \
+python scripts/contact_reference.py --source data/can_grasping/demo2/grounded/reference.npz \
   --output local/references/contact/demo2.npz --start-frame 26 --blend-start .8 --side-contact
 ./run.sh train floating 2 -i 1000
 ```

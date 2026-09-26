@@ -291,7 +291,7 @@ def plan_training(root, args):
         robot = "arm" if config.get("arm_training", {}).get("enabled", False) else "floating"
         reference = required(config["reference"]).resolve()
         demo = next(
-            (n for n in ("1", "2") if reference.is_relative_to(root / f"data/demo{n}")), None
+            (n for n in ("1", "2") if reference.is_relative_to(root / f"data/can_grasping/demo{n}")), None
         )
         # Derived contact references are deliberately stored under local/;
         # their new configs explicitly identify the original demo.
