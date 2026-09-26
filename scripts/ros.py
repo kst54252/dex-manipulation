@@ -11,22 +11,7 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def make_goal(recording, hold):
-    from control_msgs.action import FollowJointTrajectory
-    from trajectory_msgs.msg import JointTrajectoryPoint
-    from dex_manipulation.ros_bridge import goal_arrays
-
-    goal = FollowJointTrajectory.Goal()
-    goal.trajectory.joint_names = list(recording.names)
-    times, positions = goal_arrays(recording, hold)
-    for stamp, q in zip(times, positions):
-        point = JointTrajectoryPoint()
-        point.positions = q.tolist()
-        ns = round(stamp * 1e9)
-        point.time_from_start.sec = ns // 10**9
-        point.time_from_start.nanosec = ns % 10**9
-        goal.trajectory.points.append(point)
-    return goal
+from dex_manipulation.ros_bridge import make_goal
 
 
 def send(recording, settings, hold, wait):
@@ -122,7 +107,9 @@ def monitor(root, settings, seconds, output):
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="./run.sh ros")
     parser.add_argument("mode", choices=("bridge", "send", "status", "mirror"))
-    parser.add_argument("--backend", choices=("mock", "hardware", "vcb"), default="mock")
+    parser.add_argument(
+        "--backend", choices=("mock", "virtual", "isaac", "hardware", "vcb"), default="mock"
+    )
     parser.add_argument(
         "--enable-motion", action="store_true", help="Allow the selected recorded ROS goal"
     )
@@ -132,6 +119,11 @@ def main(argv=None):
     )
     parser.add_argument("--vcb-config", type=Path, default=ROOT / "local/vcb.json")
     parser.add_argument("--recording", type=Path)
+    parser.add_argument(
+        "--allow-jog",
+        action="store_true",
+        help="Enable bounded named joint jogging through the same I/O owner",
+    )
     parser.add_argument("--hold", type=float)
     parser.add_argument(
         "--seconds",
@@ -144,11 +136,22 @@ def main(argv=None):
     )
     parser.add_argument("--headless", action="store_true", help="Isaac mirror without a window")
     parser.add_argument("--output", type=Path, help="Local JSON report for status/mirror")
-    parser.add_argument("--record-tactile", action="store_true", help="Record tactile/feedback during hardware actions through the shared RS485 connection")
-    parser.add_argument("--tactile-hz", type=float, default=100.)
+    parser.add_argument(
+        "--record-tactile",
+        action="store_true",
+        help="Record tactile/feedback during hardware actions through the shared RS485 connection",
+    )
+    parser.add_argument("--tactile-hz", type=float, default=100.0)
     args = parser.parse_args(argv)
     try:
-        if args.record_tactile and (args.mode != "bridge" or args.backend != "hardware" or not args.enable_motion):
+        if args.allow_jog and (
+            args.mode != "bridge"
+            or (args.backend in ("hardware", "vcb") and not args.enable_motion)
+        ):
+            raise ValueError("Jog requires bridge and motion-enabled hardware/VCB")
+        if args.record_tactile and (
+            args.mode != "bridge" or args.backend != "hardware" or not args.enable_motion
+        ):
             raise ValueError("--record-tactile requires bridge --backend hardware --enable-motion")
         if not math.isfinite(args.tactile_hz) or args.tactile_hz <= 0:
             raise ValueError("--tactile-hz must be positive")
@@ -171,8 +174,9 @@ def main(argv=None):
 
             return run(ROOT, settings, args.seconds, args.headless, output)
         import rclpy
+        from rclpy.signals import SignalHandlerOptions
 
-        rclpy.init(args=[])
+        rclpy.init(args=[], signal_handler_options=SignalHandlerOptions.NO)
         try:
             if args.mode == "status":
                 return monitor(ROOT, settings, args.seconds, output)
@@ -203,6 +207,7 @@ def main(argv=None):
                 hold_s=hold,
                 record_tactile=args.record_tactile,
                 tactile_hz=args.tactile_hz,
+                allow_jog=args.allow_jog,
             )
             executor = MultiThreadedExecutor(num_threads=3)
             executor.add_node(node)
@@ -223,6 +228,7 @@ def main(argv=None):
                 node.worker.close()
                 executor.shutdown(timeout_sec=5.0)
                 node.action.destroy()
+                node.jog_action.destroy()
                 node.destroy_node()
             return 0
         finally:
@@ -233,3 +239,7 @@ def main(argv=None):
     except (OSError, ValueError, RuntimeError, ImportError, TimeoutError) as error:
         print(f"ROS 실행 실패: {error}", flush=True)
         return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

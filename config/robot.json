@@ -1,0 +1,19 @@
+{
+  "arm_config": "config/tasks/can_pick/ik_demo2.json",
+  "physics_config": "config/tasks/can_pick/policy_demo2_finger_tracking.json",
+  "state_rate_hz": 30.0,
+  "state_timeout_s": 0.2,
+  "mirror_rate_hz": 60.0,
+  "frame_id": "link0",
+  "panel_port": 8767,
+  "virtual_time_constant_s": 0.025,
+  "sim_command_timeout_s": 0.25,
+  "jog": {
+    "arm_velocity_deg_s": 10.0,
+    "finger_velocity_deg_s": 20.0,
+    "acceleration_deg_s2": 40.0,
+    "maximum_hardware_step_deg": 5.0,
+    "maximum_duration_s": 30.0
+  },
+  "sim_feedback_rate_hz": 120.0
+}

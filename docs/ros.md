@@ -1,105 +1,92 @@
-# ROS 2 통합 제어와 상태 반영
+# RB3-730 + Revo2 통합 제어
 
-RB3 6축과 Revo2 독립 6축을 하나의 ROS 2 action으로 실행합니다.
-별도 Isaac Sim 프로세스는 **수신한 관절 상태**를 표시합니다.
+팔 6축과 손 독립 6축을 하나의 ROS 2 인터페이스로 조작합니다. 한 장치 담당 프로세스가 명령과 상태 수신을 처리하고, RViz는 **수신한 관절값**으로 팔·손을 함께 표시합니다.
 
 ```text
-ROS action → 단일 장치 연결 담당 → RB3 Servo J + Revo2 RS485
-                               ↓ 측정 feedback
-                       JointState + diagnostics
-                               ↓
-                      Isaac / 다른 ROS 수신기
+브라우저 조작 패널 / ROS action
+  → 12축 제어기 → 가상 서보 / Isaac PhysX / 제조사 VCB / RB3 TCP + Revo2 RS485
+                    ↓ 상태
+              JointState + 진단 → robot_state_publisher → RViz
 ```
 
-## 로봇 없이 실행
-
-ROS 2 Jazzy가 설치된 환경에서 터미널을 나누어 실행합니다.
-`run.sh ros`는 `/opt/ros/jazzy/setup.bash`를 불러옵니다.
-다른 ROS 환경은 `DEX_ROS_SETUP=/경로/setup.bash`로 지정합니다.
+## 실행
 
 ```bash
-# 터미널 1: 모의 장치, 실제 로봇 연결 없음
-./run.sh ros bridge
-
-# 터미널 2: 수신한 상태를 Isaac Sim에 표시
-./run.sh ros mirror
-
-# 터미널 3: 선택된 저장 궤적을 팔·손에 함께 실행
-./run.sh ros send
-
-# 별도 상태 확인
-./run.sh ros status --seconds 5
+./run.sh robot virtual                  # 로봇 없이 관절 조작 + RViz
+./run.sh robot sim                      # Isaac 물리 시뮬레이션 + RViz
+./run.sh robot hardware                 # 실물 관절 상태 수신 + RViz
+./run.sh robot hardware --enable-motion --allow-jog
+./run.sh robot vcb --enable-motion --allow-jog
 ```
 
-모의 장치는 완벽한 위치 추종을 가정합니다. 물리 파지 평가용 환경은 아닙니다.
-제조사 Virtual Control Box로 통신을 시험하려면 [VCB 실행](vcb.md)을 사용합니다.
-`mirror --headless --seconds 10`은 화면 없이 수신·USD 반영을 실행합니다.
-`config/ros.json`에서 namespace·상태 수신 제한 시간·표시 주기를 설정합니다.
+한 명령으로 브리지·RViz·브라우저 패널(`http://127.0.0.1:8767`)을 시작합니다. 시작 자체로 이동 명령을 보내지 않습니다.
+패널에서 목표 각도를 입력하고 **Move to targets**를 누르면 팔과 손이 함께 움직입니다. 조작 입력칸과 실행 중인 명령값·측정값·오차를 구분해 표시합니다.
+**Copy measured → targets**는 현재 자세를 입력칸에 복사하며, **Load recording start**는 저장 궤적의 시작 목표만 입력합니다.
+**Play recording**은 선택된 저장 궤적을 실행합니다. 시작 자세가 맞지 않으면 거부합니다.
+**STOP motion**은 제어 정지 요청이며 비상정지는 실물 로봇의 비상정지 장치를 사용합니다. Ctrl+C는 세션을 정리합니다.
 
-## 실물 연결
+| 모드 | 상태의 출처 | 환경 |
+|---|---|---|
+| `virtual` | 속도 제한·1차 추종 지연을 가진 가상 관절 | 접촉·중력 계산 없음 |
+| `sim` | Isaac PhysX가 계산한 실제 관절 상태 | 기존 직선 마운트·책상·캔·접촉 물성, 물리 120Hz |
+| `hardware` | RB3 관절 encoder + Revo2 motor feedback | 기본 읽기 전용, 보정 설정 필요 |
+| `vcb` | 제조사 가상 컨트롤러 `jnt_ref` + 가상 손 | 별도 VCB VM 필요; 실물 encoder가 아님 |
 
-[실물 설정](execution.md)의 연결 정보·관절 보정표를 준비합니다.
-명령 전송을 활성화할 때는 물리 한계·Servo J 설정·기록 검증도 필요합니다.
-ROS 프로세스와 Isaac 프로세스는 서로 다른 Python 환경을 사용해도 됩니다.
+`--headless`는 RViz·브라우저 자동 실행을 끕니다. 패널 서버는 유지합니다.
+`--no-browser`, `--no-panel`, `--port 8768`, `--seconds 30`도 지원합니다.
+설정은 `config/robot.json`, 실행 로그·생성 URDF/STL은 `local/robot/sessions/`에 저장합니다.
+저장 궤적은 `config/execution.json`을 사용하며 `--recording local/.../commands.npz`로 선택합니다. 정책을 새로 실행하거나 궤적을 자동 교체하지 않습니다.
+
+## 설치와 실물 연결
+
+Ubuntu 24.04 / ROS 2 Jazzy / Python 3.12 환경입니다. ROS 설치 후:
 
 ```bash
-python3 -m venv local/hardware-venv
-local/hardware-venv/bin/pip install numpy scipy rbpodo==0.16.14 bc-stark-sdk==2.0.3
-
-# 연결 후 관절 상태 수신만 수행
-DEX_PYTHON=local/hardware-venv/bin/python ./run.sh ros bridge \
-  --backend hardware --hardware-config local/hardware.json
-
-# 기록 궤적의 ROS 실행도 허용하려면 위 프로세스 대신 실행
-DEX_PYTHON=local/hardware-venv/bin/python ./run.sh ros bridge \
-  --backend hardware --hardware-config local/hardware.json --enable-motion
+sudo apt install ros-jazzy-rviz2 ros-jazzy-robot-state-publisher ros-jazzy-control-msgs \
+  ros-jazzy-diagnostic-msgs ros-jazzy-tf2-ros python3-venv
+./run.sh setup robot
 ```
 
-그다음 `./run.sh ros mirror`, `./run.sh ros send`를 사용합니다.
-bridge가 두 장치의 연결을 소유합니다. 별도 `execute hardware`나 제조사 제어 프로그램에서
-동시에 명령을 보내지 않습니다. 초기 자세로 자동 이동하거나 반복 후 되감지 않습니다.
+`setup robot`은 `local/robot-venv`에 USD·ROS 연동 보조 라이브러리와 제조사 SDK를 설치합니다.
+`run.sh robot`이 이 환경을 선택하며, 없으면 USD·YAML이 설치된 기존 `hardware-venv`도 사용합니다. `sim`은 기존 Isaac Python을 사용합니다.
+Isaac 물리는 별도로 설치한 Isaac Sim 6.0.1 환경과 `./run.sh setup sim /Isaac환경/bin/python`이 필요합니다.
+ROS 경로는 기본 `/opt/ros/jazzy/setup.bash`이며 `DEX_ROS_SETUP`으로 지정할 수 있습니다.
+
+1. RB3 Ethernet과 Revo2 RS485를 연결합니다.
+2. [실물 설정](execution.md)에 따라 `local/hardware.json`에 IP·포트·실측 관절 보정·한계·Servo J 설정을 입력합니다. USD 범위를 SDK 보정표로 대신하지 않습니다.
+3. `./run.sh robot hardware`로 관절 방향·각도·마운트·상태를 확인합니다.
+4. 실물 이동은 `--enable-motion`으로 허용합니다. 수동 조작은 추가로 `--allow-jog`가 필요합니다. 두 장치가 준비되고 피드백이 최신일 때만 실행합니다.
+
+저장 궤적 실행에는 기존 물리 검증과 보정 일치 검사를 유지합니다. 조작은 관절 공간 보간이며 장애물 회피 경로 계획이 아닙니다.
+조작 기본 한계는 팔 10°/s, 손 20°/s, 가속도 40°/s²이고, 실물은 한 번에 관절별 최대 5°입니다.
+실측 물리 한계·SDK 변환 한계도 함께 검사합니다. 제조사 프로그램이나 다른 bridge에서 동시에 명령을 보내지 않습니다.
+VCB 설치·주소·Simulation mode 설정은 [VCB 안내](vcb.md)를 따릅니다.
 
 ## ROS 인터페이스
 
-| 이름 | 형식 | 내용 |
+namespace는 `virtual=/dex_virtual`, `sim=/dex_sim`, `hardware=/dex`, `vcb=/dex_vcb`입니다.
+
+| namespace 뒤의 이름 | 형식 | 내용 |
 |---|---|---|
-| `/dex/follow_joint_trajectory` | `control_msgs/action/FollowJointTrajectory` | 팔·손 12축 궤적, 진행 feedback·완료·취소 |
-| `/dex/joint_states` | `sensor_msgs/msg/JointState` | 독립 관절 12개, rad; 실물은 측정값, mock/VCB는 가상 상태 |
-| `/dex/model_joint_states` | `sensor_msgs/msg/JointState` | 팔 6개 + 손 전체 11개; 종속 5개는 coupling 계산값 |
-| `/dex/wrist_pose` | `geometry_msgs/msg/PoseStamped` | 수신 팔 관절의 FK 손목 pose, 베이스 `link0` 기준 |
-| `/dex/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | 준비·동작·오류 상태, feedback 나이, RB3 clock·상태, 손 모터 상태 |
-| `/dex/stop` | `std_srvs/srv/Trigger` | 현재 action 취소 및 팔 stop·손 hold 요청 |
+| `/jog` | `control_msgs/action/FollowJointTrajectory` | 12개 이름, 현재 자세와 목표 두 endpoint; quintic 보간·속도/가속도 제한 |
+| `/follow_joint_trajectory` | 같은 action | 선택된 기록과 일치하는 궤적·마지막 hold endpoint |
+| `/joint_states` | `sensor_msgs/msg/JointState` | 독립 관절 12개, rad |
+| `/model_joint_states` | 같은 메시지 | 팔 6개 + 손 전체 11개 |
+| `/wrist_pose` | `geometry_msgs/msg/PoseStamped` | 팔 feedback FK, `link0` 기준 |
+| `/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | 준비·동작·오류·상태 나이·장치 정보·피드백 출처 |
+| `/stop` | `std_srvs/srv/Trigger` | 현재 action 정지 요청; 정지 완료는 action 결과로 확인 |
+| `/robot_description`, `/tf`, `/tf_static` | 표준 ROS 메시지 | 현재 USD에서 생성한 팔·손·작업대 표시 모델과 변환 |
 
-```bash
-source /opt/ros/jazzy/setup.bash
-ros2 topic echo /dex/joint_states --qos-reliability best_effort
-ros2 topic hz /dex/joint_states
-ros2 service call /dex/stop std_srvs/srv/Trigger '{}'
-```
+표시 모델은 USD의 양쪽 joint frame·axis·직선 마운트·instance mesh를 반영합니다. 실물 손의 종속 5축은 coupling으로 계산하며 추가 encoder 측정으로 취급하지 않습니다. PhysX 모드에서는 종속 관절도 시뮬레이터 값을 발행하며 mimic 계산으로 덮어쓰지 않습니다.
+속도·토크를 측정하지 않은 `JointState` 필드는 비워둡니다. 두 실물 장치의 조회는 병렬이지만 동시 샘플링은 아니며 읽기 구간·RB3 clock을 진단 메시지에 포함합니다.
 
-action은 `config/execution.json` 또는 `--recording`으로 선택한 **기존 기록과 일치하는 궤적**만 받습니다.
-다른 궤적은 먼저 기록·검증하고 bridge와 send 양쪽에 같은 `--recording`을 지정합니다.
-`FollowJointTrajectory` 메시지를 쓰지만 MoveIt용 범용 보간 컨트롤러나 `ros2_control` hardware plugin은 아닙니다.
-명령은 원래 30Hz·구간별 유지 방식입니다. 표준 ROS client는 마지막 hold 종료점까지 포함해야 하며
-제공된 `send`가 이를 구성합니다. 시간 변경·미래 시작·일부 관절 명령·effort 명령은 거부합니다.
-사용자 position tolerance는 기존 한계를 좁힐 수 있으며 나머지 tolerance 필드는 지원하지 않습니다.
+외부 명령·상태 기본 주기는 30Hz이고 RViz 표시 상한은 60Hz입니다. PhysX 장치 내부 피드백은 120Hz로 받아 제어 구간 사이의 상태 지연을 줄입니다. 조작은 제한을 만족하도록 시간을 연장하며 기록 재생 시간은 변경하지 않습니다.
+새 goal은 진행 중인 goal을 덮어쓰지 않습니다. 취소·피드백 중단·추종 한계 초과 시 정지합니다. PhysX 장치는 명령이 0.25초 끊기면 현재 자세를 유지합니다.
+`sim`은 현재 물리 설정을 재사용하며 articulation self-collision은 현재 설정대로 꺼져 있습니다. RViz에는 충돌 회피 기능이 없으며 시뮬레이터 조작을 실물 충돌 안전성 검증으로 간주하지 않습니다.
 
-## 시간과 시뮬레이터
+실물 화면은 관절 상태 표시입니다. 물체 pose를 측정하지 않으므로 실제 캔 위치나 접촉을 합성하지 않습니다.
+다른 시뮬레이터는 동일한 이름·rad 단위로 `/joint_states`를 구독하거나 종속 관절까지 `/model_joint_states`를 구독합니다.
+기존 `./run.sh ros mirror --config local/robot/sessions/<세션>/settings.json`으로 Isaac에 상태를 표시할 수도 있습니다. 이 mirror는 물리를 끈 FK 표시이며 `robot sim` 물리 장치와 구분합니다.
 
-상태 수신은 기본 30Hz, 표시 목표는 60Hz입니다. 실제 주기는 장치·RS485·네트워크 지연에 달려 있습니다.
-ROS 메시지 stamp는 호스트의 읽기 시작 시각이며, 두 장치는 하나의 읽기 구간에서 병렬로 조회합니다.
-동시 샘플링을 보장하지 않으므로 `read_window_s`와 RB3 device time을 diagnostics에 함께 보냅니다.
-측정하지 않은 속도·토크는 빈 배열로 둡니다. 실물에서는 명령을 측정 상태로 발행하지 않습니다.
-mock/VCB 가상 상태의 출처는 diagnostics의 `feedback_source`로 구분합니다.
-
-상태 QoS는 best-effort·최신 1개입니다. 늦거나 순서가 뒤집힌 상태는 버리고,
-0.2초 동안 새 상태가 없으면 마지막 자세를 유지합니다. 외삽하지 않습니다.
-Isaac의 물리는 이 화면에서 끄며, 원본 USD 대신 메모리 내 표시 계층만 바꿉니다.
-캔 pose는 측정하지 않으므로 실제 물체 위치·접촉은 반영하지 않습니다.
-
-다른 PC·시뮬레이터도 같은 joint 이름·rad 단위와 ROS domain/QoS로 구독할 수 있습니다.
-호스트 시계는 동기화하고 실제 로봇 피드백에는 `use_sim_time=false`를 사용합니다.
-MuJoCo/Gazebo에서는 받은 이름을 해당 모델의 joint에 대응시키는 adapter가 필요합니다.
-
-`bridge --backend hardware --enable-motion --record-tactile`은 action 동안 같은 RS485 연결로 촉각을 기록합니다.
-[동기 기록과 그래프 명령](hardware_measurement.md)을 참조합니다.
+기본 탐색 범위는 localhost입니다. 다른 PC와 연결하려면 `ROS_AUTOMATIC_DISCOVERY_RANGE=SUBNET`, 같은 `ROS_DOMAIN_ID`, QoS와 호스트 시계 동기화를 사용합니다. 실제 장치 feedback에는 `use_sim_time=false`를 사용합니다.
+이 제어기는 표준 ROS 메시지를 사용하는 전용 bridge이며 `ros2_control` hardware plugin이나 MoveIt 범용 컨트롤러가 아닙니다.

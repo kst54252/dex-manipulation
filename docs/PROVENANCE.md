@@ -72,6 +72,10 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 - [ROS JointState](https://github.com/ros2/common_interfaces/blob/jazzy/sensor_msgs/msg/JointState.msg),
   [FollowJointTrajectory](https://github.com/ros-controls/control_msgs/blob/jazzy/control_msgs/action/FollowJointTrajectory.action): 표준 메시지·action 정의.
   `rclpy` action/QoS API를 사용해 독립 구현했으며 제조사 ROS driver나 예제 server 소스를 복사하지 않습니다.
+- [robot_state_publisher](https://github.com/ros/robot_state_publisher/tree/jazzy): URDF·JointState를 TF와 RViz 표시로 연결하는 표준 노드.
+  USD 양쪽 joint frame을 보존하는 helper link, instance mesh의 STL 변환, 측정 종속 관절을 유지하는 mimic 없는 표시 URDF는 자체 구현입니다.
+  통합 실행기·로컬 조작 패널·quintic 관절 조작·가상 1차 서보·PhysX ROS 장치 adapter도 자체 설계입니다.
+  Isaac adapter는 프로젝트의 조립 장면과 관절 position/velocity target API를 재사용하며 정책·IK 실행과 분리합니다.
 - [Isaac Sim ROS 설치](https://docs.isaacsim.omniverse.nvidia.com/6.0.0/installation/install_ros.html): Ubuntu 24.04/Jazzy 환경.
   표시는 직접 `rclpy` 구독과 USD FK를 사용하며 명령 기반 물리 추종과 구분합니다.
 - [Rainbow VCB](https://rainbowrobotics.github.io/rb_cobot_docs/technical_docs/virtual_controlbox),

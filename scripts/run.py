@@ -39,6 +39,10 @@ if __name__ == "__main__":
         from scripts.vcb import main
 
         sys.exit(main(sys.argv[2:]))
+    elif sys.argv[1:2] == ["robot"]:
+        from scripts.robot import main
+
+        sys.exit(main(sys.argv[2:]))
     elif sys.argv[1:2] == ["ros"]:
         from scripts.ros import main
 

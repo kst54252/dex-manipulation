@@ -81,7 +81,17 @@ class HandModel:
         return self.coupling @ active + self.offset
 
     def link_transforms(self, active, wrist=None):
-        full = self.expand(active)
+        return self.link_transforms_full(self.expand(active), wrist)
+
+    def link_transforms_full(self, full, wrist=None):
+        """Measured full-joint FK, preserving physical mimic/coupling error.
+
+        This does not project dependent joints onto the ideal coupling manifold.
+        Use link_transforms(active) for commanded/model-constrained FK.
+        """
+        full = np.asarray(full, dtype=float)
+        if full.shape != (len(self.full_names),) or not np.isfinite(full).all():
+            raise ValueError("Invalid full joint vector")
         links = {self.root: np.eye(4) if wrist is None else np.asarray(wrist)}
         for joint, (f0, f1_inv) in zip(self.joints, self._frames):
             motion = np.eye(4)

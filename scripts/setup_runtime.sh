@@ -13,6 +13,15 @@ case "$mode" in
       cp "$DEX_ROOT/config/hardware.example.json" "$DEX_ROOT/local/hardware.json"
     fi
     ;;
+  robot)
+    host_python="${2:-python3}"
+    "$host_python" -m venv --system-site-packages "$DEX_ROOT/local/robot-venv"
+    runtime_python="$DEX_ROOT/local/robot-venv/bin/python"
+    "$runtime_python" -m pip install -e "$DEX_ROOT[robot,hardware]"
+    if [[ ! -e "$DEX_ROOT/local/hardware.json" ]]; then
+      cp "$DEX_ROOT/config/hardware.example.json" "$DEX_ROOT/local/hardware.json"
+    fi
+    ;;
   sim)
     runtime_python="${2:-${DEX_PYTHON:-$HOME/IsaacLab/.venv/bin/python}}"
     if [[ ! -x "$runtime_python" ]]; then
@@ -26,7 +35,7 @@ case "$mode" in
     "$runtime_python" -m pip install -e "$DEX_ROOT[rl,validation]"
     ;;
   *)
-    echo '사용법: ./run.sh setup hardware [python3] 또는 ./run.sh setup sim /Isaac환경/bin/python' >&2
+    echo '사용법: ./run.sh setup {hardware|robot} [python3] 또는 ./run.sh setup sim /Isaac환경/bin/python' >&2
     exit 2
     ;;
 esac

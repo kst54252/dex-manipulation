@@ -12,6 +12,7 @@ dependencies = ["numpy>=1.24", "scipy>=1.11", "python-fcl>=0.7"]
 [project.optional-dependencies]
 contact = ["trimesh>=4", "scikit-learn>=1.3"]
 dataset = ["opencv-python>=4.8", "trimesh>=4"]
+robot = ["usd-core>=25.5", "PyYAML>=6"]
 usd = ["usd-core>=25.5"]
 validation = ["opencv-python>=4", "websockets>=14"]
 rl = ["torch>=2.4", "matplotlib>=3.8", "rsl-rl-lib>=5.4,<6", "tensordict>=0.9", "onnx>=1.16"]
@@ -26,7 +27,7 @@ dex-retarget = "dex_manipulation.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-dex_manipulation = ["static/*.html", "static/*.js", "static/*LICENSE*"]
+dex_manipulation = ["static/*.html", "static/*.js", "static/*LICENSE*", "robot/*.html"]
 
 [tool.ruff]
 target-version = "py310"

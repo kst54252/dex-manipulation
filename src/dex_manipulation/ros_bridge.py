@@ -1,8 +1,8 @@
 """ROS 2 action for a recorded 12-axis motion and continuous measured feedback.
 
 One I/O owner shares the two vendor connections between idle feedback and motion.
-Only the selected, validated recording can move hardware; ROS cannot overwrite
-its calibration, timing, initial-state guard or prevalidated command sequence.
+Saved-motion actions preserve the recording. An explicitly enabled jog action
+uses calibrated joint/rate limits and the same exclusive I/O owner.
 """
 
 from .configuration import read_config
@@ -30,6 +30,23 @@ def goal_arrays(recording, hold_s):
         np.r_[recording.times, recording.duration + hold_s],
         np.vstack([recording.q, recording.q[-1]]),
     )
+
+
+def make_goal(recording, hold):
+    from control_msgs.action import FollowJointTrajectory
+    from trajectory_msgs.msg import JointTrajectoryPoint
+
+    goal = FollowJointTrajectory.Goal()
+    goal.trajectory.joint_names = list(recording.names)
+    times, positions = goal_arrays(recording, hold)
+    for stamp, q in zip(times, positions):
+        point = JointTrajectoryPoint()
+        point.positions = q.tolist()
+        ns = round(stamp * 1e9)
+        point.time_from_start.sec = ns // 10**9
+        point.time_from_start.nanosec = ns % 10**9
+        goal.trajectory.points.append(point)
+    return goal
 
 
 def validate_goal(request, recording, hold_s, guard):
@@ -135,7 +152,9 @@ class ObservedBackend:
 
 
 class DeviceWorker:
-    def __init__(self, recording, backend, guard, rate, publish, *, record_tactile=False, tactile_hz=100.):
+    def __init__(
+        self, recording, backend, guard, rate, publish, *, record_tactile=False, tactile_hz=100.0
+    ):
         self.recording, self.backend, self.guard = recording, backend, guard
         self.rate, self.publish = rate, publish
         self.record_tactile, self.tactile_hz = record_tactile, tactile_hz
@@ -184,6 +203,10 @@ class DeviceWorker:
             self.guard["maximum_feedback_age_s"],
             time.monotonic,
         )
+        if "full_q_rad" in state:
+            full = np.asarray(state["full_q_rad"], float)
+            if full.shape != (17,) or not np.isfinite(full).all():
+                raise RuntimeError("Invalid full joint feedback")
         self.last = state
         self.publish(state)
         return state
@@ -195,15 +218,21 @@ class DeviceWorker:
         if self.error:
             raise RuntimeError(self.error)
 
-    async def _motion(self, output, hold, cancel, feedback, tolerances):
+    async def _motion(self, output, hold, cancel, feedback, tolerances, trajectory=None):
         async with self.lock:
+            trajectory = self.recording if trajectory is None else trajectory
             observed = ObservedBackend(self, cancel, feedback)
+            observed.desired = trajectory.initial.copy()
             from .sensors.session import MotionTelemetry
 
-            telemetry = MotionTelemetry(self.recording, output, self.tactile_hz) if self.record_tactile else None
+            telemetry = (
+                MotionTelemetry(trajectory, output, self.tactile_hz)
+                if self.record_tactile
+                else None
+            )
             try:
                 result = await stream(
-                    self.recording,
+                    trajectory,
                     observed,
                     output,
                     start_tolerance_rad=np.deg2rad(self.guard["start_tolerance_deg"]),
@@ -223,7 +252,7 @@ class DeviceWorker:
                 raise
             check_state(
                 await self.read(),
-                self.recording.q[-1],
+                trajectory.q[-1],
                 tolerances[1],
                 self.guard["maximum_feedback_age_s"],
                 time.monotonic,
@@ -243,8 +272,17 @@ class DeviceWorker:
 
 
 def make_node(
-    root, settings, recording, hardware_config, *, backend="mock", enable_motion=False, hold_s=1.0,
-    record_tactile=False, tactile_hz=100.
+    root,
+    settings,
+    recording,
+    hardware_config,
+    *,
+    backend="mock",
+    enable_motion=False,
+    hold_s=1.0,
+    record_tactile=False,
+    tactile_hz=100.0,
+    allow_jog=False,
 ):
     import rclpy
     from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -265,7 +303,7 @@ def make_node(
             hardware_plan(recording, hardware_config)
     elif backend == "vcb":
         from .vcb import VCBBackend
-    elif backend != "mock":
+    elif backend not in ("mock", "virtual", "isaac"):
         raise ValueError("Unknown ROS device backend")
     guard = hardware_config["guard"]
     arm_config = read_config(root / settings["arm_config"])
@@ -288,7 +326,9 @@ def make_node(
             self.full_states = self.create_publisher(JointState, "model_joint_states", qos)
             self.wrist = self.create_publisher(PoseStamped, "wrist_pose", qos)
             self.diagnostics = self.create_publisher(DiagnosticArray, "diagnostics", 10)
-            self.motion_enabled = backend == "mock" or enable_motion
+            self.motion_enabled = backend in ("mock", "virtual", "isaac") or enable_motion
+            self.jog_enabled = allow_jog and self.motion_enabled
+            self.pending_jog = None
             self.busy = False
             self.goal_lock = threading.Lock()
             self.cancel = threading.Event()
@@ -296,13 +336,30 @@ def make_node(
             self.samples = 0
             if backend == "mock":
                 device = MockBackend(recording.initial)
+            elif backend == "virtual":
+                from .robot.virtual import VirtualJointBackend
+
+                device = VirtualJointBackend(
+                    recording.initial,
+                    np.r_[model.arm.velocity, model.hand.velocity],
+                    settings.get("virtual_time_constant_s", 0.025),
+                )
+            elif backend == "isaac":
+                from .robot.sim import IsaacBackend
+
+                device = IsaacBackend(settings, model)
             elif backend == "vcb":
                 device = VCBBackend(recording, hardware_config)
             else:
                 device = RBPodoStark(recording.names, hardware_config)
             self.worker = DeviceWorker(
-                recording, device, guard, settings["state_rate_hz"], self.publish_state,
-                record_tactile=record_tactile, tactile_hz=tactile_hz,
+                recording,
+                device,
+                guard,
+                settings["state_rate_hz"],
+                self.publish_state,
+                record_tactile=record_tactile,
+                tactile_hz=tactile_hz,
             )
             self.action = ActionServer(
                 self,
@@ -311,6 +368,15 @@ def make_node(
                 goal_callback=self.accept_goal,
                 cancel_callback=self.cancel_goal,
                 execute_callback=self.execute_goal,
+                callback_group=self.group,
+            )
+            self.jog_action = ActionServer(
+                self,
+                FollowJointTrajectory,
+                "jog",
+                goal_callback=self.accept_jog,
+                cancel_callback=self.cancel_goal,
+                execute_callback=self.execute_jog,
                 callback_group=self.group,
             )
             self.stop_service = self.create_service(
@@ -330,7 +396,9 @@ def make_node(
             full = JointState()
             full.header = message.header
             full.name = list(model.model_names)
-            full.position = model.expand(np.asarray(state["q_rad"])).tolist()
+            full.position = np.asarray(
+                state.get("full_q_rad", model.expand(np.asarray(state["q_rad"])))
+            ).tolist()
             self.full_states.publish(full)
             pose = model.arm.pose(np.asarray(state["q_rad"])[:6])
             quat = Rotation.from_matrix(pose[:3, :3]).as_quat()
@@ -373,13 +441,17 @@ def make_node(
             values = dict(
                 backend=backend,
                 motion_enabled=self.motion_enabled,
+                jog_enabled=self.jog_enabled,
                 busy=self.busy,
                 ready=ready,
+                io_healthy=self.worker.error is None,
                 feedback_age_s=age,
                 state_samples=self.samples,
                 command_hz=1 / recording.dt,
                 feedback_rate_requested_hz=settings["state_rate_hz"],
-                dependent_fingers="derived from coupling; not measured",
+                dependent_fingers="PhysX joint state"
+                if backend == "isaac"
+                else "derived from coupling; not measured",
                 effort="unavailable; JointState.effort empty",
             )
             values["feedback_source"] = getattr(self.worker.backend, "feedback_source", None)
@@ -418,6 +490,55 @@ def make_node(
                 self.get_logger().warning(str(error))
                 return GoalResponse.REJECT
 
+        def accept_jog(self, request):
+            try:
+                if record_tactile:
+                    raise ValueError(
+                        "Tactile session recording requires a saved-motion goal, not jog"
+                    )
+                if not self.jog_enabled or self.worker.error or self.worker.last is None:
+                    raise ValueError("Jog is disabled or robot feedback unavailable")
+                with self.goal_lock:
+                    if self.busy:
+                        raise ValueError("Another motion is active")
+                    from .robot.motion import plan_jog, validate_hardware_jog
+
+                    output = (
+                        root
+                        / "local/results/robot/jog_plans"
+                        / (datetime.now().strftime("%Y%m%d_%H%M%S_%f") + ".json")
+                    )
+                    plan = plan_jog(
+                        request,
+                        model,
+                        self.worker.last,
+                        settings["jog"],
+                        recording.dt,
+                        output,
+                        hardware=backend == "hardware",
+                    )
+                    if backend == "hardware":
+                        validate_hardware_jog(plan, hardware_config, model, root, arm_config)
+                    elif backend == "vcb":
+                        from .hardware import ArmCalibration
+
+                        mapping = ArmCalibration(plan.names, hardware_config["mapping"])
+                        mapped = np.asarray([mapping.encode_arm(q[:6]) for q in plan.q])
+                        if np.any(np.abs(mapped) > 360):
+                            raise ValueError("Jog exceeds VCB Servo J +/-360 degree range")
+                    self.pending_jog = plan
+                    self.busy = True
+                    self.cancel.clear()
+                    self.last_error = ""
+                return GoalResponse.ACCEPT
+            except (ValueError, RuntimeError, KeyError) as error:
+                self.get_logger().warning(str(error))
+                return GoalResponse.REJECT
+
+        def execute_jog(self, handle):
+            plan, self.pending_jog = self.pending_jog, None
+            return self.execute_goal(handle, plan=plan)
+
         def cancel_goal(self, handle):
             self.cancel.set()
             return CancelResponse.ACCEPT
@@ -428,7 +549,7 @@ def make_node(
             response.message = "Cancellation requested; completion/stop acknowledgment appears in action result and diagnostics"
             return response
 
-        def execute_goal(self, handle):
+        def execute_goal(self, handle, plan=None):
             result = FollowJointTrajectory.Result()
 
             def feedback(state, desired, elapsed):
@@ -448,8 +569,14 @@ def make_node(
 
             try:
                 output = root / "local/results/ros" / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                limits = validate_goal(handle.request, recording, hold_s, guard)
-                future = self.worker.submit(output, hold_s, self.cancel, feedback, limits)
+                limits = (
+                    validate_goal(handle.request, recording, hold_s, guard)
+                    if plan is None
+                    else [np.deg2rad(guard["tracking_tolerance_deg"])] * 2
+                )
+                future = self.worker.submit(
+                    output, hold_s if plan is None else 0.3, self.cancel, feedback, limits, plan
+                )
                 while True:
                     try:
                         future.result(timeout=0.05)
@@ -483,6 +610,7 @@ def make_node(
             self.cancel.set()
             self.worker.close()
             self.action.destroy()
+            self.jog_action.destroy()
             self.destroy_node()
 
     return RobotNode()

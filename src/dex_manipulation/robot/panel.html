@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RB3-730 + Revo2</title>
+<style>
+body{font:15px system-ui,sans-serif;background:#111722;color:#e2e8f0;max-width:1000px;margin:32px auto;padding:0 20px}h1{font-size:24px;margin-bottom:8px}p{color:#aab9ce}#status{padding:16px;background:#243247;border-radius:8px}.row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid #2c3748}input{width:90px;padding:7px;background:#1e293b;color:white;border:1px solid #536580;border-radius:5px}button{padding:10px 18px;background:#4cc8b0;border:0;border-radius:6px;color:#08211d;font-weight:700;margin:8px 6px 8px 0;cursor:pointer}button:disabled{opacity:.4;cursor:default}.stop{background:#ef6b70}pre{white-space:pre-wrap;color:#cbd5e1}small{color:#99abc4}#source{font-size:13px}
+</style><h1>RB3-730 + Revo2</h1><p>One controller · 12 joint targets · measured feedback in RViz</p><div id="status">Connecting…</div><p id="source"></p>
+<div class="row"><b>Joint</b><b>Measured °</b><b>Jog target °</b><b>Command °</b><b>Error °</b></div><div id="joints"></div>
+<p>Requested duration <input id="duration" type="number" value="2" min="0.1" max="30" step="0.5"> s <small>Automatically extended to respect velocity and acceleration limits.</small></p>
+<button id="sync">Copy measured → targets</button><button id="initial">Load recording start</button><button id="move" disabled>Move to targets</button><button id="play" disabled>Play recording</button><button id="stop" class="stop">STOP motion</button>
+<p>Joint-space jogging does not plan around obstacles. Hardware: ≤ 5° per joint per action. STOP requests a controlled stop; use the robot emergency stop for an emergency.</p>
+<pre id="result"></pre><script>
+const token='__TOKEN__';let current=null,initialized=false;
+const el=id=>document.getElementById(id);
+function targets(q){q.forEach((v,i)=>el('q'+i).value=v.toFixed(3));}
+async function post(path,data={}){try{const response=await fetch('/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-Robot-Token':token},body:JSON.stringify(data)});if(!response.ok)el('result').textContent=await response.text();}catch(e){el('result').textContent=String(e);}}
+el('sync').onclick=()=>current?.q_deg&&targets(current.q_deg);
+el('initial').onclick=()=>current&&targets(current.initial_deg);
+el('move').onclick=()=>post('jog',{q_deg:Array.from({length:12},(_,i)=>Number(el('q'+i).value)),duration_s:Number(el('duration').value)});
+el('play').onclick=()=>post('recording');el('stop').onclick=()=>post('stop');
+async function update(){try{let s=await(await fetch('/state')).json();current=s;
+if(!initialized&&s.q_deg){s.names.forEach((name,i)=>{let row=document.createElement('div');row.className='row';let label=document.createElement('span');label.textContent=name;row.append(label);let measured=document.createElement('span');measured.id='m'+i;row.append(measured);let input=document.createElement('input');input.id='q'+i;input.type='number';input.step='.5';input.min=s.lower_deg[i];input.max=s.upper_deg[i];row.append(input);let command=document.createElement('span');command.id='c'+i;row.append(command);let error=document.createElement('span');error.id='e'+i;row.append(error);el('joints').append(row);});targets(s.q_deg);initialized=true;}
+if(s.q_deg)s.q_deg.forEach((q,i)=>{el('m'+i).textContent=q.toFixed(2);el('c'+i).textContent=s.command_deg?s.command_deg[i].toFixed(2):'—';el('e'+i).textContent=s.error_deg?s.error_deg[i].toFixed(2):'—';});
+let fresh=s.age_s<.2&&s.diagnostic_ok;
+el('status').textContent=`${s.backend.toUpperCase()} | ${s.status} | feedback ${s.q_deg?Math.round(s.age_s*1000)+' ms':'unavailable'} | ${s.namespace}`;
+el('source').textContent=`Feedback: ${JSON.stringify(s.feedback_source||{})}. Dependent fingers: ${s.dependent_fingers||'waiting'}. ${s.backend==='virtual'?'Virtual joint servo; no contact physics.':''}`;
+el('move').disabled=!fresh||s.busy||!s.jog_enabled;el('play').disabled=!fresh||s.busy||!s.enabled;el('result').textContent=s.result;
+}catch(e){el('status').textContent='Disconnected — motion controls disabled';el('move').disabled=true;el('play').disabled=true;}
+setTimeout(update,100);}update();
+</script></html>

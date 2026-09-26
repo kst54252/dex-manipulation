@@ -1,0 +1,40 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Background Color: 28; 34; 44
+    Fixed Frame: world
+    Frame Rate: 30
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Table frame
+      Enabled: true
+      Cell Size: 0.1
+      Plane Cell Count: 20
+      Color: 100; 110; 125
+    - Class: rviz_default_plugins/RobotModel
+      Name: RB3-730 + Revo2 (feedback)
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: __NAMESPACE__/robot_description
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Depth: 1
+      Visual Enabled: true
+      Collision Enabled: false
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 2.0
+      Focal Point: {X: 0.35, Y: 0.0, Z: 0.1}
+      Pitch: 0.5
+      Yaw: 0.8
+Window Geometry:
+  Width: 1280
+  Height: 900
