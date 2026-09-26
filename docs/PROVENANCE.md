@@ -115,3 +115,11 @@ PhysX 접촉점 힘·마찰력 합산, 120 Hz 기록과 USD 패드 축 유도는
 단일 RS485 소유자, 명령 사이 여유 시간 폴링, 공통 monotonic 시각, 고정 명령 SHA-256 정렬,
 실측 관절·촉각 CSV 및 정상력/접선력/방향각 비교 그래프는 자체 설계입니다.
 제조사 내부 신호처리나 노이즈 모델을 복제하지 않습니다.
+
+## 패드 눌림 근사
+
+[PhysX compliant contacts](https://nvidia-omniverse.github.io/PhysX/physx/5.4.1/docs/RigidBodyDynamics.html#compliant-contacts)의
+접촉점별 implicit spring–damper를 사용합니다.
+다섯 패드의 강성 10,000 N/m·감쇠 20 N·s/m는 사용자 요청의 약 1~2mm 눌림을 위한 자체 설정이며 실측 고무 물성이 아닙니다.
+[접촉·rest offset](https://nvidia-omniverse.github.io/PhysX/physx/5.1.3/docs/AdvancedCollisionDetection.html#tuning-shape-collision-behavior)에 따라
+rest offset은 0으로 유지합니다. 관통 깊이는 PhysX가 보고하는 접촉 간격으로 계산하고 2mm 초과도 그대로 기록합니다.

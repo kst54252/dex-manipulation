@@ -175,6 +175,7 @@ def pad_contact_report(env):
     view = env.robot._physics_view
     material = view.get_material_properties().cpu()
     compliant, _ = view.get_compliant_material_properties()
+    offsets = view.get_rest_offsets().cpu()
     report = dict(
         settings=env.cfg["contact_materials"],
         pad_shape_count=int(mask.sum()),
@@ -195,6 +196,7 @@ def pad_contact_report(env):
             if label == "pads"
             else None,
             contact_model="compliant" if label == "pads" else "rigid",
+            rest_offset_range_m=[float(offsets[:, selected].min()), float(offsets[:, selected].max())],
         )
     for label, rigid in (("can", env.can), ("table", env.table)):
         values, _ = rigid._physics_view.get_compliant_material_properties()
@@ -204,6 +206,8 @@ def pad_contact_report(env):
         report["groups"][label] = dict(
             stiffness_n_m=0.0,
             rigid_contact=True,
+            rest_offset_range_m=[float(rigid._physics_view.get_rest_offsets().min()),
+                                 float(rigid._physics_view.get_rest_offsets().max())],
             static_friction_range=[float(values[..., 0].min()), float(values[..., 0].max())],
             dynamic_friction_range=[float(values[..., 1].min()), float(values[..., 1].max())],
         )
