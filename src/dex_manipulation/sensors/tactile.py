@@ -33,6 +33,30 @@ def aggregate_contacts(forces, normals, counts, starts):
     return total, vectors
 
 
+def aggregate_separation(separation, counts, starts):
+    """Minimum PhysX contact separation; NaN means no reported contact points.
+
+    This measures sampled contact geometry, not full-hand or continuous-path
+    clearance. Geometric overlap is max(0, -separation), without subtracting
+    a negative rest offset (which would hide the allowed pad overlap).
+    """
+    separation = np.asarray(separation, float).reshape(-1)
+    counts, starts = np.asarray(counts), np.asarray(starts)
+    if counts.shape != starts.shape:
+        raise ValueError("Invalid contact separation buffer shapes")
+    minimum = np.full(counts.shape, np.nan)
+    for index in np.ndindex(counts.shape):
+        n, start = int(counts[index]), int(starts[index])
+        if n < 0 or (n and (start < 0 or start + n >= len(separation))):
+            raise ValueError("Contact separation buffer exhausted or invalid")
+        if n:
+            values = separation[start:start + n]
+            if not np.isfinite(values).all():
+                raise ValueError("Nonfinite contact separation")
+            minimum[index] = values.min()
+    return minimum, np.maximum(0., -np.nan_to_num(minimum, nan=0.))
+
+
 def aggregate_friction(forces, counts, starts):
     forces = np.asarray(forces, float)
     counts, starts = np.asarray(counts), np.asarray(starts)

@@ -8,7 +8,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from ..materials import PAD_BODIES
-from .tactile import FINGERS, aggregate_contacts, aggregate_friction, capacitive_proxy, pad_axes
+from .tactile import FINGERS, aggregate_contacts, aggregate_friction, aggregate_separation, capacitive_proxy, pad_axes
 
 
 def cpu(value):
@@ -58,6 +58,10 @@ class TactileRecorder:
             outward_axes_pad_link=self.outward.tolist(), toward_tip_axes_pad_link=self.toward_tip.tolist(),
             proxy_pair_coverage='can + tabletop; other contacts flagged as incomplete',
             contact_threshold_n=.05,
+            contact_separation='minimum reported PhysX contact-point separation; NaN for no points; not full-hand collision clearance',
+            penetration_depth='max(0, -separation), geometric overlap without depth clipping',
+            pad_rest_offset_m=env.cfg['rest_offset_m'],
+            penetration_reporting_threshold_m=.002,
         )
         (self.output/'metadata.json').write_text(json.dumps(self.metadata, indent=2)+'\n')
 
@@ -70,6 +74,8 @@ class TactileRecorder:
         # Each PhysX call may reuse its buffers, so copy before the next read.
         force, points, normal, separation, counts, starts = [cpu(v) for v in self.view.get_contact_data(self.dt)]
         total, vectors = aggregate_contacts(force, normal, counts, starts)
+        minimum_separation, penetration = aggregate_separation(separation, counts, starts)
+        minimum_separation, penetration = minimum_separation[self.order], penetration[self.order]
         friction, _, fcounts, fstarts = [cpu(v) for v in self.view.get_friction_data(self.dt)]
         shear = aggregate_friction(friction, fcounts, fstarts)
         matrix = cpu(self.view.get_contact_force_matrix(self.dt))
@@ -90,6 +96,8 @@ class TactileRecorder:
             normal_sum_n=total, normal_world_n=vectors, friction_world_n=shear,
             normal_pad_link_n=local(vectors), friction_pad_link_n=local(shear),
             all_contact_normal_world_n=net, normal_contact_count=counts,
+            minimum_contact_separation_m=minimum_separation, penetration_depth_m=penetration,
+            penetration_over_2mm=penetration > .002,
             sensor_normal_n=proxy['normal_n'], sensor_tangential_n=proxy['shear_n'],
             sensor_direction_deg=proxy['direction_deg'], sensor_registers=proxy['registers'],
             sensor_saturated=proxy['saturated'], sensor_pair_coverage_valid=coverage,
@@ -110,7 +118,8 @@ class TactileRecorder:
             columns = ['physics_time_s', 'reference_time_s']
             for finger in FINGERS:
                 for pair in ('can', 'table'):
-                    columns += [f'{finger}_{pair}_normal_n', f'{finger}_{pair}_shear_n']
+                    columns += [f'{finger}_{pair}_normal_n', f'{finger}_{pair}_shear_n',
+                                f'{finger}_{pair}_separation_m', f'{finger}_{pair}_penetration_m']
             for finger in FINGERS:
                 columns += [f'{finger}_sensor_normal_n', f'{finger}_sensor_tangential_n',
                             f'{finger}_sensor_direction_deg', f'{finger}_sensor_pair_coverage_valid']
@@ -120,7 +129,8 @@ class TactileRecorder:
                 values = [row['physics_time_s'], row['reference_time_s']]
                 for i in range(5):
                     for j in range(2):
-                        values += [row['normal_sum_n'][i,j], np.linalg.norm(row['friction_world_n'][i,j])]
+                        values += [row['normal_sum_n'][i,j], np.linalg.norm(row['friction_world_n'][i,j]),
+                                   row['minimum_contact_separation_m'][i,j], row['penetration_depth_m'][i,j]]
                 for i in range(5):
                     values += [row['sensor_normal_n'][i], row['sensor_tangential_n'][i],
                                row['sensor_direction_deg'][i], row['sensor_pair_coverage_valid'][i]]
@@ -141,6 +151,9 @@ class TactileRecorder:
                     normal_p95_n=float(np.percentile(normal[:,i],95)),
                     shear_mean_n=float(shear[:,i].mean()), shear_peak_n=float(shear[:,i].max()),
                     contact_fraction=float((normal[:,i]>=.05).mean()),
+                    penetration_mean_mm=float(data['penetration_depth_m'][window,i,0].mean()*1000),
+                    penetration_peak_mm=float(data['penetration_depth_m'][window,i,0].max()*1000),
+                    penetration_over_2mm_fraction=float(data['penetration_over_2mm'][window,i,0].mean()),
                     sensor_normal_mean_n=float(data['sensor_normal_n'][window,i].mean()),
                     sensor_normal_peak_n=float(data['sensor_normal_n'][window,i].max()),
                     sensor_tangential_mean_n=float(data['sensor_tangential_n'][window,i].mean()),
@@ -149,6 +162,9 @@ class TactileRecorder:
             summary.update(normal_sum_mean_n=float(normal.sum(-1).mean()),
                            normal_sum_peak_n=float(normal.sum(-1).max()),
                            all_five_contact_fraction=float((normal>=.05).all(-1).mean()))
+        summary['whole_episode_penetration_peak_mm'] = float(data['penetration_depth_m'][:,:,0].max()*1000)
+        summary['whole_episode_penetration_over_2mm_samples'] = int(data['penetration_over_2mm'][:,:,0].sum())
+        summary['penetration_scope'] = 'Reported pad-can contacts only, all physics steps; 2 mm is a reporting threshold, not a hard constraint'
         summary['sensor_saturation_samples'] = int(data['sensor_saturated'].sum())
         summary['sensor_incomplete_pair_samples'] = int((~data['sensor_pair_coverage_valid']).sum())
         summary['normal_sum_interpretation'] = 'Sum of pad compression loads; not net object force or maximum hand grip rating'

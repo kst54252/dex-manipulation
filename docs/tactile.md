@@ -62,3 +62,8 @@
 
 [공식 프로토콜](https://staging.brainco.tech/docs/revolimb-hand/en/revo2/modbus_touch.html) ·
 [공식 SDK](https://staging.brainco.tech/docs/revolimb-hand/en/revo2/python_sdk.html)
+
+접촉 기록의 `minimum_contact_separation_m`는 손끝–캔/책상의 최소 접촉 간격(m),
+`penetration_depth_m`는 음수 간격의 크기입니다. 접촉점이 없으면 간격은 NaN, 깊이는 0이며 `normal_contact_count`로 구분합니다.
+2mm 초과를 `penetration_over_2mm`로 표시하며, JSON 요약은 전체 회차 최대값과 파지 구간 손가락별 값을 담습니다.
+힘이 0인 접촉 후보도 기하적 겹침 계산에 포함합니다. 실물 tactile은 이 깊이를 직접 측정하지 않습니다.
