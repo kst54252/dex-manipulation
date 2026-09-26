@@ -144,8 +144,14 @@ def main(argv=None):
     )
     parser.add_argument("--headless", action="store_true", help="Isaac mirror without a window")
     parser.add_argument("--output", type=Path, help="Local JSON report for status/mirror")
+    parser.add_argument("--record-tactile", action="store_true", help="Record tactile/feedback during hardware actions through the shared RS485 connection")
+    parser.add_argument("--tactile-hz", type=float, default=100.)
     args = parser.parse_args(argv)
     try:
+        if args.record_tactile and (args.mode != "bridge" or args.backend != "hardware" or not args.enable_motion):
+            raise ValueError("--record-tactile requires bridge --backend hardware --enable-motion")
+        if not math.isfinite(args.tactile_hz) or args.tactile_hz <= 0:
+            raise ValueError("--tactile-hz must be positive")
         if args.enable_motion and (
             args.mode != "bridge" or args.backend not in ("hardware", "vcb")
         ):
@@ -195,6 +201,8 @@ def main(argv=None):
                 backend=args.backend,
                 enable_motion=args.enable_motion,
                 hold_s=hold,
+                record_tactile=args.record_tactile,
+                tactile_hz=args.tactile_hz,
             )
             executor = MultiThreadedExecutor(num_threads=3)
             executor.add_node(node)

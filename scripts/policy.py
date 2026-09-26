@@ -54,6 +54,7 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
         "--placement-seed", type=int, help="Reproducible random can placement order"
     )
     parser.add_argument("--headless", action="store_true")
+    parser.add_argument("--record-tactile", action="store_true", help="Record per-physics-step pad contact loads during play")
     parser.add_argument("--policy-device", choices=("cpu", "cuda"), default=None)
     parser.add_argument(
         "--device",
@@ -123,6 +124,8 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
         help="Play defaults to localized rubber pad contact. Checkpoint reproduces trained materials; training uses its config.",
     )
     args = parser.parse_args(argv)
+    if args.record_tactile and args.mode != "play":
+        parser.error("--record-tactile is for single-environment play only")
     if not math.isfinite(args.speed) or args.speed <= 0:
         parser.error("--speed must be positive and finite")
     if args.speed != 1.0 and args.mode != "play":

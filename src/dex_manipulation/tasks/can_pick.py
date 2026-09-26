@@ -54,6 +54,8 @@ def plan_playback(root, args, catalog):
 
     commands = []
     random_can = getattr(args, "random_can", False)
+    if getattr(args, "record_tactile", False) and args.mode != "policy":
+        raise ValueError("--record-tactile은 policy 재생에서 사용하세요.")
     placement_seed = getattr(args, "placement_seed", None)
     if random_can and (args.robot != "arm" or args.mode != "policy"):
         raise ValueError("--random-can은 데모2 arm policy에서만 지원합니다.")
@@ -92,6 +94,8 @@ def plan_playback(root, args, catalog):
     )
     flags = ["--headless"] if args.headless else []
     flags += ["--speed", str(speed)]
+    if getattr(args, "record_tactile", False):
+        flags.append("--record-tactile")
     if args.mode == "policy":
         automatic = (
             latest_policy(root, entry["latest_demo"], args.robot, task=task_id)

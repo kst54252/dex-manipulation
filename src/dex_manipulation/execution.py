@@ -133,6 +133,7 @@ async def stream(
     maximum_feedback_age_s,
     maximum_lateness_s,
     hold_s=1.0,
+    telemetry=None,
     clock=time.monotonic,
     sleep=asyncio.sleep,
 ):
@@ -165,9 +166,15 @@ async def stream(
     )
     try:
         await backend.connect()
+        if telemetry is not None:
+            await telemetry.prepare(backend)
         state = await backend.read()
         check_state(state, trajectory.initial, limits[0], maximum_feedback_age_s, clock)
         start = clock()
+        if telemetry is not None:
+            telemetry.start(start)
+            telemetry.feedback(state, trajectory.initial, -1)
+        report["start_monotonic_s"] = start
         hold_count = int(np.ceil(hold_s / trajectory.dt))
         previous = trajectory.initial
         with (output / "commands.jsonl").open("w") as log:
@@ -179,6 +186,8 @@ async def stream(
                     raise TimeoutError("Command deadline missed; refusing catch-up jump")
                 if i:
                     state = await backend.read()
+                    if telemetry is not None:
+                        telemetry.feedback(state, previous, i - 1)
                     check_state(state, previous, limits[1], maximum_feedback_age_s, clock)
                     if clock() - deadline > maximum_lateness_s:
                         raise TimeoutError("Feedback exceeded command deadline")
@@ -190,11 +199,15 @@ async def stream(
                 )
                 command = trajectory.q[index]
                 report["attempted_commands"] = i + 1
+                sending = clock() - start
                 await backend.send(command, velocity, trajectory.dt)
                 event = dict(
                     index=i,
                     scheduled_s=i * trajectory.dt,
                     sent_s=clock() - start,
+                    send_started_s=sending,
+                    feedback_sample_s=float(state["sample_time_s"]) - start,
+                    feedback_read_window_s=float(state.get("read_window_s", 0.)),
                     hold=i >= len(trajectory.times),
                     q_command_rad=command.tolist(),
                     q_measured_rad=np.asarray(state["q_rad"]).tolist(),
@@ -206,10 +219,15 @@ async def stream(
                 previous = command
                 if clock() - deadline >= trajectory.dt:
                     raise TimeoutError("Command I/O exceeded its interval")
+                if telemetry is not None:
+                    await telemetry.poll_until(backend, deadline + trajectory.dt, clock, sleep)
             await sleep(
                 max(0.0, start + (len(trajectory.times) + hold_count) * trajectory.dt - clock())
             )
-            check_state(await backend.read(), previous, limits[1], maximum_feedback_age_s, clock)
+            state = await backend.read()
+            if telemetry is not None:
+                telemetry.feedback(state, previous, len(trajectory.times) + hold_count - 1)
+            check_state(state, previous, limits[1], maximum_feedback_age_s, clock)
         report.update(completed=True, command_count=len(trajectory.times), hold_count=hold_count)
     except BaseException as error:
         report["error"] = f"{type(error).__name__}: {error}"
@@ -225,6 +243,12 @@ async def stream(
         if cleanup_errors:
             report.update(completed=False, cleanup_errors=cleanup_errors)
         report["sent_commands"] = len(events)
+        if telemetry is not None:
+            try:
+                telemetry.finish(report)
+            except BaseException as error:
+                cleanup_errors.append(f"measurement: {type(error).__name__}: {error}")
+                report.update(completed=False, cleanup_errors=cleanup_errors)
         (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
         if cleanup_errors and "error" not in report:
             raise RuntimeError("; ".join(cleanup_errors))

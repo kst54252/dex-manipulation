@@ -120,6 +120,14 @@ class ObservedBackend:
         await self.worker.backend.send(q, velocity, dt)
         self.desired = q.copy()
 
+    async def prepare_tactile(self):
+        self.check_cancel()
+        return await self.worker.backend.prepare_tactile()
+
+    async def read_tactile(self):
+        self.check_cancel()
+        return await self.worker.backend.read_tactile()
+
     async def stop(self):
         await self.worker.backend.stop()
         if hasattr(self.worker.backend, "sent"):
@@ -127,9 +135,10 @@ class ObservedBackend:
 
 
 class DeviceWorker:
-    def __init__(self, recording, backend, guard, rate, publish):
+    def __init__(self, recording, backend, guard, rate, publish, *, record_tactile=False, tactile_hz=100.):
         self.recording, self.backend, self.guard = recording, backend, guard
         self.rate, self.publish = rate, publish
+        self.record_tactile, self.tactile_hz = record_tactile, tactile_hz
         self.shutdown = threading.Event()
         self.ready = threading.Event()
         self.error = None
@@ -189,6 +198,9 @@ class DeviceWorker:
     async def _motion(self, output, hold, cancel, feedback, tolerances):
         async with self.lock:
             observed = ObservedBackend(self, cancel, feedback)
+            from .sensors.session import MotionTelemetry
+
+            telemetry = MotionTelemetry(self.recording, output, self.tactile_hz) if self.record_tactile else None
             try:
                 result = await stream(
                     self.recording,
@@ -199,6 +211,7 @@ class DeviceWorker:
                     maximum_feedback_age_s=self.guard["maximum_feedback_age_s"],
                     maximum_lateness_s=self.guard["maximum_lateness_s"],
                     hold_s=hold,
+                    telemetry=telemetry,
                 )
             except Exception:
                 report = Path(output) / "report.json"
@@ -230,7 +243,8 @@ class DeviceWorker:
 
 
 def make_node(
-    root, settings, recording, hardware_config, *, backend="mock", enable_motion=False, hold_s=1.0
+    root, settings, recording, hardware_config, *, backend="mock", enable_motion=False, hold_s=1.0,
+    record_tactile=False, tactile_hz=100.
 ):
     import rclpy
     from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -287,7 +301,8 @@ def make_node(
             else:
                 device = RBPodoStark(recording.names, hardware_config)
             self.worker = DeviceWorker(
-                recording, device, guard, settings["state_rate_hz"], self.publish_state
+                recording, device, guard, settings["state_rate_hz"], self.publish_state,
+                record_tactile=record_tactile, tactile_hz=tactile_hz,
             )
             self.action = ActionServer(
                 self,

@@ -300,6 +300,10 @@ def run(args, root, on_ready=None, is_running=None):
         if args.mode == "play":
             from .play import play
 
+            if getattr(args, "record_tactile", False):
+                from ..sensors.physx_tactile import attach_tactile_recording
+
+                attach_tactile_recording(env, args.output)
             return play(
                 env,
                 learner,

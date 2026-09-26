@@ -9,7 +9,20 @@ from .execution import RecordedCommands, SCHEMA, sha256
 from .ik import pose_error
 
 
-def run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0):
+def run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0, record_tactile=False):
+    completed = False
+    try:
+        result = _run(env, metadata, checkpoint, output, replay_path=replay_path,
+                      hold_s=hold_s, record_tactile=record_tactile)
+        completed = True
+        return result
+    finally:
+        recorder = getattr(env, "tactile_recorder", None)
+        if record_tactile and recorder is not None and recorder.active:
+            recorder.finish({"end": "completed" if completed else "aborted"})
+
+
+def _run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0, record_tactile=False):
     import torch
     from .policy.ppo import PPO
 
@@ -66,10 +79,18 @@ def run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0):
     hold_count = round(hold_s / env.task.dt)
     if hold_count < 1:
         raise ValueError("At least one final hold interval is required")
+    recorder = None
+    if record_tactile:
+        from .sensors.physx_tactile import attach_tactile_recording
+
+        recorder = attach_tactile_recording(env, output)
+        recorder.begin(1)
     target_q = None
     with torch.no_grad():
         for i in range(count + hold_count):
             hold = i >= count
+            if recorder is not None:
+                recorder.reference_time_override = min(i, count - 1) * env.task.dt
             if not frozen and not hold:
                 action = learner.act(env.observation(), deterministic=True)
                 _, _, term, trunc, info = env.step(action, auto_reset=False)
@@ -243,6 +264,11 @@ def run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0):
         report["commands_sha256"] = sha256(path)
     else:
         report["commands_sha256"] = sha256(frozen.path)
+    if recorder is not None:
+        recorder.metadata.update(source_commands_sha256=report["commands_sha256"],
+                                 time_zero="first recorded command", command_hz=1 / env.task.dt,
+                                 hold_s=hold_count * env.task.dt)
+        (recorder.output / "metadata.json").write_text(json.dumps(recorder.metadata, indent=2) + "\n")
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print("[recorded grasp]", json.dumps(report), flush=True)
     if not grasp:

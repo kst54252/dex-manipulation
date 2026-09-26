@@ -129,6 +129,14 @@ def connection_plan(names, config):
             "Supply measured arm/hand/mount/table calibration; example config is not commissioned"
         )
     mapping = JointCalibration(names, calibration)
+    transport_plan(config)
+    return mapping
+
+
+def transport_plan(config):
+    """Validate only explicitly supplied connection settings for a read-only probe."""
+    if config.get("schema") != "dex_rb3_revo2_hardware_v1":
+        raise ValueError("Unsupported hardware configuration")
     rb, revo = config["rb3"], config["revo2"]
     if not rb["address"] or not revo["port"] or revo["transport"] != "rs485":
         raise ValueError("Provide explicit RB3 IP and Revo2 RS485 port")
@@ -141,7 +149,6 @@ def connection_plan(names, config):
     for key in ("command_port", "data_port"):
         if not isinstance(rb[key], int) or not 1 <= rb[key] <= 65535:
             raise ValueError("Invalid RB3 port")
-    return mapping
 
 
 def hardware_plan(trajectory, config):
@@ -223,6 +230,7 @@ class RBPodoStark:
         self.previous_device_time = None
         self.last_finger = None
         self.sent = False
+        self.hand_lock = asyncio.Lock()
 
     async def connect(self):
         for name, version in VERSIONS.items():
@@ -248,12 +256,34 @@ class RBPodoStark:
             raise RuntimeError("Connected hand does not support the Revo2 motor API")
 
     async def call_hand(self, method, *args):
-        value = getattr(self.hand, method)(self.config["revo2"]["slave_id"], *args)
-        return (
-            await asyncio.wait_for(value, self.config["io_timeout_s"])
-            if inspect.isawaitable(value)
-            else value
+        async with self.hand_lock:
+            value = getattr(self.hand, method)(self.config["revo2"]["slave_id"], *args)
+            return (
+                await asyncio.wait_for(value, self.config["io_timeout_s"])
+                if inspect.isawaitable(value)
+                else value
+            )
+
+    async def prepare_tactile(self):
+        if not await self.call_hand("is_touch_hand"):
+            raise ValueError("The connected Revo2 has no tactile sensors")
+        enabled = int(await self.call_hand("get_touch_sensor_enabled"))
+        if enabled & 31 != 31:
+            raise ValueError("All five tactile sensors must already be enabled")
+        return dict(
+            type="Revo2 capacitive", enabled_mask=enabled,
+            firmware=str(await self.call_hand("get_touch_sensor_fw_versions")),
+            io_timeout_s=self.config["io_timeout_s"],
+            connection="shared controller RS485 handle; no sensor/calibration setters",
         )
+
+    async def read_tactile(self):
+        from .sensors.hardware_tactile import decode_sdk_sample
+
+        started = time.monotonic()
+        value = await self.call_hand("get_touch_sensor_status")
+        completed = time.monotonic()
+        return dict(sample=decode_sdk_sample(value), started_s=started, completed_s=completed)
 
     async def read(self):
         started = time.monotonic()
@@ -373,12 +403,15 @@ class RBPodoStark:
             self.hand = self.robot = self.data = None
 
 
-async def execute(trajectory, config, output, hold_s):
+async def execute(trajectory, config, output, hold_s, *, record_tactile=False, tactile_hz=100.):
     plan = hardware_plan(trajectory, config)
     guard = config["guard"]
     output = Path(output)
     if output.exists():
         raise ValueError("Use a new hardware output directory")
+    from .sensors.session import MotionTelemetry
+
+    telemetry = MotionTelemetry(trajectory, output, tactile_hz) if record_tactile else None
     try:
         return await stream(
             trajectory,
@@ -389,6 +422,7 @@ async def execute(trajectory, config, output, hold_s):
             maximum_feedback_age_s=guard["maximum_feedback_age_s"],
             maximum_lateness_s=guard["maximum_lateness_s"],
             hold_s=hold_s,
+            telemetry=telemetry,
         )
     finally:
         if output.is_dir():

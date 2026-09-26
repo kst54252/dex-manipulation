@@ -14,7 +14,7 @@ dataset = ["opencv-python>=4.8", "trimesh>=4"]
 usd = ["usd-core>=25.5"]
 validation = ["opencv-python>=4", "websockets>=14"]
 rl = ["torch>=2.4", "matplotlib>=3.8", "rsl-rl-lib>=5.4,<6", "tensordict>=0.9", "onnx>=1.16"]
-hardware = ["rbpodo==0.16.14", "bc-stark-sdk==2.0.3"]
+hardware = ["rbpodo==0.16.14", "bc-stark-sdk==2.0.3", "matplotlib>=3.6"]
 vcb = ["rbpodo==0.16.14"]
 dev = ["pytest>=8.4", "ruff>=0.15.7"]
 

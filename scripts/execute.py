@@ -5,6 +5,7 @@ import argparse
 import asyncio
 from datetime import datetime
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -16,7 +17,7 @@ from dex_manipulation.configuration import read_config
 def _main(argv=None):
     defaults = read_config(ROOT / "config/execution.json")
     parser = argparse.ArgumentParser(prog="./run.sh execute")
-    parser.add_argument("mode", choices=("record", "replay", "inspect", "dry-run", "hardware"))
+    parser.add_argument("mode", choices=("record", "replay", "inspect", "dry-run", "probe", "hardware"))
     parser.add_argument("--recording", type=Path, default=ROOT / defaults["recording"])
     parser.add_argument(
         "--checkpoint",
@@ -35,6 +36,9 @@ def _main(argv=None):
     parser.add_argument(
         "--send", action="store_true", help="Actually connect and stream to commissioned hardware"
     )
+    parser.add_argument("--record-tactile", action="store_true", help="Record tactile on the same I/O owner as motion")
+    parser.add_argument("--tactile-hz", type=float, default=100., help="Requested hardware tactile rate; limited by available command time")
+    parser.add_argument("--seconds", type=float, default=5., help="Read-only probe duration")
     args = parser.parse_args(argv)
     for name in ("recording", "checkpoint", "arm_config", "hardware_config", "output"):
         value = getattr(args, name)
@@ -42,11 +46,15 @@ def _main(argv=None):
             setattr(args, name, (ROOT / value).resolve())
     if args.send and args.mode != "hardware":
         parser.error("--send requires hardware mode")
-    if args.hold <= 0:
-        parser.error("--hold must be positive")
+    if args.record_tactile and args.mode not in ("hardware", "probe", "record", "replay"):
+        parser.error("--record-tactile requires hardware, probe, record or replay")
+    if not math.isfinite(args.hold) or args.hold <= 0:
+        parser.error("--hold must be positive and finite")
+    if not math.isfinite(args.tactile_hz) or args.tactile_hz <= 0:
+        parser.error("--tactile-hz must be positive and finite")
     from dex_manipulation.execution import RecordedCommands, MockBackend, stream
 
-    frozen = None if args.mode == "record" else RecordedCommands(args.recording)
+    frozen = None if args.mode in ("record", "probe") else RecordedCommands(args.recording)
     if args.checkpoint is None and args.mode in ("record", "replay"):
         if frozen:
             args.checkpoint = (ROOT / frozen.metadata["checkpoint"]).resolve()
@@ -70,6 +78,13 @@ def _main(argv=None):
     ).resolve()
     if not output.is_relative_to(ROOT / "local") or output.exists():
         parser.error("Use a new output directory under local/")
+    if args.mode == "probe":
+        from dex_manipulation.hardware_probe import probe
+
+        result = asyncio.run(probe(read_config(args.hardware_config), output, args.seconds, args.record_tactile))
+        print(json.dumps(result, indent=2))
+        print(f"Log: {output}")
+        return 0
     if args.mode == "dry-run":
         result = asyncio.run(
             stream(
@@ -94,7 +109,15 @@ def _main(argv=None):
         if not args.send:
             print(json.dumps(plan, indent=2))
             return 0
-        print(json.dumps(asyncio.run(execute(frozen, config, output, args.hold)), indent=2))
+        if args.record_tactile:
+            from dex_manipulation.sensors.session import MotionTelemetry
+
+            MotionTelemetry(frozen, output, args.tactile_hz)  # Validate before connecting.
+        print(json.dumps(asyncio.run(execute(
+            frozen, config, output, args.hold,
+            record_tactile=args.record_tactile, tactile_hz=args.tactile_hz,
+        )), indent=2))
+        print(f"Log: {output}")
         return 0
     output.mkdir(parents=True)
     config = (
@@ -146,6 +169,7 @@ def _main(argv=None):
             output,
             replay_path=args.recording if args.mode == "replay" else None,
             hold_s=args.hold,
+            record_tactile=args.record_tactile,
         )
 
     return launch(sim_args, on_ready=ready)

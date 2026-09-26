@@ -16,6 +16,11 @@ fi
 if [[ -z "${DEX_PYTHON:-}" && "${1:-}" == vcb && "${2:-}" != mirror && -x "$DEX_ROOT/local/vcb-venv/bin/python" ]]; then
     DEX_PYTHON="$DEX_ROOT/local/vcb-venv/bin/python"
 fi
+if [[ -z "${DEX_PYTHON:-}" && -x "$DEX_ROOT/local/hardware-venv/bin/python" ]]; then
+    if [[ "${1:-}" == tactile || ( "${1:-}" == execute && ( "${2:-}" == hardware || "${2:-}" == probe || "${2:-}" == inspect || "${2:-}" == dry-run ) ) ]]; then
+        DEX_PYTHON="$DEX_ROOT/local/hardware-venv/bin/python"
+    fi
+fi
 if [[ -z "${DEX_PYTHON:-}" ]]; then
     for candidate in "$HOME/IsaacLab/.venv/bin/python" "$DEX_ROOT/.venv/bin/python"; do
         if [[ -x "$candidate" ]]; then

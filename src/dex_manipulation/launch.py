@@ -62,6 +62,7 @@ def parser():
         "--placement-seed", type=int, help="랜덤 캔 배치 순서를 재현할 seed (--random-can 전용)"
     )
     p.add_argument("--headless", action="store_true", help="창 없이 동일 물리 재생")
+    p.add_argument("--record-tactile", action="store_true", help="정책 재생 중 손끝 정상력·접선력 120Hz 기록")
     p.add_argument(
         "--table-safety",
         choices=("protect", "checkpoint"),

@@ -12,6 +12,10 @@ if __name__ == "__main__":
         from dex_manipulation.dataset.cli import main
 
         sys.exit(main(ROOT, sys.argv[2:]))
+    elif sys.argv[1:2] == ["tactile"]:
+        from scripts.tactile import main
+
+        sys.exit(main(ROOT, sys.argv[2:]))
     elif sys.argv[1:2] == ["tasks"]:
         from scripts.tasks import main
 

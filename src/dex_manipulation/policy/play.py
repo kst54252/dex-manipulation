@@ -78,6 +78,9 @@ def play(env, learner, output, episodes=0, is_running=None, protocol="strict"):
                     (output / "first_episode_placement.json").write_text(
                         json.dumps(placement, indent=2) + "\n"
                     )
+            tactile = getattr(env, "tactile_recorder", None)
+            if tactile is not None:
+                tactile.begin(episode + 1)
             reset_count = env.object_reset_count
             obs = env.observation()
             rows, steps, episode_return = [], 0, 0.0
@@ -195,6 +198,8 @@ def play(env, learner, output, episodes=0, is_running=None, protocol="strict"):
             )
             if placement is not None:
                 report["placement"] = placement
+            if tactile is not None:
+                tactile.finish(report)
             log.write(json.dumps(report) + "\n")
             log.flush()
             print("[play episode]", json.dumps(report), flush=True)
