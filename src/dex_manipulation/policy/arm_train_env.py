@@ -19,14 +19,14 @@ from ..scene import Workcell
 from ..control import MotionController
 from .arm_ik import PolicyFrame
 from .arm_scene import build_arm_scene
-from .arm_observations import ArmObservations
+from dex_manipulation.policy.observations import ArmObservations
 from .floating_env import PhysxResidualEnv
 from .task import ResidualTask
 from .reference import TensorReference
 from .curriculum import ReferenceStateSampler, GravityCurriculum
 from .randomization import apply_startup_randomization, PushSchedule, property_report
 from .math3d import quat_apply, rotation_error, uniform
-from .trajectory import digest
+from dex_manipulation.policy.trajectory import digest
 
 
 class ArmTrainingEnv(PhysxResidualEnv):

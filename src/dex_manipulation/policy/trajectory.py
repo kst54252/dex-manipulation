@@ -1,16 +1,14 @@
-"""Validated trajectory adapter, SI units, column transforms, XYZW quaternions."""
+"""Reference motion loading, interpolation and runtime playback timing."""
 
-from ..configuration import read_config
+from dex_manipulation.configuration import read_config
 import hashlib
 import json
 import copy
 from pathlib import Path
-
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
-
-from ..transforms import inverse
-from ..data import resolve_demo_path
+from dex_manipulation.transforms import inverse
+from dex_manipulation.data import resolve_demo_path
 
 
 def digest(path):
@@ -45,8 +43,8 @@ class ReferenceMotion:
         self.duration = float(self.times[-1])
         self.model = model
         geometry = read_config(Path(geometry_path))
-        from ..coordinates import collision_bottom, z_aligned_cylinders
-        from ..geometry import geometry_fingerprint
+        from dex_manipulation.coordinates import collision_bottom, z_aligned_cylinders
+        from dex_manipulation.geometry import geometry_fingerprint
 
         self.object_geometry = geometry
         self.collision_shapes = z_aligned_cylinders(geometry)
@@ -115,7 +113,7 @@ class ReferenceMotion:
 
     def validate_can_base_down(self):
         """Check actual collider orientation, independently of ground clearance."""
-        from ..geometry import can_orientation_report
+        from dex_manipulation.geometry import can_orientation_report
 
         report = can_orientation_report(self.object, self.object_geometry)
         if not report["initial_base_below_body"]:
@@ -254,3 +252,30 @@ class ReferenceMotion:
     def points(self, position, quaternion):
         rotation = Rotation.from_quat(quaternion).as_matrix()
         return np.einsum("nij,kj->nki", rotation, self.object_local) + position[:, None]
+
+
+def prepare_playback(reference, config, speed=1.0):
+    dt = config["physics_dt"] * config["control_decimation"]
+    applied = reference.for_playback(speed, dt)
+    runtime = copy.deepcopy(config)
+    if speed != 1.0:
+        runtime["episode_length_s"] /= speed
+        # These intervals belong to reference phase. Physical controller gains,
+        # filters, contact properties and the simulation/control dt stay fixed.
+        for key in ("blend_start_s", "blend_end_s"):
+            if key in runtime["augmentation"]:
+                runtime["augmentation"][key] /= speed
+        for key in ("approach_lead_s", "preload_ramp_s"):
+            if key in runtime.get("grasp_task", {}):
+                runtime["grasp_task"][key] /= speed
+    timing = dict(
+        speed=float(speed),
+        input_duration_s=reference.duration,
+        duration_s=applied.duration,
+        physics_dt_s=config["physics_dt"],
+        control_dt_s=dt,
+        differs_from_training=speed != 1.0,
+        restore_training_rsi_histogram=speed == 1.0,
+        interpretation="reference clock retimed; physical grasp performance requires separate validation",
+    )
+    return applied, runtime, timing

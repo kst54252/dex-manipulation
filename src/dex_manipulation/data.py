@@ -250,7 +250,7 @@ def import_human_demo(source, output, geometry_path):
     geometry = json.loads(geometry_path.read_text())
     # Camera gravity and the replacement asset's bottom-to-top direction are
     # different conventions; the original left-demo object +Z points down.
-    from .geometry import can_base_down_alignment
+    from dex_manipulation.geometry import can_base_down_alignment
 
     world_from_camera = np.eye(4)
     world_from_camera[:3, :3] = [[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]]

@@ -79,7 +79,7 @@ def main(argv=None):
         defaults = read_config(ROOT / "config/execution.json")
         recording_path = (ROOT / (args.recording or defaults["recording"])).resolve()
         if args.mode.startswith("_"):
-            from dex_manipulation.execution import RecordedCommands
+            from dex_manipulation.robot.trajectory import RecordedCommands
 
             recording = RecordedCommands(recording_path)
             if args.mode == "_panel":
@@ -110,13 +110,13 @@ def main(argv=None):
             raise ValueError("--allow-jog also requires --enable-motion")
         output = ROOT / "local/robot/sessions" / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         output.mkdir(parents=True, exist_ok=False)
-        from dex_manipulation.robot.description import export_description
+        from dex_manipulation.robot.model import export_description
 
         urdf = export_description(ROOT, settings, output / "description")
         if args.mode == "description":
             print(urdf)
             return 0
-        from dex_manipulation.execution import RecordedCommands
+        from dex_manipulation.robot.trajectory import RecordedCommands
 
         recording = RecordedCommands(recording_path)
         namespace = {
@@ -168,7 +168,7 @@ def main(argv=None):
         env["PYTHONPATH"] = str(ROOT / "src") + ":" + str(ROOT) + ":" + env.get("PYTHONPATH", "")
         if args.mode == "hardware":
             hardware_path = (ROOT / args.hardware_config).resolve()
-            from dex_manipulation.hardware import connection_plan, hardware_plan
+            from dex_manipulation.robot.hardware import connection_plan, hardware_plan
 
             cfg = read_config(hardware_path)
             cfg["simulation_validation"] = str(ROOT / cfg["simulation_validation"])
@@ -177,7 +177,7 @@ def main(argv=None):
                 hardware_plan(recording, cfg)
         elif args.mode == "vcb":
             hardware_path = (ROOT / args.vcb_config).resolve()
-            from dex_manipulation.vcb import motion_plan
+            from dex_manipulation.robot.vcb import motion_plan
 
             motion_plan(recording, read_config(hardware_path))
         else:
@@ -213,7 +213,8 @@ def main(argv=None):
             )
         command = [
             sys.executable,
-            str(ROOT / "scripts/ros.py"),
+            "-m",
+            "dex_manipulation.robot.ros",
             "bridge",
             "--backend",
             backend,

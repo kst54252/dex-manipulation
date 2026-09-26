@@ -16,7 +16,7 @@ from ..ik import IKOptions, model_fingerprint, pose_error, solve_trajectory
 from ..joint_trajectory import JointReference
 from ..scene import Workcell
 from ..transforms import transform
-from .trajectory import ReferenceMotion, digest
+from dex_manipulation.policy.trajectory import ReferenceMotion, digest
 
 
 def frozen_source(rollout, reference, control_dt, kind="command", time_scale=1.0):

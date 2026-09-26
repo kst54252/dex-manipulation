@@ -1,10 +1,11 @@
-"""SI contact aggregation and explicitly typed Revo2 tactile register decoding.
-
-Sensor firmware transfer functions and taxel positions are not inferred from a
-rigid collision mesh. Simulated contact loads are not calibrated tactile data.
-"""
+"""Tactile force proxies, sensor decoding and record/plot/compare commands."""
 
 import numpy as np
+import argparse
+import asyncio
+from datetime import datetime
+from pathlib import Path
+
 
 FINGERS = ("thumb", "index", "middle", "ring", "little")
 STANDARD_GRAVITY = 9.80665
@@ -50,11 +51,11 @@ def aggregate_separation(separation, counts, starts):
         if n < 0 or (n and (start < 0 or start + n >= len(separation))):
             raise ValueError("Contact separation buffer exhausted or invalid")
         if n:
-            values = separation[start:start + n]
+            values = separation[start : start + n]
             if not np.isfinite(values).all():
                 raise ValueError("Nonfinite contact separation")
             minimum[index] = values.min()
-    return minimum, np.maximum(0., -np.nan_to_num(minimum, nan=0.))
+    return minimum, np.maximum(0.0, -np.nan_to_num(minimum, nan=0.0))
 
 
 def aggregate_friction(forces, counts, starts):
@@ -91,10 +92,15 @@ def decode_capacitive(force_registers, status_registers):
     raw, status = raw.astype(np.uint16), status.astype(np.uint16)
     valid = ((status & 255) == 0) & (raw[:, :2] <= 2500).all(-1)
     direction_valid = valid & (raw[:, 2] < 360)
-    return dict(normal_n=raw[:, 0] * .01, shear_n=raw[:, 1] * .01,
-                direction_deg=np.where(direction_valid, raw[:, 2], np.nan),
-                valid=valid, direction_valid=direction_valid,
-                status_error=status & 255, sequence=status >> 8)
+    return dict(
+        normal_n=raw[:, 0] * 0.01,
+        shear_n=raw[:, 1] * 0.01,
+        direction_deg=np.where(direction_valid, raw[:, 2], np.nan),
+        valid=valid,
+        direction_valid=direction_valid,
+        status_error=status & 255,
+        sequence=status >> 8,
+    )
 
 
 def decode_pressure(values, *, calibrated):
@@ -116,22 +122,22 @@ def pad_axes(model):
     distal-link origin to semantic fingertip defines
     the zero-degree direction. Clockwise is viewed from outside the pad.
     """
-    from ..materials import PAD_BODIES
-    from ..transforms import inverse
+    from dex_manipulation.materials import PAD_BODIES
+    from dex_manipulation.transforms import inverse
 
     transforms = model.link_transforms(np.zeros(len(model.active_names)))
     normals, tips = [], []
     for name in PAD_BODIES:
-        vertices = np.array(next(c for c in model.colliders if c['link'] == name)['vertices'])
+        vertices = np.array(next(c for c in model.colliders if c["link"] == name)["vertices"])
         axis = int(np.argmin(np.ptp(vertices, axis=0)))
         normal = np.zeros(3)
-        joint = next(j for j in model.joints if j['child'] == name)
-        origin = (inverse(transforms[name]) @ transforms[joint['parent']])[:3, 3]
+        joint = next(j for j in model.joints if j["child"] == name)
+        origin = (inverse(transforms[name]) @ transforms[joint["parent"]])[:3, 3]
         normal[axis] = -np.sign(origin[axis])
-        tip = np.array(next(k for k in model.keypoints if k['link'] == name)['xyz']) - origin
+        tip = np.array(next(k for k in model.keypoints if k["link"] == name)["xyz"]) - origin
         tip -= normal * np.dot(tip, normal)
         if np.linalg.norm(tip) < 1e-8 or not np.isclose(np.linalg.norm(normal), 1):
-            raise ValueError('Cannot derive pad axes from this USD model')
+            raise ValueError("Cannot derive pad axes from this USD model")
         normals.append(normal)
         tips.append(tip / np.linalg.norm(tip))
     return np.array(normals), np.array(tips)
@@ -147,25 +153,122 @@ def capacitive_proxy(force_pad_n, outward, toward_tip):
     force = np.asarray(force_pad_n, float)
     outward, toward_tip = np.asarray(outward, float), np.asarray(toward_tip, float)
     if force.shape[-2:] != (5, 3) or outward.shape != (5, 3) or toward_tip.shape != (5, 3):
-        raise ValueError('Expected five force vectors and five pad axis pairs')
-    if not np.isfinite(force).all() or not np.isfinite(outward).all() or not np.isfinite(toward_tip).all():
-        raise ValueError('Nonfinite sensor force or axes')
-    if not (np.allclose(np.linalg.norm(outward, axis=-1), 1) and
-            np.allclose(np.linalg.norm(toward_tip, axis=-1), 1) and
-            np.allclose((outward*toward_tip).sum(-1), 0, atol=1e-6)):
-        raise ValueError('Sensor axes must be orthonormal')
+        raise ValueError("Expected five force vectors and five pad axis pairs")
+    if (
+        not np.isfinite(force).all()
+        or not np.isfinite(outward).all()
+        or not np.isfinite(toward_tip).all()
+    ):
+        raise ValueError("Nonfinite sensor force or axes")
+    if not (
+        np.allclose(np.linalg.norm(outward, axis=-1), 1)
+        and np.allclose(np.linalg.norm(toward_tip, axis=-1), 1)
+        and np.allclose((outward * toward_tip).sum(-1), 0, atol=1e-6)
+    ):
+        raise ValueError("Sensor axes must be orthonormal")
     signed = (force * outward).sum(-1)
     normal = np.maximum(-signed, 0)
     tangent = force - signed[..., None] * outward
     shear = np.linalg.norm(tangent, axis=-1)
     clockwise = -np.cross(outward, toward_tip)
-    angle = np.mod(np.degrees(np.arctan2((tangent*clockwise).sum(-1), (tangent*toward_tip).sum(-1))), 360)
+    angle = np.mod(
+        np.degrees(np.arctan2((tangent * clockwise).sum(-1), (tangent * toward_tip).sum(-1))), 360
+    )
     # No stable direction below one protocol count; this is our encoding choice.
-    direction_valid = shear >= .01
-    registers = np.stack((np.rint(np.clip(normal, 0, 25)/.01),
-                          np.rint(np.clip(shear, 0, 25)/.01),
-                          np.where(direction_valid, np.rint(angle) % 360, 65535)), -1).astype(np.uint16)
-    return dict(normal_n=normal, shear_n=shear,
-                direction_deg=np.where(direction_valid, angle, np.nan),
-                registers=registers, saturated=(normal>25)|(shear>25),
-                direction_valid=direction_valid)
+    direction_valid = shear >= 0.01
+    registers = np.stack(
+        (
+            np.rint(np.clip(normal, 0, 25) / 0.01),
+            np.rint(np.clip(shear, 0, 25) / 0.01),
+            np.where(direction_valid, np.rint(angle) % 360, 65535),
+        ),
+        -1,
+    ).astype(np.uint16)
+    return dict(
+        normal_n=normal,
+        shear_n=shear,
+        direction_deg=np.where(direction_valid, angle, np.nan),
+        registers=registers,
+        saturated=(normal > 25) | (shear > 25),
+        direction_valid=direction_valid,
+    )
+
+
+def main(root, argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser(
+        "record", help="Read-only, exclusive RS485 connection to Revo2 capacitive tactile"
+    )
+    p.add_argument("--port", required=True)
+    p.add_argument("--slave-id", type=int, required=True)
+    p.add_argument(
+        "--baudrate-enum", required=True, help="Actual configured BrainCo SDK Baudrate enum name"
+    )
+    p.add_argument("--seconds", type=float, default=10.0)
+    p.add_argument(
+        "--hz", type=float, default=100.0, help="Host polling request rate, not sensor bandwidth"
+    )
+    p.add_argument("--output", type=Path)
+    c = sub.add_parser(
+        "compare", help="Compare real CSV to simulation NPZ after measured start alignment"
+    )
+    c.add_argument("--sim", type=Path, required=True)
+    c.add_argument("--real", type=Path, required=True)
+    c.add_argument(
+        "--offset-s",
+        type=float,
+        help="real_host_time - simulation_time; automatic zero only for matching execute records",
+    )
+    c.add_argument("--output", type=Path, required=True)
+    p = sub.add_parser(
+        "plot", help="Plot real and/or simulated normal force, tangential force and direction"
+    )
+    p.add_argument("--sim", type=Path)
+    p.add_argument("--real", type=Path)
+    p.add_argument("--offset-s", type=float)
+    p.add_argument("--grasp-start-s", type=float)
+    p.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    for key in ("sim", "real", "output"):
+        value = getattr(args, key, None)
+        if value is not None:
+            setattr(args, key, (root / value).resolve())
+    if args.output is not None and (
+        not args.output.is_relative_to(root / "local") or args.output.exists()
+    ):
+        parser.error("Use a new output directory under local/")
+    if args.command == "plot":
+        from dex_manipulation.sensors.plotting import plot
+
+        print(
+            plot(
+                args.output,
+                sim_path=args.sim,
+                real_path=args.real,
+                offset_s=args.offset_s,
+                grasp_start_s=args.grasp_start_s,
+            )
+        )
+        return 0
+    if args.command == "compare":
+        from dex_manipulation.sensors.plotting import compare
+
+        from dex_manipulation.sensors.plotting import aligned_offset
+
+        offset, _ = aligned_offset(args.sim, args.real, args.offset_s)
+        print(compare(args.sim, args.real, offset, args.output))
+        return 0
+    from dex_manipulation.sensors.hardware_tactile import record
+
+    output = args.output or root / "local/results/tactile" / (
+        "real_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+    )
+    try:
+        result = asyncio.run(
+            record(args.port, args.baudrate_enum, args.slave_id, output, args.seconds, args.hz)
+        )
+    except (ImportError, RuntimeError, ValueError, OSError) as error:
+        parser.exit(1, f"Tactile recording failed: {error}\n")
+    print(result)
+    return 0

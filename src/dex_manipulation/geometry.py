@@ -1,10 +1,12 @@
-"""Persistent mesh surface samples and complete convex collider queries."""
+"""Surface sampling, collision queries and interaction-mesh geometry."""
 
-from .configuration import read_config
+from dex_manipulation.configuration import read_config
 import json
 import hashlib
 from pathlib import Path
 import numpy as np
+from itertools import combinations
+from scipy.spatial import Delaunay
 
 
 def can_orientation_report(poses, geometry):
@@ -195,3 +197,62 @@ class CollisionScene:
                 for _, obj in self.objects
             ]
         )
+
+
+def interaction_graph(source):
+    source = np.asarray(source)
+    if source.ndim != 2 or source.shape[1] != 3 or not np.isfinite(source).all():
+        raise ValueError("Expected finite 3D vertices")
+    if len(np.unique(source, axis=0)) != len(source):
+        raise ValueError("Duplicate interaction vertices")
+    tetrahedra = Delaunay(source).simplices
+    edges = sorted({tuple(sorted(pair)) for tet in tetrahedra for pair in combinations(tet, 2)})
+    adjacency = np.zeros((len(source), len(source)))
+    for a, b in edges:
+        adjacency[a, b] = adjacency[b, a] = 1
+    degrees = adjacency.sum(axis=1)
+    if np.any(degrees == 0):
+        raise ValueError("Delaunay omitted a vertex")
+    laplacian = np.eye(len(source)) - adjacency / degrees[:, None]
+    return laplacian, np.asarray(edges, dtype=np.int32)
+
+
+def deformation(laplacian, source, target, norm="regrind", epsilon=1e-7):
+    residual = laplacian @ (target - source)
+    squared = np.sum(residual * residual, axis=1)
+    if norm == "regrind":
+        return float(np.sum(np.sqrt(squared + epsilon**2) - epsilon)), residual
+    if norm == "omni":
+        return float(np.sum(squared)), residual
+    raise ValueError(f"Unknown Laplacian norm: {norm}")
+
+
+FINGERS = ("thumb", "index", "middle", "ring", "little")
+
+
+def finger_edges(semantic_names):
+    """Fifteen phalange edges; palm lengths must not dominate finger articulation."""
+    edges = []
+    for finger in FINGERS:
+        chain = [
+            semantic_names.index(f"{finger}_{joint}") for joint in ("mcp", "pip", "dip", "tip")
+        ]
+        edges.extend(zip(chain[:-1], chain[1:]))
+    return np.asarray(edges, dtype=int)
+
+
+def directions(points, edges):
+    vectors = np.asarray(points)[edges[:, 1]] - np.asarray(points)[edges[:, 0]]
+    lengths = np.linalg.norm(vectors, axis=1)
+    if np.any(lengths < 1e-8):
+        raise ValueError("Cannot compare a zero-length semantic finger segment")
+    return vectors / lengths[:, None]
+
+
+def direction_error(source, target, edges):
+    reference, actual = directions(source, edges), directions(target, edges)
+    cosine = np.clip(np.sum(reference * actual, axis=1), -1, 1)
+    return dict(
+        mean_deg=float(np.rad2deg(np.arccos(cosine)).mean()),
+        by_finger_deg=np.rad2deg(np.arccos(cosine)).reshape(5, 3).mean(1).tolist(),
+    )

@@ -19,7 +19,26 @@ if __name__ == "__main__":
 
         print(json.dumps(status, indent=2))
         sys.exit(1 if status["conflicts"] else 0)
-    if sys.argv[1:2] == ["retarget-contact"]:
+    if sys.argv[1:2] == ["data"]:
+        from scripts.data import main
+
+        sys.exit(main(sys.argv[2:]))
+    elif sys.argv[1:2] == ["retargeting"]:
+        from dex_manipulation.cli import main
+
+        sys.argv = ["./run.sh retargeting", *sys.argv[2:]]
+        sys.exit(main())
+    elif sys.argv[1:2] == ["ik"]:
+        from scripts.ik import main
+
+        sys.argv = ["./run.sh ik", *sys.argv[2:]]
+        sys.exit(main())
+    elif sys.argv[1:2] == ["tracking"]:
+        from scripts.tracking import main
+
+        sys.argv = ["./run.sh tracking", *sys.argv[2:]]
+        sys.exit(main())
+    elif sys.argv[1:2] == ["retarget-contact"]:
         from scripts.contact_retargeting import main
 
         sys.exit(main(sys.argv[2:]))
@@ -28,15 +47,15 @@ if __name__ == "__main__":
 
         sys.exit(main(ROOT, sys.argv[2:]))
     elif sys.argv[1:2] == ["tactile"]:
-        from scripts.tactile import main
+        from dex_manipulation.sensors.tactile import main
 
         sys.exit(main(ROOT, sys.argv[2:]))
     elif sys.argv[1:2] == ["tasks"]:
-        from scripts.tasks import main
+        from dex_manipulation.tasks.registry import main
 
         sys.exit(main(sys.argv[2:]))
     elif sys.argv[1:2] == ["vcb"]:
-        from scripts.vcb import main
+        from dex_manipulation.robot.vcb import main
 
         sys.exit(main(sys.argv[2:]))
     elif sys.argv[1:2] == ["robot"]:
@@ -44,11 +63,11 @@ if __name__ == "__main__":
 
         sys.exit(main(sys.argv[2:]))
     elif sys.argv[1:2] == ["ros"]:
-        from scripts.ros import main
+        from dex_manipulation.robot.ros import main
 
         sys.exit(main(sys.argv[2:]))
     elif sys.argv[1:2] == ["execute"]:
-        from scripts.execute import main
+        from dex_manipulation.robot.recording import main
 
         sys.exit(main(sys.argv[2:]))
     elif sys.argv[1:2] == ["train"]:

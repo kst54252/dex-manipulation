@@ -159,8 +159,8 @@ def replay_floating(
     from pathlib import Path
     import torch
     from .fk import HandModel
-    from .policy.trajectory import ReferenceMotion
-    from .floating_env import PhysxResidualEnv
+    from dex_manipulation.policy.trajectory import ReferenceMotion
+    from .policy.floating_env import PhysxResidualEnv
     from .coordinates import collision_bottom
     from .transforms import transform
     from scipy.spatial.transform import Rotation
@@ -191,7 +191,7 @@ def replay_floating(
     reference = ReferenceMotion(
         root / cfg["reference"], model, root / cfg["object_geometry"], cfg["world_frame"]
     )
-    from .policy.playback import prepare_playback
+    from dex_manipulation.policy.trajectory import prepare_playback
 
     reference, cfg, playback_timing = prepare_playback(reference, cfg, speed)
     # Preserve the current input segment's timing rather than invoking RL's retiming.

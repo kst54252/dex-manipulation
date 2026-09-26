@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .geometry import generate_object_points
+from dex_manipulation.geometry import generate_object_points
 from .usd import extract_object
 
 
@@ -120,7 +120,7 @@ def build_can(spec_path, asset_path, model_dir):
         mesh_sha256=hashlib.sha256((model_dir / "can_mesh.npz").read_bytes()).hexdigest(),
         collision_source_sha256=hashlib.sha256(asset_path.read_bytes()).hexdigest(),
     )
-    from .geometry import geometry_fingerprint
+    from dex_manipulation.geometry import geometry_fingerprint
 
     metadata["fingerprint"] = geometry_fingerprint(metadata)
     (model_dir / "can_mesh.json").write_text(json.dumps(metadata, indent=2) + "\n")

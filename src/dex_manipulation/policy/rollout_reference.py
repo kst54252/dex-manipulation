@@ -13,7 +13,7 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.transform import Rotation, Slerp
 
-from ..geometry import CollisionScene
+from dex_manipulation.geometry import CollisionScene
 
 
 def _digest(path):

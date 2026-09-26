@@ -73,7 +73,7 @@ def viewer_payload(
         with np.load(object_mesh_path, allow_pickle=False) as mesh:
             object_mesh = dict(vertices=numbers(mesh["vertices"]), faces=mesh["faces"].tolist())
     metadata = report.get("sequence_metadata", {})
-    from .metrics import finger_edges, direction_error
+    from dex_manipulation.geometry import finger_edges, direction_error
 
     edges = finger_edges(model.semantic_names)
     quality = []

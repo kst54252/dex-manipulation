@@ -8,8 +8,8 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.transform import Rotation
 from .transforms import transform, apply, rigid_fit
-from .mesh import interaction_graph, deformation
-from .metrics import finger_edges, directions, direction_error
+from dex_manipulation.geometry import interaction_graph, deformation
+from dex_manipulation.geometry import finger_edges, directions, direction_error
 
 
 @dataclass

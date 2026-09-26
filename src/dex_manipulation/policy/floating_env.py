@@ -14,7 +14,7 @@ from .task import ResidualTask
 from .reference import TensorReference
 from .math3d import quat_apply, from_rotvec, quat_multiply, uniform
 from ..control import MotionController, wrist_pd_wrenches
-from .observations import ObservationHistory
+from dex_manipulation.policy.observations import ObservationHistory
 from .curriculum import ReferenceStateSampler, GravityCurriculum
 from .randomization import (
     apply_startup_randomization,
@@ -66,7 +66,7 @@ class PhysxResidualEnv:
             raise ValueError("Unknown mimic_schema_policy")
         physics = config.get("solver_iterations", {})
         self.surface = FloatingSurface(config["surface"], reference.object[0, :3, 3])
-        from .trajectory import digest
+        from dex_manipulation.policy.trajectory import digest
 
         expected = reference.metadata.get("object_asset_sha256")
         if expected and digest(Path(root) / config["object_asset"]) != expected:

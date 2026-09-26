@@ -134,8 +134,8 @@ def run_device(root, settings, recording, output):
     from std_srvs.srv import Trigger
     from rclpy.qos import QoSProfile, ReliabilityPolicy
     from ..configuration import read_config
-    from ..ros_state import RobotState
-    from ..policy.trajectory import ReferenceMotion
+    from .model import RobotState
+    from dex_manipulation.policy.trajectory import ReferenceMotion
     from ..policy.arm_play_env import ArmPolicyEnv
 
     node = None

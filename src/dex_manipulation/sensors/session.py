@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .tactile import FINGERS
+from dex_manipulation.sensors.tactile import FINGERS
 
 
 class TactileCSV:
@@ -98,7 +98,7 @@ class MotionTelemetry:
         )
 
     async def prepare(self, backend):
-        from ..execution import sha256
+        from dex_manipulation.robot.trajectory import sha256
 
         self.metadata.update(
             hardware=bool(getattr(backend, 'hardware', False)),

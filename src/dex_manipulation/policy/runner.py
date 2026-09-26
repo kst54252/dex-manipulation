@@ -10,12 +10,12 @@ import torch
 
 from ..fk import HandModel
 from ..data import legacy_demo_paths
-from .trajectory import ReferenceMotion, digest
+from dex_manipulation.policy.trajectory import ReferenceMotion, digest
 from .floating_env import PhysxResidualEnv
 from .ppo import PPO
 from .trainer import train_policy
 from .evaluation import evaluate, evaluate_contacts, plot_comparison
-from .rewards import attach_grasp_reward
+from dex_manipulation.tasks.registry import attach_grasp_reward
 
 
 def run(args, root, on_ready=None, is_running=None):
@@ -132,7 +132,7 @@ def run(args, root, on_ready=None, is_running=None):
     ).hexdigest()
     # Preserve strict historical checkpoint contracts. Deployment material
     # changes belong to an explicit execution profile, never forged metadata.
-    from .playback import prepare_playback
+    from dex_manipulation.policy.trajectory import prepare_playback
 
     contact_mode = getattr(args, "contact_materials", None) or (
         "rubber" if args.mode == "play" else "checkpoint"

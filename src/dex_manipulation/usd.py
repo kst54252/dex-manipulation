@@ -326,7 +326,7 @@ def extract_object(mesh_stage_path, collision_stage_path, output_path):
         bounds_m=[np.min(vertices, axis=0).tolist(), np.max(vertices, axis=0).tolist()],
     )
     import hashlib
-    from .geometry import geometry_fingerprint
+    from dex_manipulation.geometry import geometry_fingerprint
 
     metadata.update(
         mesh_sha256=hashlib.sha256(output_path.read_bytes()).hexdigest(),

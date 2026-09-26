@@ -8,7 +8,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from ..materials import PAD_BODIES
-from .tactile import FINGERS, aggregate_contacts, aggregate_friction, aggregate_separation, capacitive_proxy, pad_axes
+from dex_manipulation.sensors.tactile import FINGERS, aggregate_contacts, aggregate_friction, aggregate_separation, capacitive_proxy, pad_axes
 
 
 def cpu(value):

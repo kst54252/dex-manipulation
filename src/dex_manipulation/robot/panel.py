@@ -22,8 +22,8 @@ def run_panel(root, settings, recording, hold, port, page):
     from std_srvs.srv import Trigger
     from trajectory_msgs.msg import JointTrajectoryPoint
     from ..configuration import read_config
-    from ..ros_state import RobotState
-    from ..ros_bridge import make_goal
+    from .model import RobotState
+    from dex_manipulation.robot.ros import make_goal
 
     model = RobotState(root, read_config(root / settings["arm_config"]))
     rclpy.init(args=[], signal_handler_options=SignalHandlerOptions.NO)

@@ -10,7 +10,7 @@ import sys
 
 from ..data import resolve_demo_path
 from ..policies import demo_id, latest_policy
-from .registry import DEFAULT_TASK, config_task_id, load_task
+from dex_manipulation.tasks.registry import DEFAULT_TASK, config_task_id, load_task
 
 
 def attach_reward(env, metadata, training_reference):

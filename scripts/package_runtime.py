@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 from dex_manipulation.configuration import read_config
 from dex_manipulation.data import resolve_demo_path
-from dex_manipulation.execution import RecordedCommands
+from dex_manipulation.robot.trajectory import RecordedCommands
 from dex_manipulation.policies import latest_policy
 from dex_manipulation.portable import sha256
 

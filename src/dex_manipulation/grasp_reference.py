@@ -14,7 +14,7 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.spatial.transform import Rotation, Slerp
 
-from .geometry import CollisionScene, can_orientation_report
+from dex_manipulation.geometry import CollisionScene, can_orientation_report
 from .materials import PAD_BODIES
 
 

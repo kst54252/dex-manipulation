@@ -1,11 +1,6 @@
-"""ROS 2 action for a recorded 12-axis motion and continuous measured feedback.
+"""ROS 2 arm/hand actions, feedback bridge and command-line clients."""
 
-One I/O owner shares the two vendor connections between idle feedback and motion.
-Saved-motion actions preserve the recording. An explicitly enabled jog action
-uses calibrated joint/rate limits and the same exclusive I/O owner.
-"""
-
-from .configuration import read_config
+from dex_manipulation.configuration import read_config
 import asyncio
 from concurrent.futures import TimeoutError as FutureTimeout
 from datetime import datetime
@@ -13,12 +8,12 @@ import json
 from pathlib import Path
 import threading
 import time
-
 import numpy as np
-
-from .execution import MockBackend, check_state, stream
-from .hardware import RBPodoStark, connection_plan, hardware_plan
-from .ros_state import RobotState
+from dex_manipulation.robot.trajectory import MockBackend, check_state, stream
+from dex_manipulation.robot.hardware import RBPodoStark, connection_plan, hardware_plan
+from dex_manipulation.robot.model import RobotState
+import argparse
+import math
 
 
 class MotionCancelled(RuntimeError):
@@ -223,7 +218,7 @@ class DeviceWorker:
             trajectory = self.recording if trajectory is None else trajectory
             observed = ObservedBackend(self, cancel, feedback)
             observed.desired = trajectory.initial.copy()
-            from .sensors.session import MotionTelemetry
+            from dex_manipulation.sensors.session import MotionTelemetry
 
             telemetry = (
                 MotionTelemetry(trajectory, output, self.tactile_hz)
@@ -302,7 +297,7 @@ def make_node(
         if enable_motion:
             hardware_plan(recording, hardware_config)
     elif backend == "vcb":
-        from .vcb import VCBBackend
+        from dex_manipulation.robot.vcb import VCBBackend
     elif backend not in ("mock", "virtual", "isaac"):
         raise ValueError("Unknown ROS device backend")
     guard = hardware_config["guard"]
@@ -337,7 +332,7 @@ def make_node(
             if backend == "mock":
                 device = MockBackend(recording.initial)
             elif backend == "virtual":
-                from .robot.virtual import VirtualJointBackend
+                from dex_manipulation.robot.trajectory import VirtualJointBackend
 
                 device = VirtualJointBackend(
                     recording.initial,
@@ -345,7 +340,7 @@ def make_node(
                     settings.get("virtual_time_constant_s", 0.025),
                 )
             elif backend == "isaac":
-                from .robot.sim import IsaacBackend
+                from dex_manipulation.robot.sim import IsaacBackend
 
                 device = IsaacBackend(settings, model)
             elif backend == "vcb":
@@ -501,7 +496,7 @@ def make_node(
                 with self.goal_lock:
                     if self.busy:
                         raise ValueError("Another motion is active")
-                    from .robot.motion import plan_jog, validate_hardware_jog
+                    from dex_manipulation.robot.trajectory import plan_jog, validate_hardware_jog
 
                     output = (
                         root
@@ -520,7 +515,7 @@ def make_node(
                     if backend == "hardware":
                         validate_hardware_jog(plan, hardware_config, model, root, arm_config)
                     elif backend == "vcb":
-                        from .hardware import ArmCalibration
+                        from dex_manipulation.robot.hardware import ArmCalibration
 
                         mapping = ArmCalibration(plan.names, hardware_config["mapping"])
                         mapped = np.asarray([mapping.encode_arm(q[:6]) for q in plan.q])
@@ -614,3 +609,238 @@ def make_node(
             self.destroy_node()
 
     return RobotNode()
+
+
+ROOT = Path(__file__).resolve().parents[3]
+
+
+def send(recording, settings, hold, wait):
+    import rclpy
+    from rclpy.action import ActionClient
+    from control_msgs.action import FollowJointTrajectory
+    from action_msgs.msg import GoalStatus
+
+    node = rclpy.create_node("recorded_motion_client", namespace=settings["namespace"])
+    client = ActionClient(node, FollowJointTrajectory, "follow_joint_trajectory")
+    handle = None
+    try:
+        if not client.wait_for_server(timeout_sec=wait):
+            raise TimeoutError("ROS action server not found")
+        future = client.send_goal_async(make_goal(recording, hold))
+        rclpy.spin_until_future_complete(node, future, timeout_sec=wait)
+        if not future.done():
+            raise TimeoutError("Goal acknowledgment timed out")
+        handle = future.result()
+        if not handle.accepted:
+            raise RuntimeError("Goal rejected; check bridge diagnostics and initial pose")
+        result = handle.get_result_async()
+        try:
+            rclpy.spin_until_future_complete(
+                node, result, timeout_sec=recording.duration + hold + wait
+            )
+            if not result.done():
+                raise TimeoutError("Motion result timed out")
+        except (KeyboardInterrupt, TimeoutError):
+            cancellation = handle.cancel_goal_async()
+            rclpy.spin_until_future_complete(node, cancellation, timeout_sec=2.0)
+            rclpy.spin_until_future_complete(node, result, timeout_sec=3.0)
+            raise
+        response = result.result()
+        print(
+            json.dumps(
+                dict(
+                    status=response.status,
+                    error_code=response.result.error_code,
+                    message=response.result.error_string,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return (
+            0
+            if response.status == GoalStatus.STATUS_SUCCEEDED and response.result.error_code == 0
+            else 1
+        )
+    finally:
+        client.destroy()
+        node.destroy_node()
+
+
+def monitor(root, settings, seconds, output):
+    import rclpy
+    from dex_manipulation.robot.model import RobotState, subscribe_state
+
+    model = RobotState(root, read_config(root / settings["arm_config"]))
+    node = subscribe_state(settings, model, "robot_state_monitor")
+    start = time.monotonic()
+    last_print = 0.0
+    ages = []
+    try:
+        while rclpy.ok() and (seconds == 0 or time.monotonic() - start < seconds):
+            rclpy.spin_once(node, timeout_sec=0.02)
+            if model.stamp_ns:
+                ages.append((node.get_clock().now().nanoseconds - model.stamp_ns) * 1e-9)
+            if time.monotonic() - last_print >= 1:
+                last_print = time.monotonic()
+                print(
+                    f"states={model.accepted} fresh={model.fresh(settings['state_timeout_s'])} joints=12",
+                    flush=True,
+                )
+        report = dict(
+            messages=model.accepted,
+            rejected=model.rejected,
+            elapsed_s=time.monotonic() - start,
+            fresh=model.fresh(settings["state_timeout_s"]),
+            latest_q_rad=model.q.tolist() if model.q is not None else None,
+            observed_age_max_s=max(ages) if ages else None,
+        )
+        print(json.dumps(report, indent=2))
+        if output:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(report, indent=2) + "\n")
+        return 0 if report["messages"] and report["fresh"] else 1
+    finally:
+        node.destroy_node()
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="./run.sh ros")
+    parser.add_argument("mode", choices=("bridge", "send", "status", "mirror"))
+    parser.add_argument(
+        "--backend", choices=("mock", "virtual", "isaac", "hardware", "vcb"), default="mock"
+    )
+    parser.add_argument(
+        "--enable-motion", action="store_true", help="Allow the selected recorded ROS goal"
+    )
+    parser.add_argument("--config", type=Path, default=ROOT / "config/ros.json")
+    parser.add_argument(
+        "--hardware-config", type=Path, default=ROOT / "config/hardware.example.json"
+    )
+    parser.add_argument("--vcb-config", type=Path, default=ROOT / "local/vcb.json")
+    parser.add_argument("--recording", type=Path)
+    parser.add_argument(
+        "--allow-jog",
+        action="store_true",
+        help="Enable bounded named joint jogging through the same I/O owner",
+    )
+    parser.add_argument("--hold", type=float)
+    parser.add_argument(
+        "--seconds",
+        type=float,
+        default=0.0,
+        help="Duration for bridge/status/mirror; 0 keeps running",
+    )
+    parser.add_argument(
+        "--wait", type=float, default=10.0, help="Action server/result timeout margin"
+    )
+    parser.add_argument("--headless", action="store_true", help="Isaac mirror without a window")
+    parser.add_argument("--output", type=Path, help="Local JSON report for status/mirror")
+    parser.add_argument(
+        "--record-tactile",
+        action="store_true",
+        help="Record tactile/feedback during hardware actions through the shared RS485 connection",
+    )
+    parser.add_argument("--tactile-hz", type=float, default=100.0)
+    args = parser.parse_args(argv)
+    try:
+        if args.allow_jog and (
+            args.mode != "bridge"
+            or (args.backend in ("hardware", "vcb") and not args.enable_motion)
+        ):
+            raise ValueError("Jog requires bridge and motion-enabled hardware/VCB")
+        if args.record_tactile and (
+            args.mode != "bridge" or args.backend != "hardware" or not args.enable_motion
+        ):
+            raise ValueError("--record-tactile requires bridge --backend hardware --enable-motion")
+        if not math.isfinite(args.tactile_hz) or args.tactile_hz <= 0:
+            raise ValueError("--tactile-hz must be positive")
+        if args.enable_motion and (
+            args.mode != "bridge" or args.backend not in ("hardware", "vcb")
+        ):
+            raise ValueError("--enable-motion requires bridge --backend hardware or vcb")
+        for key in ("seconds", "wait"):
+            if not math.isfinite(getattr(args, key)) or getattr(args, key) < 0:
+                raise ValueError("Invalid duration")
+        settings = read_config(ROOT / args.config)
+        for key in ("state_rate_hz", "state_timeout_s", "mirror_rate_hz"):
+            if not math.isfinite(settings[key]) or settings[key] <= 0:
+                raise ValueError(f"Invalid {key}")
+        output = (ROOT / args.output).resolve() if args.output else None
+        if output and (not output.is_relative_to(ROOT / "local") or output.exists()):
+            raise ValueError("Use a new report path under local/")
+        if args.mode == "mirror":
+            from dex_manipulation.robot.model import run_mirror as run
+
+            return run(ROOT, settings, args.seconds, args.headless, output)
+        import rclpy
+        from rclpy.signals import SignalHandlerOptions
+
+        rclpy.init(args=[], signal_handler_options=SignalHandlerOptions.NO)
+        try:
+            if args.mode == "status":
+                return monitor(ROOT, settings, args.seconds, output)
+            from dex_manipulation.robot.trajectory import RecordedCommands
+
+            defaults = read_config(ROOT / "config/execution.json")
+            recording = RecordedCommands(ROOT / (args.recording or defaults["recording"]))
+            hold = args.hold if args.hold is not None else defaults["hold_s"]
+            if not math.isfinite(hold) or hold < 0:
+                raise ValueError("Hold must be finite and nonnegative")
+            if args.mode == "send":
+                return send(recording, settings, hold, args.wait)
+            from rclpy.executors import MultiThreadedExecutor
+
+            pass
+
+            config = read_config(
+                ROOT / (args.vcb_config if args.backend == "vcb" else args.hardware_config)
+            )
+            if args.backend != "vcb":
+                config["simulation_validation"] = str(ROOT / config["simulation_validation"])
+            node = make_node(
+                ROOT,
+                settings,
+                recording,
+                config,
+                backend=args.backend,
+                enable_motion=args.enable_motion,
+                hold_s=hold,
+                record_tactile=args.record_tactile,
+                tactile_hz=args.tactile_hz,
+                allow_jog=args.allow_jog,
+            )
+            executor = MultiThreadedExecutor(num_threads=3)
+            executor.add_node(node)
+            try:
+                node.worker.start()
+                print(
+                    f"ROS ready: backend={args.backend}, motion={node.motion_enabled}, "
+                    f"action={settings['namespace']}/follow_joint_trajectory",
+                    flush=True,
+                )
+                started = time.monotonic()
+                while rclpy.ok() and (
+                    args.seconds == 0 or time.monotonic() - started < args.seconds
+                ):
+                    executor.spin_once(timeout_sec=0.05)
+            finally:
+                node.cancel.set()
+                node.worker.close()
+                executor.shutdown(timeout_sec=5.0)
+                node.action.destroy()
+                node.jog_action.destroy()
+                node.destroy_node()
+            return 0
+        finally:
+            if rclpy.ok():
+                rclpy.shutdown()
+    except KeyboardInterrupt:
+        return 130
+    except (OSError, ValueError, RuntimeError, ImportError, TimeoutError) as error:
+        print(f"ROS 실행 실패: {error}", flush=True)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

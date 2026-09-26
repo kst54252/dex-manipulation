@@ -4,7 +4,6 @@ Independent PhysX adaptation, not the paper's full implementation. No policy
 network, RL updates, object pose pins or post-reset teleports are used.
 """
 
-import copy
 import json
 from pathlib import Path
 
@@ -13,10 +12,11 @@ import torch
 
 from .contact_retargeting import PAD_LINKS, HardContacts, extract_contacts, adapt_contact_anchors
 from .fk import HandModel
-from .geometry import CollisionScene
+from dex_manipulation.geometry import CollisionScene
 from .policy.math3d import quat_apply, rotation_error
-from .policy.trajectory import ReferenceMotion, digest
+from dex_manipulation.policy.trajectory import ReferenceMotion, digest
 from .data import resolve_demo_path
+from .configuration import read_config
 
 
 def spring_pair_force(error, relative_velocity, stiffness, damping, cap, strength):
@@ -110,7 +110,7 @@ def optimize_virtual_contacts(root, settings, output, *, controls_path=None):
     from .policy.contact_reward import PadCanContacts, ContactWorld
 
     root, output = Path(root), Path(output)
-    cfg = copy.deepcopy(json.loads((root / settings["physics_config"]).read_text()))
+    cfg = read_config(root / settings["physics_config"])
     cfg["reference"] = settings["reference"]
     cfg["domain_randomization"]["enabled"] = False
     cfg["augmentation"]["enabled"] = False

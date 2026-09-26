@@ -14,7 +14,7 @@ from ..fk import ArmModel, HandModel
 from ..ik import ArmIK, IKOptions, checked_pose, model_fingerprint
 from ..scene import Workcell
 from ..transforms import inverse
-from .trajectory import ReferenceMotion, digest
+from dex_manipulation.policy.trajectory import ReferenceMotion, digest
 
 
 @dataclass

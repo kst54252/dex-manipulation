@@ -15,7 +15,7 @@ import time
 
 import numpy as np
 
-from .tactile import FINGERS, decode_capacitive
+from dex_manipulation.sensors.tactile import FINGERS, decode_capacitive
 
 
 def decode_sdk_sample(value):

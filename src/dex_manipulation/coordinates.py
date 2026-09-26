@@ -89,7 +89,7 @@ def stabilize_grounded_dataset(poses_path, reference_path, geometry_path, output
     This is an explicit reference correction, not a runtime pose override.
     Source archives and historical checkpoint inputs remain untouched.
     """
-    from .geometry import can_orientation_report
+    from dex_manipulation.geometry import can_orientation_report
 
     paths = [Path(p) for p in (poses_path, reference_path, geometry_path)]
     output = Path(output)
@@ -236,7 +236,7 @@ def ground_dataset(poses_path, reference_path, geometry_path, config_path, outpu
     grounded = transform_reference(reference, frame)
     orientation = None
     if config.get("object_orientation_requirement") == "initial_base_below_body":
-        from .geometry import can_orientation_report
+        from dex_manipulation.geometry import can_orientation_report
 
         orientation = can_orientation_report(grounded["object_transform"], geometry)
         if not orientation["initial_base_below_body"]:

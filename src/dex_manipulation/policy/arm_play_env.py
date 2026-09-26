@@ -21,10 +21,10 @@ from ..scene import Workcell
 from ..transforms import transform
 from .arm_ik import PolicyArmBridge, PolicyFrame, named_material_transfer
 from .floating_env import PhysxResidualEnv
-from .observations import ObservationHistory
+from dex_manipulation.policy.observations import ObservationHistory
 from .reference import TensorReference
 from .task import ResidualTask
-from .trajectory import digest
+from dex_manipulation.policy.trajectory import digest
 from .math3d import rotation_error, quat_apply
 
 

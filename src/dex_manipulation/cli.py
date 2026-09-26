@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import numpy as np
 from .fk import HandModel
-from .geometry import CollisionScene, generate_object_points
+from dex_manipulation.geometry import CollisionScene, generate_object_points
 from .dataset.adapter import load_sequence
 from .retargeting import solve_sequence, SolverOptions
 
