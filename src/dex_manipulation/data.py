@@ -46,7 +46,9 @@ def resolve_demo_path(path, root=None):
     and immutable NPZ provenance retain their original path strings.
     """
     root = Path(root or Path(__file__).resolve().parents[2]).resolve()
-    path = Path(path)
+    from .portable import relocate_path
+
+    path = relocate_path(path, root)
     candidate = path if path.is_absolute() else root / path
     if candidate.exists():
         return candidate

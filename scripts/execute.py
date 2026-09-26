@@ -12,6 +12,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT)]
 from dex_manipulation.configuration import read_config
+from dex_manipulation.data import resolve_demo_path
 
 
 def _main(argv=None):
@@ -57,7 +58,7 @@ def _main(argv=None):
     frozen = None if args.mode in ("record", "probe") else RecordedCommands(args.recording)
     if args.checkpoint is None and args.mode in ("record", "replay"):
         if frozen:
-            args.checkpoint = (ROOT / frozen.metadata["checkpoint"]).resolve()
+            args.checkpoint = resolve_demo_path(frozen.metadata["checkpoint"], ROOT).resolve()
         else:
             from dex_manipulation.policies import latest_policy
 
@@ -125,7 +126,7 @@ def _main(argv=None):
         if frozen
         else read_config(args.checkpoint.parent / "config.resolved.json")
     )
-    if frozen and args.checkpoint.resolve() != Path(frozen.metadata["checkpoint"]).resolve():
+    if frozen and args.checkpoint.resolve() != resolve_demo_path(frozen.metadata["checkpoint"], ROOT).resolve():
         parser.error("Replay must use the checkpoint recorded in the trajectory")
     config_path = output / "physics_config.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n")

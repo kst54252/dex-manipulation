@@ -8,6 +8,17 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 if __name__ == "__main__":
+    from dex_manipulation.portable import prepare
+
+    check = sys.argv[1:2] == ["check"]
+    status = prepare(ROOT, verify=check)
+    if status["installed"]:
+        print(f"[runtime] Restored {status['installed']} execution inputs under local/", flush=True)
+    if check:
+        import json
+
+        print(json.dumps(status, indent=2))
+        sys.exit(1 if status["conflicts"] else 0)
     if sys.argv[1:2] == ["dataset"]:
         from dex_manipulation.dataset.cli import main
 

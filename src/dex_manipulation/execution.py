@@ -12,6 +12,8 @@ import time
 
 import numpy as np
 
+from .data import resolve_demo_path
+
 SCHEMA = "dex_recorded_commands_v1"
 
 
@@ -21,7 +23,7 @@ def sha256(path):
 
 class RecordedCommands:
     def __init__(self, path):
-        self.path = Path(path).resolve()
+        self.path = resolve_demo_path(path).resolve()
         with np.load(path, allow_pickle=False) as data:
             self.data = {k: data[k].copy() for k in data.files}
         d = self.data

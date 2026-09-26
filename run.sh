@@ -2,6 +2,10 @@
 # One entry point from any directory; no shell activation or exports required.
 set -euo pipefail
 DEX_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${1:-}" == setup ]]; then
+    shift
+    exec bash "$DEX_ROOT/scripts/setup_runtime.sh" "$@"
+fi
 if [[ "${1:-}" == ros || ( "${1:-}" == vcb && "${2:-}" =~ ^(bridge|send|status|mirror)$ ) ]]; then
     DEX_ROS_SETUP="${DEX_ROS_SETUP:-/opt/ros/${ROS_DISTRO:-jazzy}/setup.bash}"
     if [[ ! -f "$DEX_ROS_SETUP" ]]; then
@@ -29,7 +33,7 @@ if [[ -z "${DEX_PYTHON:-}" ]]; then
         fi
     done
 fi
-if [[ -z "${DEX_PYTHON:-}" && "${1:-}" == dataset ]]; then
+if [[ -z "${DEX_PYTHON:-}" && ( "${1:-}" == dataset || "${1:-}" == check ) ]]; then
     DEX_PYTHON="$(command -v python3 || true)"
 fi
 if [[ -z "${DEX_PYTHON:-}" || ! -x "$DEX_PYTHON" ]]; then

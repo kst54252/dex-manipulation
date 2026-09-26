@@ -1,0 +1,5 @@
+numpy>=1.24
+scipy>=1.11
+matplotlib>=3.6
+rbpodo==0.16.14
+bc-stark-sdk==2.0.3

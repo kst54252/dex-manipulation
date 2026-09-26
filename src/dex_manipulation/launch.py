@@ -141,6 +141,8 @@ def main(root=None, argv=None):
         for group in ("demos", "policies"):
             print("데모" if group == "demos" else "\n정책")
             for name, entry in catalog[group].items():
+                if "checkpoint" in entry and not resolve_demo_path(entry["checkpoint"], root).is_file():
+                    continue
                 print(f"  {name:10} {entry['label']}")
                 if "checkpoint" in entry:
                     print("             " + entry["checkpoint"])
@@ -171,7 +173,10 @@ def main(root=None, argv=None):
             )
             if not args.selection and not args.policy:
                 group = "policies" if args.mode == "policy" else "demos"
-                options = [(name, entry["label"]) for name, entry in catalog[group].items()]
+                options = [
+                    (name, entry["label"]) for name, entry in catalog[group].items()
+                    if "checkpoint" not in entry or resolve_demo_path(entry["checkpoint"], root).is_file()
+                ]
                 if args.mode == "policy":
                     options.append(("custom", "다른 체크포인트 경로 입력"))
                 args.selection = choose("정책" if args.mode == "policy" else "데모", options)

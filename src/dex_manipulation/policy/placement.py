@@ -123,7 +123,7 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
             raise ValueError(f"IK region does not cover this input: {path}")
     geometry = read_config(directory / "collision_model.json")
     for path, expected in geometry["layers"].items():
-        if not Path(path).is_file() or digest(path) != expected:
+        if not resolve_demo_path(path, root).is_file() or digest(resolve_demo_path(path, root)) != expected:
             raise ValueError(f"Stale IK region collision layer: {path}")
     hand = HandModel.load(root / config["model"])
     source = ReferenceMotion(

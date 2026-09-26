@@ -10,6 +10,7 @@
 
 - Reusable code: `src/dex_manipulation/`; entry points: `scripts/`; settings: `config/`; documentation: `docs/`.
 - Keep tests, troubleshooting, analyses, reports, runs, checkpoints and share packages under ignored `local/`. Never force-add them.
+- User-authorized portable execution inputs are published as checksummed archives under `runtime/`; restore them into ignored `local/`. Do not publish intermediate checkpoints or raw datasets.
 - Preserve source assets, data and checkpoint contracts. Record methodology sources in `docs/PROVENANCE.md`.
 - Keep `data/can_grasping/demo*/raw/` images and NPZ untracked; track only placement READMEs. Keep DexYCB attribution in `docs/dataset.md`.
 - Demo 1 is `data/can_grasping/demo1/` (40 poses, historical `original`); demo 2 is `data/can_grasping/demo2/` (27 poses, historical `current`). Use `1`/`2` in user-facing commands.
