@@ -18,9 +18,9 @@ rest offset은 0으로 유지해 표면에서 저항이 생기게 합니다. 2mm
 실물 고무의 압축 특성을 실측해 맞춘 값은 아닙니다.
 
 ```bash
-./run.sh floating policy 1
+./run.sh floating policy 2
 ./run.sh arm policy 2
-./run.sh floating policy 1 --contact-materials checkpoint
+./run.sh floating policy 2 --contact-materials checkpoint
 ```
 
 기본 재생은 패드 프로필을 적용합니다. `checkpoint` 옵션은 학습 당시 물성을 사용합니다.

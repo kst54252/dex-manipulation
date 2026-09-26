@@ -13,9 +13,9 @@
 - User-authorized portable execution inputs are published as checksummed archives under `runtime/`; restore them into ignored `local/`. Do not publish intermediate checkpoints or raw datasets.
 - Preserve source assets, data and checkpoint contracts. Record methodology sources in `docs/PROVENANCE.md`.
 - Keep `data/can_grasping/demo*/raw/` images and NPZ untracked; track only placement READMEs. Keep DexYCB attribution in `docs/dataset.md`.
-- Demo 1 is `data/can_grasping/demo1/` (40 poses, historical `original`); demo 2 is `data/can_grasping/demo2/` (27 poses, historical `current`). Use `1`/`2` in user-facing commands.
+- Can picking uses only demo 2: `data/can_grasping/demo2/` (27 poses, historical `current`). Keep its number `2` in user-facing commands. Do not restore retired demo 1 files.
 - Resolve historical input paths with `resolve_demo_path` rather than editing saved metadata.
-- Group task-specific settings under `config/tasks/<task>/` and adapters under `src/dex_manipulation/tasks/`. Default task is `can_pick`; its demos live under `data/can_grasping/demo1/` and `data/can_grasping/demo2/`.
+- Group task-specific settings under `config/tasks/<task>/` and adapters under `src/dex_manipulation/tasks/`. Default task is `can_pick`; its demo lives under `data/can_grasping/demo2/`.
 - Add new task inputs under `data/<task>/demoN/` and task assets under `assets/tasks/<task>/`. Raw inputs remain untracked. Keep task identity separate from demo number and never silently reuse another task's policy or physics.
 
 ## Documentation

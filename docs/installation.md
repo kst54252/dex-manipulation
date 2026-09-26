@@ -1,7 +1,7 @@
 # 다른 PC에서 실행
 
 Ubuntu에서 저장소를 clone한 뒤 실행 환경을 설치합니다. 원본 RGB/annotation과 학습 중간 checkpoint는 필요하지 않습니다.
-데모1 1000iter·데모2 2000iter 정책, 각 reference, 팔 IK 궤적, 데모2 랜덤 위치 지도,
+데모2 2000iter 정책, reference, 팔 IK 궤적, 랜덤 위치 지도,
 베이스 정면 55cm의 12축 고정 명령·검증 파일·비교용 tactile 기록은 `runtime/`에 포함됩니다.
 
 ```bash
@@ -25,11 +25,11 @@ Isaac 전용 Python에 의존성을 설치하며, 별도 `usd-core`를 덮어 �
 DEX_PYTHON=/Isaac환경/bin/python ./run.sh floating policy 2
 DEX_PYTHON=/Isaac환경/bin/python ./run.sh arm policy 2
 DEX_PYTHON=/Isaac환경/bin/python ./run.sh arm policy 2 --random-can
-DEX_PYTHON=/Isaac환경/bin/python ./run.sh arm retarget 1
+DEX_PYTHON=/Isaac환경/bin/python ./run.sh arm retarget 2
 ```
 
 Python이 `~/IsaacLab/.venv/bin/python` 또는 저장소 `.venv/bin/python`에 있으면 `DEX_PYTHON`은 생략합니다.
-데모 번호는 `1` 또는 `2`이며 기본 무한 반복, `--repeat 1`은 1회입니다.
+캔 집기 데모 번호는 `2`이며 기본 무한 반복, `--repeat 1`은 1회입니다.
 `--dry-run`으로 입력과 실행 명령을 확인하고 `--headless`로 GUI 없이 재생합니다.
 재생은 현재 패드 프로필을 적용합니다. 학습 당시 물성은 `--contact-materials checkpoint`로 선택합니다.
 

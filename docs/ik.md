@@ -20,11 +20,10 @@ T_base_flange = T_base_wrist @ inverse(T_flange_wrist)
 | 이동 제한 | min(20°, USD velocity × dt) |
 | 성공 판정 | FK 위치 ≤ 1e-5m, 회전 ≤ 1e-4rad 및 관절·특이점 조건 |
 
-설정은 `config/tasks/can_pick/ik_demo1.json`과 `config/tasks/can_pick/ik_demo2.json`입니다.
+설정은 `config/tasks/can_pick/ik_demo2.json`입니다.
 `alignment`는 데모→책상, `workcell`은 책상→베이스 관계를 지정합니다.
 
 ```bash
-./run.sh arm retarget 1
 ./run.sh arm retarget 2
 ./run.sh arm policy 2
 ```

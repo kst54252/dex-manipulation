@@ -4,7 +4,7 @@
 
 ```text
 config/tasks/
-  can_pick/                  캔 집기 설정·데모 1, 2
+  can_pick/                  캔 집기 설정·데모 2
     task.json                작업 정의·실행 어댑터
     play.json                데모·정책 목록
     policy_demo*.json        학습·보상
@@ -15,7 +15,6 @@ config/tasks/
     play.json
     capture.json             RGB 데이터 제작 설정
 src/dex_manipulation/tasks/   작업 등록·작업별 실행 구성
-data/can_grasping/demo1/      can_pick 데모 1
 data/can_grasping/demo2/      can_pick 데모 2
 data/drilling/demo1/          드릴 작업 입력
 assets/tasks/drilling/        드릴 mesh·물리 자산
@@ -30,7 +29,7 @@ FK·IK·리타게팅·PPO·로봇 모델은 공통 모듈을 사용합니다.
 ./run.sh tasks
 ./run.sh tasks drilling
 ./run.sh floating policy 2 --task can_pick
-./run.sh train floating 1 --task can_pick -i 1000
+./run.sh train floating 2 --task can_pick -i 1000
 ```
 
 `--task` 생략 시 `can_pick`입니다. 이어 학습은 checkpoint의 task를 따릅니다.

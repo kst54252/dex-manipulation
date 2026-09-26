@@ -12,7 +12,7 @@ DexYCB / 직접 촬영한 RGB → 손 21점 + 물체 6D pose
 
 ## 실행
 
-Git clone에는 데모1·2 최신 정책과 실행 입력도 포함됩니다. `run.sh`가 `runtime/`의 검증된 묶음을
+Git clone에는 데모2 최신 정책과 실행 입력도 포함됩니다. `run.sh`가 `runtime/`의 검증된 묶음을
 Git 제외 영역인 `local/`에 자동 복원하며 기존 파일은 덮어쓰지 않습니다.
 
 ```bash
@@ -30,23 +30,23 @@ cd dex-manipulation
 
 ```bash
 ./run.sh                      # 환경·데모·정책 선택 메뉴
-./run.sh floating retarget 1   # 플로팅 손 · 리타게팅
-./run.sh arm retarget 1        # 로봇팔 연결 · 리타게팅
-./run.sh floating policy 1     # 플로팅 손 · 학습 정책
-./run.sh arm policy 1          # 로봇팔 연결 · 학습 정책
+./run.sh floating retarget 2   # 플로팅 손 · 리타게팅
+./run.sh arm retarget 2        # 로봇팔 연결 · 리타게팅
+./run.sh floating policy 2     # 플로팅 손 · 학습 정책
+./run.sh arm policy 2          # 로봇팔 연결 · 학습 정책
 ./run.sh tasks                 # 작업 목록
 ./run.sh tasks drilling        # 드릴 작업의 구성·필요 입력
 ./run.sh arm policy 2 --task can_pick
 ```
 
-마지막 번호는 **데모1 / 데모2** 선택입니다. 정책은 `local/results/policy/`에서 데모별 최신 학습 완료 checkpoint를 자동 선택합니다.
+캔 집기는 **데모2**를 사용합니다. 정책은 `local/results/policy/`에서 데모2의 최신 학습 완료 checkpoint를 자동 선택합니다.
 학습 중·중단된 실행은 제외하며 실행 시 선택한 경로를 표시합니다. 특정 정책은 checkpoint 경로로 지정합니다.
 체크포인트·접촉 학습 입력·IK 지도는 로컬 `local/`에 보관합니다.
 
 | 옵션 | 동작 |
 |---|---|
 | `--repeat 3` | 3회 재생. 기본은 무한 반복, Ctrl+C 또는 창 닫기로 종료 |
-| `--speed 1` | 학습/reference 시간 그대로. 데모2 정책 기본 1, 데모1 정책·플로팅 리타게팅 2, 팔 리타게팅 1 |
+| `--speed 1` | 학습/reference 시간 그대로. 정책 기본 1, 플로팅 리타게팅 2, 팔 리타게팅 1 |
 | `--headless` | 창 없이 실행 |
 | `--dry-run` | 실행할 입력과 명령 확인 |
 
@@ -59,7 +59,6 @@ cd dex-manipulation
 
 ```bash
 ./run.sh train                                # 학습 메뉴
-./run.sh train floating 1 -i 1000 -n 4096
 ./run.sh train floating 2 -i 1000 -n 4096
 ./run.sh train arm 2 -i 2000 -n 4096
 ```
@@ -72,7 +71,7 @@ cd dex-manipulation
 | 경로 | 내용 |
 |---|---|
 | `assets/` | RB3·Revo2 USD, 캔 형상, 키포인트, 추출 모델 |
-| `data/can_grasping/demo1/`, `data/can_grasping/demo2/` | 사람 손·물체 데모와 리타게팅 궤적 |
+| `data/can_grasping/demo2/` | 사람 손·물체 데모와 리타게팅 궤적 |
 | `data/<task>/demoN/` | 추가 작업의 촬영 입력·변환 데이터 |
 | `config/tasks/<task>/` | 작업별 데모·환경·IK·정책 설정 |
 | `config/` | 공통 로봇 실행·통신·작업대 설정 |
@@ -82,7 +81,7 @@ cd dex-manipulation
 | `runtime/` | 최신 정책·필수 참조·실물 명령·IK 지도 배포 묶음과 SHA256 목록 |
 | `local/` | Git 제외: 실행 결과·체크포인트·테스트·분석·공유 파일 |
 
-설정 파일은 `policy_demo1.json`, `ik_demo2.json`처럼 기능과 데모를 이름에 표시합니다.
+설정 파일은 `policy_demo2.json`, `ik_demo2.json`처럼 기능과 데모를 이름에 표시합니다.
 정책 코드는 환경(`floating_env`, `arm_play_env`, `arm_train_env`), 보상, 학습(`trainer`), 평가(`evaluation`)로 구분합니다.
 저장된 checkpoint의 이전 설정 경로는 자동으로 해석하므로 기존 `run.sh` 명령을 그대로 사용합니다.
 

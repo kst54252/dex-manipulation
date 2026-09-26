@@ -10,10 +10,10 @@
 
 | 환경 | 리타게팅 | 정책 |
 |---|---|---|
-| 플로팅 Revo2 | `./run.sh floating retarget 1` | `./run.sh floating policy 1` |
-| RB3 + Revo2 | `./run.sh arm retarget 1` | `./run.sh arm policy 1` |
+| 플로팅 Revo2 | `./run.sh floating retarget 2` | `./run.sh floating policy 2` |
+| RB3 + Revo2 | `./run.sh arm retarget 2` | `./run.sh arm policy 2` |
 
-번호 `1`/`2`로 데모를 선택합니다. `retarget`는 손목·관절 기준 궤적을, `policy`는 학습 정책의 residual을 적용해 재생합니다.
+캔 집기는 번호 `2`를 사용합니다. `retarget`는 손목·관절 기준 궤적을, `policy`는 학습 정책의 residual을 적용해 재생합니다.
 `--task can_pick`으로 작업을 지정하며 생략해도 같은 작업을 사용합니다. 작업 목록과 추가 방법은 [task 구성](tasks.md)에 있습니다.
 팔 리타게팅은 입력·배치에 맞는 IK 궤적을 준비하고, 팔 정책은 온라인 IK를 사용합니다.
 
@@ -22,7 +22,7 @@
 | 옵션 | 설명 |
 |---|---|
 | `--repeat N` | 반복 횟수. 기본 `0`은 무한 반복 |
-| `--speed N` | 학습/reference 기준 배속. 데모2 정책 1, 데모1 정책·플로팅 리타게팅 2, 팔 리타게팅 1이 기본 |
+| `--speed N` | 학습/reference 기준 배속. 정책 1, 플로팅 리타게팅 2, 팔 리타게팅 1이 기본 |
 | `--headless` | 창 없이 물리 재생 |
 | `--dry-run` | 파일 생성 없이 실행 계획 출력 |
 | `--list` | 등록 데모·정책 목록 |
@@ -41,7 +41,7 @@
 ./run.sh arm policy local/results/policy/my_run/policy.pt
 ```
 
-번호 `1`/`2`는 `local/results/policy/`의 데모별 최신 학습 완료 정책을 자동 선택합니다.
+번호 `2`는 `local/results/policy/`의 데모2 최신 학습 완료 정책을 자동 선택합니다.
 전체 학습 로그와 checkpoint의 iteration·설정이 일치하는 실행 중 저장 시각이 가장 최근인 것을 사용합니다.
 학습 중·중단·손상된 실행은 제외합니다. 팔 학습 정책은 `arm` 환경에서만 선택합니다.
 선택한 경로는 터미널과 `launch.json`에 표시됩니다.

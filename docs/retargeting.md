@@ -21,7 +21,7 @@ REGRIND와 OmniRetarget의 방법 구분은 [출처 문서](PROVENANCE.md)에 �
 기존 데모 재생:
 
 ```bash
-./run.sh floating retarget 1
+./run.sh floating retarget 2
 ./run.sh arm retarget 2
 ```
 

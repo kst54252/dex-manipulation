@@ -9,10 +9,9 @@
 
 | 데모 | 입력 | Frame ID |
 |---|---|---|
-| demo1 | `20200709_143747_left`, 카메라 `839512060362`의 전처리 annotation | 12~51 |
 | demo2 | 카메라 `839512060362`의 RGB·label | 15~41 |
 
-원본은 `data/can_grasping/demo1/raw/`, `data/can_grasping/demo2/raw/`에 두며 이미지·NPZ는 Git에서 제외합니다.
+원본은 `data/can_grasping/demo2/raw/`에 두며 이미지·NPZ는 Git에서 제외합니다.
 `manifest.json`의 SHA-256으로 입력 파일을 대응시킵니다.
 리타게팅·좌표변환·프레임 선택·시간 조정·접촉 reference는 프로젝트의 파생 처리입니다.
 원본과 파생 데이터에는 데이터셋의 출처·이용 조건을 적용합니다.

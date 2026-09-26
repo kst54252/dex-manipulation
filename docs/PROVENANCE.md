@@ -40,7 +40,7 @@ REGRIND의 vertex별 L2 norm 합과 OmniRetarget의 제곱합은 각각 `--norm 
 | 추가 추종 | 손 21점 위치와 손가락 segment 방향 항 |
 | 충돌 | authored convex hull·원통의 FCL 거리와 보간 표본 제약 |
 | 캔 | 사용자 지정 Ø73×32mm, 하단 Ø76×3mm 복합 원통 |
-| 좌표 | 캔 밑면 Z=0, 데모1 수평화, 손·물체 공통 변환 |
+| 좌표 | 캔 밑면 Z=0, 손·물체 공통 변환 |
 | RB3 IK | USD 모델, adaptive DLS, branch 연속성, FK 오차·속도·특이점 조건 |
 | 상판 보호 | 링크별 collision 경계 상자, 실제/목표 여유 보상, 손목 Z 보정 |
 | 접촉 학습 | FK/FCL로 옆면 파지 입력 생성, 패드 접근·대향·동시 접촉 보상, preload |
