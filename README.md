@@ -12,9 +12,21 @@ DexYCB / 직접 촬영한 RGB → 손 21점 + 물체 6D pose
 
 ## 실행
 
-Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합니다.
-`run.sh`가 `~/IsaacLab/.venv` 또는 저장소의 `.venv`를 찾고 Python 경로를 설정합니다.
-다른 환경은 `DEX_PYTHON=/경로/python ./run.sh`로 지정합니다.
+Git clone에는 데모1·2 최신 정책과 실행 입력도 포함됩니다. `run.sh`가 `runtime/`의 검증된 묶음을
+Git 제외 영역인 `local/`에 자동 복원하며 기존 파일은 덮어쓰지 않습니다.
+
+```bash
+git clone https://github.com/kst54252/dex-manipulation.git
+cd dex-manipulation
+./run.sh check                                       # 파일 복원·SHA256 검사
+./run.sh setup sim /Isaac환경/bin/python              # 설치된 Isaac Python에 프로젝트 의존성 설치
+# 실물 저장 궤적 실행·촉각 측정만 필요한 PC:
+./run.sh setup hardware
+```
+
+시뮬레이션 실행 기준은 **Isaac Sim 6.0.1 / Python 3.12**입니다. Isaac Sim·GPU 드라이버는 별도로 설치합니다.
+`run.sh`는 `~/IsaacLab/.venv` 또는 저장소의 `.venv`를 찾습니다.
+다른 환경은 `DEX_PYTHON=/경로/python ./run.sh`로 지정합니다. [다른 PC 설치](docs/installation.md)
 
 ```bash
 ./run.sh                      # 환경·데모·정책 선택 메뉴
@@ -67,6 +79,7 @@ Isaac Sim과 프로젝트 의존성이 설치된 Python 환경에서 사용합�
 | `src/dex_manipulation/` | FK, IK, 리타게팅, 시뮬레이션, 정책 패키지 |
 | `scripts/` | 데이터 처리·모델 추출·학습 진입점 |
 | `docs/` | 기능과 설정 설명 |
+| `runtime/` | 최신 정책·필수 참조·실물 명령·IK 지도 배포 묶음과 SHA256 목록 |
 | `local/` | Git 제외: 실행 결과·체크포인트·테스트·분석·공유 파일 |
 
 설정 파일은 `policy_demo1.json`, `ik_demo2.json`처럼 기능과 데모를 이름에 표시합니다.

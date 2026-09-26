@@ -201,16 +201,15 @@ ROS bridge의 `Ctrl+C` 또는 `/dex/stop`도 같은 stop/hold 경로를 사용�
 
 ## 다른 PC로 옮길 때
 
+Git clone 후 `./run.sh setup hardware`를 실행합니다. 최신 정책, 저장 명령, 대응 검증 파일과
+비교용 시뮬레이션 tactile 입력은 `runtime/`에서 원래 상대경로로 복원됩니다. `./run.sh check`로 해시를 검사합니다.
+
 실물 고정 궤적 실행·측정·그래프에는 Isaac Sim이나 GPU가 필요하지 않습니다.
 ROS 명령을 사용할 때만 ROS 2를 별도로 설치합니다.
+`local/hardware.json`은 연결·보정값이 비어 있는 예제로 생성되므로 실제 IP·RS485 포트·관절 보정값을 채웁니다.
+설정 후 `./run.sh execute inspect`, 읽기 전용 `execute probe` 순서로 확인합니다.
+Python 가상환경은 새로 설치하며 이전 PC의 가상환경 폴더를 복사하지 않습니다.
 
-- 프로젝트를 복사하되 `local/hardware-venv` 등 Python 가상환경은 제외하고 위 설치 명령으로 다시 만듭니다.
-- `config/execution.json`이 가리키는 `commands.npz`와 `local/hardware.json`의 `simulation_validation` 파일을 함께 복사합니다.
-  기본 입력은 `local/results/execution/demo2_half_capture_55cm_20260922/` 아래에 있습니다.
-- 기존 시뮬레이션 그래프와 비교하려면 해당 `tactile/episode_0001.npz`도 복사합니다.
-- Git에서 제외된 `local/`의 입력은 clone만으로 전달되지 않습니다.
-- 새 PC에 맞춰 RB3 IP, RS485 장치 경로·권한을 확인합니다. 로봇·마운트·배치가 달라지면 관절·좌표 보정도 다시 확인합니다.
-- 새 PC에서 `./run.sh execute inspect`로 입력을 검사한 뒤 읽기 전용 `execute probe`를 진행합니다.
-
-실물 실행은 저장된 정책 checkpoint를 다시 읽지 않습니다. 반면 Isaac의 `execute replay`는
-별도 Isaac 환경과 checkpoint가 필요하며 저장 메타데이터의 절대 checkpoint 경로도 확인해야 합니다.
+Isaac의 `execute replay`에는 Isaac 환경이 필요합니다. 저장 metadata의 이전 PC 경로는
+배포 manifest에 명시된 원본 루트에 한해 현재 저장소 경로로 해석합니다. checkpoint와 궤적 파일의 내용은 바꾸지 않습니다.
+[다른 PC 설치](installation.md)
