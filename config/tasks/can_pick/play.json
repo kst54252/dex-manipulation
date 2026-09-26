@@ -14,6 +14,11 @@
       "arm_config": "config/tasks/can_pick/ik_demo2.json",
       "arm_reference": "local/results/ik/full/trajectory.npz",
       "training_config": "config/tasks/can_pick/policy_demo2_contact.json",
+      "random_can_policy_regions": {
+        "fd453aa7ba8989b00874657be7df418878d29d4dce492ddbc757d2823878f96c": {
+          "1": "local/reports/demo2_policy_random_20260923/region"
+        }
+      },
       "random_can_regions": {
         "1": "local/reports/table_ik_current_20260921/demo2_1x",
         "2": "local/reports/table_ik_current_20260921/demo2_2x"

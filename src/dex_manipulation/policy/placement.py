@@ -60,7 +60,7 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
     """Fail closed on stale maps/assets, wrong demo, speed, or reference frame.
 
     The map certifies sampled *retarget* paths, not residual-policy rollouts.
-    The policy must share its object motion and initial hand pose with that map.
+    The policy must share its complete reference motion with that map.
     Subsequent residual commands still pass through the ordinary strict arm IK.
     """
     root = Path(root)
@@ -71,11 +71,17 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
         for key in ("config", "training_config")
         if key in demo
     ]
-    if config.get("arm_training", {}).get("enabled") or resolve_demo_path(
-        config["reference"], root
-    ).resolve() not in [resolve_demo_path(path, root).resolve() for path in known]:
+    registered_reference = resolve_demo_path(config["reference"], root).resolve() in [
+        resolve_demo_path(path, root).resolve() for path in known
+    ]
+    if config.get("arm_training", {}).get("enabled") or not (
+        registered_reference or str(config.get("demo_id")) == "2"
+    ):
         raise ValueError("--random-can supports only demo 2 floating-trained arm policy playback")
-    maps = demo.get("random_can_regions", {})
+    reference_hash = digest(resolve_demo_path(config["reference"], root))
+    maps = demo.get("random_can_policy_regions", {}).get(
+        reference_hash, demo.get("random_can_regions", {})
+    )
     path = maps.get(f"{speed:g}")
     if path is None:
         raise ValueError(
@@ -93,17 +99,19 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
         raise ValueError("IK region playback speed differs from this playback")
     hashes = manifest["input_hashes"]
     for path, expected in hashes.items():
-        if not resolve_demo_path(path, root).is_file() or digest(root / path) != expected:
+        resolved = resolve_demo_path(path, root)
+        if not resolved.is_file() or digest(resolved) != expected:
             raise ValueError(f"Stale IK region input: {path}. Regenerate the tabletop IK report.")
     scanned_config = read_config(root / manifest["config_path"])
     if (
-        legacy_demo_paths(arm_config) != legacy_demo_paths(scanned_config)
+        legacy_demo_paths({k: v for k, v in arm_config.items() if k != "input"})
+        != legacy_demo_paths({k: v for k, v in scanned_config.items() if k != "input"})
         or arm_config["solver"] != manifest["solver"]
     ):
         raise ValueError("IK region arm placement/solver configuration differs")
     for path in (
         manifest["config_path"],
-        arm_config["input"],
+        scanned_config["input"],
         arm_config["workcell"],
         arm_config["alignment"],
         arm_config["arm_model"],
@@ -119,7 +127,10 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
             raise ValueError(f"Stale IK region collision layer: {path}")
     hand = HandModel.load(root / config["model"])
     source = ReferenceMotion(
-        root / arm_config["input"], hand, root / config["object_geometry"], config["world_frame"]
+        resolve_demo_path(scanned_config["input"], root),
+        hand,
+        root / config["object_geometry"],
+        config["world_frame"],
     )
     if reference is None:
         reference = ReferenceMotion(
@@ -140,13 +151,17 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
     if (
         reference.metadata["frame_ids"] != manifest["source_frames"]
         or reference.object.shape != source.object.shape
+        or reference.wrist.shape != source.wrist.shape
+        or reference.q.shape != source.q.shape
+        or reference.times.shape != source.times.shape
         or not np.allclose(reference.object, source.object, atol=1e-9, rtol=0)
-        or not np.allclose(reference.wrist[0], source.wrist[0], atol=1e-9, rtol=0)
-        or not np.allclose(reference.q[0], source.q[0], atol=1e-9, rtol=0)
+        or not np.allclose(reference.wrist, source.wrist, atol=1e-9, rtol=0)
+        or not np.allclose(reference.q, source.q, atol=1e-9, rtol=0)
+        or not np.allclose(reference.times, source.times / speed, atol=1e-8, rtol=0)
         or not np.isclose(reference.duration, manifest["reference_duration_s"], atol=1e-8, rtol=0)
     ):
         raise ValueError(
-            "Policy initial hand pose, object trajectory or timing differs from the verified IK region"
+            "Policy reference motion or timing differs from the verified IK region; regenerate its map"
         )
     if digest(root / config["object_asset"]) != reference.metadata["object_asset_sha256"]:
         raise ValueError("Policy can asset differs from the verified geometry")
@@ -206,6 +221,7 @@ def load_random_placement(root, config, arm_config, speed, seed=None, reference=
             playback_speed=speed,
             policy_reference_sha256=reference.metadata["reference_sha256"],
             reference_start_checked=True,
+            full_reference_checked=True,
             interpretation="Retarget IK/collision/singularity-checked grid and identical policy start; residual policy motion and physical grasp are not certified",
         ),
         seed,
