@@ -2,6 +2,7 @@
 
 import torch
 from .math3d import from_rotvec, quat_multiply, rotation_error
+from .finger_tracking import FingerTracking
 
 
 class ResidualTask:
@@ -25,6 +26,13 @@ class ResidualTask:
             self.observation_size += 20
             self.critic_observation_size += 20
         self.dt = config["physics_dt"] * config["control_decimation"]
+        if config.get("finger_tracking", {}).get("enabled") and config.get(
+            "motion_control", {}
+        ).get("enabled"):
+            raise ValueError("Use one finger governor: disable motion_control for finger_tracking")
+        self.finger_tracking = FingerTracking(
+            model, config.get("finger_tracking", {}), self.dt, device
+        )
 
         def tensor(v):
             return torch.as_tensor(v, dtype=torch.float32, device=device)
@@ -59,6 +67,11 @@ class ResidualTask:
             full_q=q @ self.coupling.T + self.offset,
         )
 
+    def protect_fingers(self, target, measured, previous):
+        return self.finger_tracking.protect(
+            target, measured, previous, self.coupling, self.offset
+        )
+
     def score(
         self,
         state,
@@ -69,6 +82,7 @@ class ResidualTask:
         timed_out=None,
         *,
         table_metrics=None,
+        finger_target=None,
     ):
         c = self.config["reward"]
         points = self.reference.points(state["object_position"], state["object_quaternion"])
@@ -125,6 +139,12 @@ class ResidualTask:
                 table_clearance=-safety["actual_penalty_weight"] * actual.square(),
                 table_command=-safety["target_penalty_weight"] * command.square(),
             )
+        finger_metrics = {}
+        if self.finger_tracking.enabled:
+            if finger_target is None:
+                raise ValueError("Finger tracking reward requires the applied drive targets")
+            costs, finger_metrics = self.finger_tracking.score(finger_target, state["q"])
+            terms.update(costs)
         reward = sum(terms.values()) * self.dt
         metrics = dict(
             object_keypoint_error_m=eo,
@@ -152,6 +172,7 @@ class ResidualTask:
             .amax(-1),
             **{"reward_" + k: v for k, v in terms.items()},
         )
+        metrics.update(finger_metrics)
         if table_metrics is not None:
             metrics.update(table_metrics)
         return reward, term, timed_out, metrics

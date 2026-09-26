@@ -27,7 +27,7 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
     parser.add_argument(
         "--initialize-actor",
         type=Path,
-        help="Initialize an arm-training actor from a compatible floating checkpoint; not resume",
+        help="Initialize a new floating/arm actor from a compatible floating checkpoint; not resume",
     )
     parser.add_argument("--num-envs", type=int, default=None)
     parser.add_argument("--iterations", type=int, default=None)
@@ -153,8 +153,8 @@ def parse_args(argv=None, modes=("train", "evaluate", "play"), default_mode="tra
         parser.error("Set table_safety in the training config; this flag is for play/evaluate")
     if args.mode == "train" and args.contact_materials is not None:
         parser.error("Set contact_materials in the training config; this flag is for play/evaluate")
-    if args.initialize_actor and (args.mode != "train" or args.robot != "arm" or args.checkpoint):
-        parser.error("--initialize-actor is only for new arm training, without --checkpoint")
+    if args.initialize_actor and (args.mode != "train" or args.checkpoint):
+        parser.error("--initialize-actor is only for new training, without --checkpoint")
     if args.mode == "play":
         if args.num_envs not in (None, 1):
             parser.error("Play mode uses one robot (--num-envs 1)")

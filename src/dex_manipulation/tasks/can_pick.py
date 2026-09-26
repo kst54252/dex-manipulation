@@ -354,8 +354,6 @@ def plan_training(root, args):
             if demo_config["reference"] != read(source)["reference"]:
                 config["recipe"] = f"revo2_rb3_online_ik_demo{demo}_v1"
         num_envs = args.num_envs or config["training"]["num_envs"]
-    if actor and robot != "arm":
-        raise ValueError("--initialize-actor는 새 arm 학습에서만 사용하세요.")
     iterations = args.iterations or config["training"]["iterations"]
     save_every = args.save_every or config["training"]["save_every"]
     if not checkpoint:

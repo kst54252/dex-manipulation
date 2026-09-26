@@ -495,6 +495,8 @@ class ArmTrainingEnv(PhysxResidualEnv):
         ref = self.motion.sample(self.time)
         before = self.state()
         raw = self.task.targets(ref, actions, self.last_q_target, self.default_q_offset)
+        if self.task.finger_tracking.enabled:
+            raw = self.task.protect_fingers(raw, before["q"], self.last_q_target)
         target = raw
         table = self.table_safety
         if table is not None:
@@ -537,6 +539,7 @@ class ArmTrainingEnv(PhysxResidualEnv):
             demo_end,
             timed_out,
             table_metrics=table.metrics() if table is not None else None,
+            finger_target=dict(target, active_q=self.last_q_target),
         )
         actual, _, jac = self.ik.evaluate(state["q_arm"])
         sigma, condition = self.ik.singularity(jac)

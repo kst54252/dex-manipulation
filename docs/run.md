@@ -87,3 +87,5 @@ checkpoint 옆의 `config.resolved.json`과 해당 모델·reference 파일을 �
 실물: `./run.sh execute probe --hardware-config local/hardware.json --record-tactile`로 읽기 연결을 확인한 뒤,
 `./run.sh execute hardware --hardware-config local/hardware.json --send --record-tactile`로 한 번 실행·측정합니다.
 연결·현장 보정·초기 자세 준비는 [실물 절차](hardware_measurement.md)를 따릅니다.
+
+관절 추종 제한 적용 전 정책은 `./run.sh arm policy 2-before-finger-tracking` 또는 `./run.sh floating policy 2-before-finger-tracking`으로 선택합니다. 기존 저장 궤적은 변경하지 않으며 새 녹화는 별도 경로를 사용합니다.

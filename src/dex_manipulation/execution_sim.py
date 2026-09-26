@@ -156,6 +156,9 @@ def _run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0, rec
                 hold=hold,
                 q_arm=state["q_arm"],
                 q_finger=state["q"],
+                q_finger_command=target_q[6:].copy(),
+                finger_tracking_error_rad=target_q[6:] - state["q"],
+                finger_guard_conflict=metrics.get("finger_guard_conflict", 0.0),
                 q_full=state["full_q"],
                 object_position_source=state["object_position"],
                 object_quaternion_xyzw=state["object_quaternion"],
@@ -220,8 +223,32 @@ def _run(env, metadata, checkpoint, output, *, replay_path=None, hold_s=1.0, rec
         minimum_sigma=float(arrays["sigma_min"].min()),
         maximum_coupling_error_rad=float(arrays["coupling_error_rad"].max()),
         strict_coupling_0_01rad_pass=bool(arrays["coupling_error_rad"].max() < 0.01),
+        maximum_finger_tracking_error_deg=float(
+            np.rad2deg(np.abs(arrays["finger_tracking_error_rad"])).max()
+        ),
+        per_joint_mean_tracking_error_deg=np.rad2deg(
+            np.abs(arrays["finger_tracking_error_rad"]).mean(0)
+        ).tolist(),
+        per_joint_max_tracking_error_deg=np.rad2deg(
+            np.abs(arrays["finger_tracking_error_rad"]).max(0)
+        ).tolist(),
+        per_joint_hold_tracking_error_deg=np.rad2deg(
+            np.abs(arrays["finger_tracking_error_rad"])[held].mean(0)
+        ).tolist(),
+        finger_guard_conflict_frames=np.flatnonzero(arrays["finger_guard_conflict"] > 0).tolist(),
         hardware_validated=False,
     )
+    settings = env.cfg.get("finger_tracking", {})
+    if settings.get("enabled", False):
+        limits = np.array([settings["max_error_rad"][n] for n in env.model.active_names])
+        excessive = np.abs(arrays["finger_tracking_error_rad"]) > limits + 1e-4
+        report["finger_tracking"] = dict(
+            max_error_deg=np.rad2deg(limits).tolist(),
+            exceeds_bound_frames=np.flatnonzero(excessive.any(1)).tolist(),
+            hold_within_bound=bool(not excessive[held].any()),
+            all_frames_within_bound=bool(not excessive.any()),
+            interpretation="Measured end-of-control-interval error including fixed final hold; issued-target bounds do not guarantee post-step tracking",
+        )
     if not frozen:
         m = dict(
             schema=SCHEMA,

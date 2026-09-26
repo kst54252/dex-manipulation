@@ -276,7 +276,7 @@ def run(args, root, on_ready=None, is_running=None):
                 raise ValueError("Resume requires complete curriculum state")
         initialize = getattr(args, "initialize_actor", None)
         if initialize:
-            metadata["execution"]["actor_initialization"] = learner.initialize_arm_actor(
+            metadata["execution"]["actor_initialization"] = learner.initialize_actor(
                 initialize, metadata
             )
             metadata["execution"]["actor_initialization"].update(

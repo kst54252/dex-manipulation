@@ -154,8 +154,8 @@ class PPO:
                 torch.cuda.set_rng_state_all([x.cpu() for x in data["cuda_rng_states"]])
         return data
 
-    def initialize_arm_actor(self, path, metadata):
-        """Explicit transfer, not resume: preserve the floating mean actor only.
+    def initialize_actor(self, path, metadata):
+        """Explicit transfer, not resume: preserve a compatible floating mean actor.
 
         New arm inputs have zero first-layer weights. Critic, optimizer and
         exploration std are freshly initialized for the new physical task.
@@ -175,6 +175,9 @@ class PPO:
             "observation",
             "reference_phase",
             "reference_velocity_mode",
+            "physics_dt",
+            "control_decimation",
+            "world_frame",
             "residual_translation_m",
             "residual_rotation_rad",
             "residual_joint_rad",
@@ -182,6 +185,9 @@ class PPO:
         ):
             if old["config"].get(key) != new["config"].get(key):
                 raise ValueError(f"Actor transfer contract differs: {key}")
+        arm_extension = new.get("observation_schema") == "revo2_arm_actor87_critic114_v1"
+        if not arm_extension and new.get("observation_schema") != old["observation_schema"]:
+            raise ValueError("Actor transfer observation schema differs")
         source = data["learner"]["actor_state_dict"]
         target = self.actor.state_dict()
         if set(source) != set(target):
@@ -189,12 +195,12 @@ class PPO:
         for key, value in source.items():
             if key == "distribution.std_param":
                 continue
-            if key == "mlp.0.weight":
+            if key == "mlp.0.weight" and arm_extension:
                 if value.shape[1] != 67 or target[key].shape != (value.shape[0], 87):
                     raise ValueError("Expected 67 -> 87 arm actor input extension")
                 target[key].zero_()
                 target[key][:, :67].copy_(value)
-            elif key in ("obs_normalizer._mean", "obs_normalizer._var", "obs_normalizer._std"):
+            elif arm_extension and key in ("obs_normalizer._mean", "obs_normalizer._var", "obs_normalizer._std"):
                 if value.shape != (1, 67) or target[key].shape != (1, 87):
                     raise ValueError("Unexpected actor normalization dimensions")
                 target[key][:, :67].copy_(value)
@@ -212,12 +218,15 @@ class PPO:
             source_iteration=data["iteration"],
             source_contract_hash=old["contract_hash"],
             transferred="floating actor mean and observation statistics",
-            new_inputs="20 zero-weight arm features",
+            new_inputs="20 zero-weight arm features" if arm_extension else "none",
             critic="fresh",
             optimizer="fresh",
             exploration_std="new training config",
             normalizer_prior_count=float(target["obs_normalizer.count"].item()),
         )
+
+    def initialize_arm_actor(self, path, metadata):
+        return self.initialize_actor(path, metadata)
 
     def export(self, directory):
         directory = Path(directory)

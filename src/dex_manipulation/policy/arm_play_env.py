@@ -516,6 +516,8 @@ class ArmPolicyEnv(PhysxResidualEnv):
             raise ValueError("Invalid residual policy output")
         ref = self.motion.sample(self.time)
         target = self.task.targets(ref, actions, self.last_q_target, self.default_q_offset)
+        if self.task.finger_tracking.enabled:
+            target = self.task.protect_fingers(target, self.state()["q"], self.last_q_target)
         table = getattr(self, "table_safety", None)
         protected = target
         if table is not None:
@@ -606,6 +608,7 @@ class ArmPolicyEnv(PhysxResidualEnv):
             demo_end,
             self.episode_length_buf >= self.max_episode_length,
             table_metrics=table.metrics() if table is not None else None,
+            finger_target=dict(target, active_q=self.last_q_target),
         )
         result = ik["result"]
 

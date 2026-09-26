@@ -815,6 +815,8 @@ class PhysxResidualEnv:
         # Current command drives physics and reward; command advances afterwards as in ManagerBasedRLEnv.
         ref = self.motion.sample(self.time)
         target = self.task.targets(ref, actions, self.last_q_target, self.default_q_offset)
+        if self.task.finger_tracking.enabled:
+            target = self.task.protect_fingers(target, self.state()["q"], self.last_q_target)
         table = getattr(self, "table_safety", None)
         if table is not None:
             table.begin(target, self.state())
@@ -857,6 +859,7 @@ class PhysxResidualEnv:
             demo_end,
             timed_out,
             table_metrics=table.metrics() if table is not None else None,
+            finger_target=applied_target,
         )
         metrics["gravity_m_s2"] = torch.full(
             (self.num_envs,), self.gravity.value, device=self.device

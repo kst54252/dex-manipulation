@@ -123,3 +123,9 @@ PhysX 접촉점 힘·마찰력 합산, 120 Hz 기록과 USD 패드 축 유도는
 다섯 패드의 강성 10,000 N/m·감쇠 20 N·s/m는 사용자 요청의 약 1~2mm 눌림을 위한 자체 설정이며 실측 고무 물성이 아닙니다.
 [접촉·rest offset](https://nvidia-omniverse.github.io/PhysX/physx/5.1.3/docs/AdvancedCollisionDetection.html#tuning-shape-collision-behavior)에 따라
 rest offset은 0으로 유지합니다. 관통 깊이는 PhysX가 보고하는 접촉 간격으로 계산하고 2mm 초과도 그대로 기록합니다.
+
+## 손가락 목표각 추종
+
+실측 관절각 기준 목표각 제한, USD 속도 한계와의 교집합 처리, 제한 전 명령·제한 후 실제 추종 오차 보상은 자체 설계입니다.
+작은 목표각 차이에서도 PD 파지 토크를 유지하도록 이 설정의 강성·감쇠를 조정하되 기존 토크 상한을 유지합니다. 도달 불가능한 제한 구간은 별도 기록합니다.
+기존 actor 평균·정규화 통계만 이관하고 critic·optimizer를 새로 시작합니다. 실물 관절 보정이나 힘 제어를 대신하지 않습니다.

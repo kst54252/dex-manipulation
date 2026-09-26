@@ -35,7 +35,7 @@ def parser():
     start.add_argument(
         "--initialize-actor",
         type=Path,
-        help="새 팔 학습에 호환되는 floating actor만 이관 (resume 아님)",
+        help="새 floating/arm 학습에 호환되는 floating actor 이관 (resume 아님)",
     )
     p.add_argument("--output", type=Path, help="새 결과 폴더 (local/ 내부, 기본 자동 생성)")
     p.add_argument("--logger", choices=("tensorboard", "none"), default="tensorboard")
